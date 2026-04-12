@@ -1,7 +1,6 @@
 import type { HttpClient } from '@substack-api/internal/http-client'
-import { SubscriberLists } from '@substack-api/internal/types/subscriber-lists'
-import { isLeft } from 'fp-ts/Either'
-import { PathReporter } from 'io-ts/PathReporter'
+import { SubscriberLists } from '@substack-api/internal/types'
+import { decodeOrThrow } from '@substack-api/internal/validation'
 
 export type FollowingUser = {
   id: number
@@ -35,10 +34,7 @@ export class FollowingService {
       `/user/${userId}/subscriber-lists?lists=following`
     )
 
-    const lists = SubscriberLists.decode(data)
-    if (isLeft(lists)) {
-      throw Error(`Could not validate data: ${PathReporter.report(lists).join('\n')}`)
-    }
-    return lists.right.subscriberLists[0].groups[0].users.map((user) => user)
+    const lists = decodeOrThrow(SubscriberLists, data, 'Following list')
+    return lists.subscriberLists[0].groups[0].users
   }
 }

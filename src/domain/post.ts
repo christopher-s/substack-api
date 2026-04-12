@@ -1,6 +1,5 @@
 import type { SubstackFullPost, SubstackPreviewPost } from '@substack-api/internal'
-import type { HttpClient } from '@substack-api/internal/http-client'
-import type { CommentService, PostService } from '@substack-api/internal/services'
+import type { EntityDeps } from '@substack-api/domain/entity-deps'
 import { Comment } from '@substack-api/domain/comment'
 
 /**
@@ -44,56 +43,36 @@ export class PreviewPost implements Post {
   }
   public readonly publishedAt: Date
 
-  constructor(
-    rawData: SubstackPreviewPost,
-    private readonly publicationClient: HttpClient,
-    private readonly commentService: CommentService,
-    private readonly postService: PostService
-  ) {
+  private readonly deps: EntityDeps
+
+  constructor(rawData: SubstackPreviewPost, deps: EntityDeps) {
+    this.deps = deps
     this.id = rawData.id
     this.title = rawData.title
     this.subtitle = rawData.subtitle || ''
     this.truncatedBody = rawData.truncated_body_text || ''
     this.body = rawData.truncated_body_text || ''
-    this.likesCount = 0 // TODO: Extract from rawData when available
+    this.likesCount = rawData.reaction_count || 0
     this.publishedAt = new Date(rawData.post_date)
 
-    // TODO: Extract author information from rawData
-    // For now, use placeholder values
-    this.author = {
-      id: 0,
-      name: 'Unknown Author',
-      handle: 'unknown',
-      avatarUrl: ''
-    }
-  }
-
-  /**
-   * Fetch the full post data with HTML body content
-   * @returns Promise<FullPost> - A FullPost instance with complete content
-   * @throws {Error} When full post retrieval fails
-   */
-  async fullPost(): Promise<FullPost> {
-    try {
-      const fullPostData = await this.postService.getPostById(this.id)
-      return new FullPost(fullPostData, this.publicationClient, this.commentService)
-    } catch (error) {
-      throw new Error(`Failed to fetch full post ${this.id}: ${(error as Error).message}`)
-    }
+    // Extract author from publishedBylines if available
+    const byline = rawData.publishedBylines?.[0]
+    this.author = byline
+      ? { id: byline.id, name: byline.name, handle: byline.handle, avatarUrl: byline.photo_url }
+      : { id: 0, name: 'Unknown Author', handle: 'unknown', avatarUrl: '' }
   }
 
   /**
    * Get comments for this post
-   * @throws {Error} When comment retrieval fails or API is unavailable
    */
   async *comments(options: { limit?: number } = {}): AsyncIterable<Comment> {
     try {
-      const commentsData = await this.commentService.getCommentsForPost(this.id)
+      const commentsData = await this.deps.commentService.getCommentsForPost(this.id)
 
       let count = 0
       for (const commentData of commentsData) {
         if (options.limit && count >= options.limit) break
-        yield new Comment(commentData, this.publicationClient)
+        yield new Comment(commentData, this.deps.publicationClient)
         count++
       }
     } catch (error) {
@@ -105,16 +84,28 @@ export class PreviewPost implements Post {
    * Like this post
    */
   async like(): Promise<void> {
-    // Implementation will like the post via the client
-    throw new Error('Post liking not implemented yet - requires like API')
+    throw new Error('Post liking is not supported by this version of the API')
   }
 
   /**
    * Add a comment to this post
    */
   async addComment(_data: { body: string }): Promise<Comment> {
-    // Implementation will add comment via the client
-    throw new Error('Comment creation not implemented yet - requires comment creation API')
+    throw new Error('Comment creation is not supported by this version of the API')
+  }
+
+  /**
+   * Fetch the full post data with HTML body content
+   * @returns Promise<FullPost> - A FullPost instance with complete content
+   * @throws {Error} When full post retrieval fails
+   */
+  async fullPost(): Promise<FullPost> {
+    try {
+      const fullPostData = await this.deps.postService.getPostById(this.id)
+      return new FullPost(fullPostData, this.deps)
+    } catch (error) {
+      throw new Error(`Failed to fetch full post ${this.id}: ${(error as Error).message}`)
+    }
   }
 }
 
@@ -144,28 +135,24 @@ export class FullPost implements Post {
   public readonly coverImage?: string
   public readonly url: string
 
-  constructor(
-    rawData: SubstackFullPost,
-    private readonly publicationClient: HttpClient,
-    private readonly commentService: CommentService
-  ) {
+  private readonly deps: EntityDeps
+
+  constructor(rawData: SubstackFullPost, deps: EntityDeps) {
+    this.deps = deps
     this.id = rawData.id
     this.title = rawData.title
     this.subtitle = rawData.subtitle || ''
     this.truncatedBody = rawData.truncated_body_text || ''
     this.body = rawData.body_html || rawData.htmlBody || rawData.truncated_body_text || ''
-    this.likesCount = 0 // TODO: Extract from rawData when available
+    this.likesCount = rawData.reaction_count || 0
     this.publishedAt = new Date(rawData.post_date)
     this.url = rawData.canonical_url
 
-    // TODO: Extract author information from rawData
-    // For now, use placeholder values
-    this.author = {
-      id: 0,
-      name: 'Unknown Author',
-      handle: 'unknown',
-      avatarUrl: ''
-    }
+    // Extract author from publishedBylines if available
+    const byline = rawData.publishedBylines?.[0]
+    this.author = byline
+      ? { id: byline.id, name: byline.name, handle: byline.handle, avatarUrl: byline.photo_url }
+      : { id: 0, name: 'Unknown Author', handle: 'unknown', avatarUrl: '' }
 
     // Prefer body_html from the full post response, fall back to htmlBody for backward compatibility
     this.htmlBody = rawData.body_html || rawData.htmlBody || ''
@@ -179,16 +166,15 @@ export class FullPost implements Post {
 
   /**
    * Get comments for this post
-   * @throws {Error} When comment retrieval fails or API is unavailable
    */
   async *comments(options: { limit?: number } = {}): AsyncIterable<Comment> {
     try {
-      const commentsData = await this.commentService.getCommentsForPost(this.id)
+      const commentsData = await this.deps.commentService.getCommentsForPost(this.id)
 
       let count = 0
       for (const commentData of commentsData) {
         if (options.limit && count >= options.limit) break
-        yield new Comment(commentData, this.publicationClient)
+        yield new Comment(commentData, this.deps.publicationClient)
         count++
       }
     } catch (error) {
@@ -200,15 +186,13 @@ export class FullPost implements Post {
    * Like this post
    */
   async like(): Promise<void> {
-    // Implementation will like the post via the client
-    throw new Error('Post liking not implemented yet - requires like API')
+    throw new Error('Post liking is not supported by this version of the API')
   }
 
   /**
    * Add a comment to this post
    */
   async addComment(_data: { body: string }): Promise<Comment> {
-    // Implementation will add comment via the client
-    throw new Error('Comment creation not implemented yet - requires comment creation API')
+    throw new Error('Comment creation is not supported by this version of the API')
   }
 }

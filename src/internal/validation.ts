@@ -27,7 +27,6 @@ export function decodeOrThrow<A>(
     fold(
       (_errors) => {
         const errorMessage = PathReporter.report(result).join(', ')
-        console.log(`Invalid ${errorContext}: ${errorMessage}`)
         throw new Error(`Invalid ${errorContext}: ${errorMessage}`)
       },
       (parsed) => parsed

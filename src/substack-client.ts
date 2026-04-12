@@ -1,5 +1,6 @@
 import { HttpClient } from '@substack-api/internal/http-client'
 import { Comment, FullPost, Note, OwnProfile, Profile } from '@substack-api/domain'
+import type { EntityDeps } from '@substack-api/domain/entity-deps'
 import {
   CommentService,
   ConnectivityService,
@@ -86,18 +87,18 @@ export class SubstackClient {
     try {
       const profile = await this.profileService.getOwnProfile()
 
-      return new OwnProfile(
-        profile,
-        this.publicationClient,
-        this.profileService,
-        this.postService,
-        this.noteService,
-        this.commentService,
-        this.followingService,
-        this.newNoteService,
-        this.perPage,
-        profile.handle
-      )
+      const deps: EntityDeps = {
+        publicationClient: this.publicationClient,
+        profileService: this.profileService,
+        postService: this.postService,
+        noteService: this.noteService,
+        commentService: this.commentService,
+        followingService: this.followingService,
+        newNoteService: this.newNoteService,
+        perPage: this.perPage
+      }
+
+      return new OwnProfile(profile, deps, profile.handle)
     } catch (error) {
       throw new Error(`Failed to get own profile: ${(error as Error).message}`)
     }
@@ -113,16 +114,7 @@ export class SubstackClient {
 
     try {
       const profile = await this.profileService.getProfileBySlug(slug)
-      return new Profile(
-        profile,
-        this.publicationClient,
-        this.profileService,
-        this.postService,
-        this.noteService,
-        this.commentService,
-        this.perPage,
-        profile.handle
-      )
+      return new Profile(profile, this.buildEntityDeps(), profile.handle)
     } catch (error) {
       throw new Error(`Profile with slug '${slug}' not found: ${(error as Error).message}`)
     }
@@ -134,16 +126,7 @@ export class SubstackClient {
   async profileForId(id: number): Promise<Profile> {
     try {
       const profile = await this.profileService.getProfileById(id)
-      return new Profile(
-        profile,
-        this.publicationClient,
-        this.profileService,
-        this.postService,
-        this.noteService,
-        this.commentService,
-        this.perPage,
-        profile.handle
-      )
+      return new Profile(profile, this.buildEntityDeps(), profile.handle)
     } catch (error) {
       throw new Error(`Profile with ID ${id} not found: ${(error as Error).message}`)
     }
@@ -155,7 +138,7 @@ export class SubstackClient {
   async postForId(id: number): Promise<FullPost> {
     try {
       const post = await this.postService.getPostById(id)
-      return new FullPost(post, this.publicationClient, this.commentService)
+      return new FullPost(post, this.buildEntityDeps())
     } catch (error) {
       throw new Error(`Post with ID ${id} not found: ${(error as Error).message}`)
     }
@@ -168,8 +151,8 @@ export class SubstackClient {
     try {
       const noteData = await this.noteService.getNoteById(id)
       return new Note(noteData, this.publicationClient)
-    } catch {
-      throw new Error(`Note with ID ${id} not found`)
+    } catch (error) {
+      throw new Error(`Note with ID ${id} not found: ${(error as Error).message}`)
     }
   }
 
@@ -182,6 +165,19 @@ export class SubstackClient {
       return new Comment(commentData, this.publicationClient)
     } catch (error) {
       throw new Error(`Comment with ID ${id} not found: ${(error as Error).message}`)
+    }
+  }
+
+  private buildEntityDeps(): EntityDeps {
+    return {
+      publicationClient: this.publicationClient,
+      profileService: this.profileService,
+      postService: this.postService,
+      noteService: this.noteService,
+      commentService: this.commentService,
+      followingService: this.followingService,
+      newNoteService: this.newNoteService,
+      perPage: this.perPage
     }
   }
 }

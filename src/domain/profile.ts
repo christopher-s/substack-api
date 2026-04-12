@@ -1,11 +1,5 @@
 import type { SubstackPublicProfile, SubstackFullProfile } from '@substack-api/internal'
-import type { HttpClient } from '@substack-api/internal/http-client'
-import type {
-  ProfileService,
-  CommentService,
-  PostService,
-  NoteService
-} from '@substack-api/internal/services'
+import type { EntityDeps } from '@substack-api/domain/entity-deps'
 import { PreviewPost } from '@substack-api/domain/post'
 import { Note } from '@substack-api/domain/note'
 
@@ -23,12 +17,7 @@ export class Profile {
 
   constructor(
     protected readonly rawData: SubstackPublicProfile | SubstackFullProfile,
-    protected readonly publicationClient: HttpClient,
-    protected readonly profileService: ProfileService,
-    protected readonly postService: PostService,
-    protected readonly noteService: NoteService,
-    protected readonly commentService: CommentService,
-    protected readonly perPage: number,
+    protected readonly deps: EntityDeps,
     resolvedSlug?: string
   ) {
     this.id = rawData.id
@@ -45,44 +34,33 @@ export class Profile {
    * Get posts from this profile's publications
    */
   async *posts(options: { limit?: number } = {}): AsyncIterable<PreviewPost> {
-    try {
-      let offset = 0
-      let totalYielded = 0
+    let offset = 0
+    let totalYielded = 0
 
-      while (true) {
-        const postsData = await this.postService.getPostsForProfile(this.id, {
-          limit: this.perPage,
-          offset
-        })
+    while (true) {
+      const postsData = await this.deps.postService.getPostsForProfile(this.id, {
+        limit: this.deps.perPage,
+        offset
+      })
 
-        if (!postsData) {
-          break // No more posts to fetch
-        }
-
-        for (const postData of postsData) {
-          if (options.limit && totalYielded >= options.limit) {
-            return // Stop if we've reached the requested limit
-          }
-          yield new PreviewPost(
-            postData,
-            this.publicationClient,
-            this.commentService,
-            this.postService
-          )
-          totalYielded++
-        }
-
-        // If we got fewer posts than requested, we've reached the end
-        if (postsData.length < this.perPage) {
-          break
-        }
-
-        offset += this.perPage
+      if (!postsData) {
+        break // No more posts to fetch
       }
-    } catch (error) {
-      console.log(error)
-      // If the endpoint doesn't exist or fails, return empty iterator
-      yield* []
+
+      for (const postData of postsData) {
+        if (options.limit && totalYielded >= options.limit) {
+          return // Stop if we've reached the requested limit
+        }
+        yield new PreviewPost(postData, this.deps)
+        totalYielded++
+      }
+
+      // If we got fewer posts than requested, we've reached the end
+      if (postsData.length < this.deps.perPage) {
+        break
+      }
+
+      offset += this.deps.perPage
     }
   }
 
@@ -90,38 +68,33 @@ export class Profile {
    * Get notes from this profile
    */
   async *notes(options: { limit?: number } = {}): AsyncIterable<Note> {
-    try {
-      let cursor: string | undefined = undefined
-      let totalYielded = 0
+    let cursor: string | undefined = undefined
+    let totalYielded = 0
 
-      while (true) {
-        // Use NoteService to get notes for this profile with cursor-based pagination
-        const paginatedNotes = await this.noteService.getNotesForProfile(this.id, {
-          cursor
-        })
+    while (true) {
+      // Use NoteService to get notes for this profile with cursor-based pagination
+      const paginatedNotes = await this.deps.noteService.getNotesForProfile(this.id, {
+        cursor
+      })
 
-        if (!paginatedNotes.notes) {
-          break // No more notes to fetch
-        }
-
-        for (const item of paginatedNotes.notes) {
-          if (options.limit && totalYielded >= options.limit) {
-            return // Stop if we've reached the requested limit
-          }
-          yield new Note(item, this.publicationClient)
-          totalYielded++
-        }
-
-        // If there's no next cursor, we've reached the end
-        if (!paginatedNotes.nextCursor) {
-          break
-        }
-
-        cursor = paginatedNotes.nextCursor
+      if (!paginatedNotes.notes) {
+        break // No more notes to fetch
       }
-    } catch {
-      // If both endpoints fail, return empty iterator
-      yield* []
+
+      for (const item of paginatedNotes.notes) {
+        if (options.limit && totalYielded >= options.limit) {
+          return // Stop if we've reached the requested limit
+        }
+        yield new Note(item, this.deps.publicationClient)
+        totalYielded++
+      }
+
+      // If there's no next cursor, we've reached the end
+      if (!paginatedNotes.nextCursor) {
+        break
+      }
+
+      cursor = paginatedNotes.nextCursor
     }
   }
 }

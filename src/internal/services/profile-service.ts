@@ -65,6 +65,9 @@ export class ProfileService {
    * @throws {Error} When profile is not found or API request fails
    */
   async getProfileBySlug(slug: string): Promise<SubstackFullProfile> {
+    if (!/^[a-zA-Z0-9_-]+$/.test(slug)) {
+      throw new Error(`Invalid slug format: ${slug}`)
+    }
     const rawResponse = await this.substackClient.get<unknown>(`/user/${slug}/public_profile`)
     return decodeOrThrow(SubstackFullProfileCodec, rawResponse, 'Full profile response')
   }

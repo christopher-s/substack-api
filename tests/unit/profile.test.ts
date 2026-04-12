@@ -4,7 +4,9 @@ import {
   ProfileService,
   PostService,
   NoteService,
-  CommentService
+  CommentService,
+  FollowingService,
+  NewNoteService
 } from '@substack-api/internal/services'
 import type { HttpClient } from '@substack-api/internal/http-client'
 
@@ -81,15 +83,16 @@ describe('Profile Entity', () => {
       dm_upgrade_options: []
     }
 
-    profile = new Profile(
-      mockProfileData,
-      mockPublicationClient,
-      mockProfileService,
-      mockPostService,
-      mockNoteService,
-      mockCommentService,
-      25
-    )
+    profile = new Profile(mockProfileData, {
+      publicationClient: mockPublicationClient,
+      profileService: mockProfileService,
+      postService: mockPostService,
+      noteService: mockNoteService,
+      commentService: mockCommentService,
+      followingService: {} as unknown as FollowingService,
+      newNoteService: {} as unknown as NewNoteService,
+      perPage: 25
+    })
   })
 
   describe('posts()', () => {
@@ -183,15 +186,18 @@ describe('Profile Entity', () => {
       expect(posts).toHaveLength(0)
     })
 
-    it('should handle API error gracefully', async () => {
-      mockPublicationClient.get.mockRejectedValue(new Error('API error'))
+    it('should propagate API errors from posts()', async () => {
+      mockPostService.getPostsForProfile.mockRejectedValue(new Error('API error'))
 
-      const posts = []
-      for await (const post of profile.posts()) {
-        posts.push(post)
+      const collectPosts = async () => {
+        const posts = []
+        for await (const post of profile.posts()) {
+          posts.push(post)
+        }
+        return posts
       }
 
-      expect(posts).toHaveLength(0)
+      await expect(collectPosts()).rejects.toThrow('API error')
     })
 
     it('should implement pagination with offset for multiple pages', async () => {
@@ -199,15 +205,16 @@ describe('Profile Entity', () => {
       mockPostService.getPostsForProfile.mockReset()
 
       // Create a new profile with perPage set to 2 for this test
-      const profileWithCustomPerPage = new Profile(
-        profile['rawData'],
-        mockPublicationClient,
-        mockProfileService,
-        mockPostService,
-        mockNoteService,
-        mockCommentService,
-        2
-      )
+      const profileWithCustomPerPage = new Profile(profile['rawData'], {
+        publicationClient: mockPublicationClient,
+        profileService: mockProfileService,
+        postService: mockPostService,
+        noteService: mockNoteService,
+        commentService: mockCommentService,
+        followingService: {} as unknown as FollowingService,
+        newNoteService: {} as unknown as NewNoteService,
+        perPage: 2
+      })
 
       // Mock first page response (full page)
       const firstPagePosts = [
@@ -664,8 +671,10 @@ describe('Profile Entity', () => {
     })
 
     it('should handle empty notes response', async () => {
-      const mockResponse = { items: [] }
-      mockPublicationClient.get.mockResolvedValue(mockResponse)
+      mockNoteService.getNotesForProfile.mockResolvedValue({
+        notes: [],
+        nextCursor: undefined
+      })
 
       const notes = []
       for await (const note of profile.notes()) {
@@ -675,9 +684,8 @@ describe('Profile Entity', () => {
       expect(notes).toHaveLength(0)
     })
 
-    it('should handle missing items property', async () => {
-      const mockResponse = {}
-      mockPublicationClient.get.mockResolvedValue(mockResponse)
+    it('should handle missing notes property', async () => {
+      mockNoteService.getNotesForProfile.mockResolvedValue({} as any)
 
       const notes = []
       for await (const note of profile.notes()) {
@@ -687,15 +695,18 @@ describe('Profile Entity', () => {
       expect(notes).toHaveLength(0)
     })
 
-    it('should handle API error gracefully', async () => {
-      mockPublicationClient.get.mockRejectedValue(new Error('API error'))
+    it('should propagate API errors from notes()', async () => {
+      mockNoteService.getNotesForProfile.mockRejectedValue(new Error('API error'))
 
-      const notes = []
-      for await (const note of profile.notes()) {
-        notes.push(note)
+      const collectNotes = async () => {
+        const notes = []
+        for await (const note of profile.notes()) {
+          notes.push(note)
+        }
+        return notes
       }
 
-      expect(notes).toHaveLength(0)
+      await expect(collectNotes()).rejects.toThrow('API error')
     })
 
     it('should implement pagination with cursor for multiple pages', async () => {

@@ -120,7 +120,9 @@ describe('PostService', () => {
       const result = await postService.getPostsForProfile(123, { limit: 10, offset: 0 })
 
       expect(result).toEqual(mockPosts)
-      expect(mockSubstackClient.get).toHaveBeenCalledWith('/profile/posts?profile_user_id=123')
+      expect(mockSubstackClient.get).toHaveBeenCalledWith(
+        '/profile/posts?profile_user_id=123&limit=10&offset=0'
+      )
     })
 
     it('should handle empty posts array', async () => {
@@ -129,7 +131,9 @@ describe('PostService', () => {
       const result = await postService.getPostsForProfile(456, { limit: 5, offset: 10 })
 
       expect(result).toEqual([])
-      expect(mockSubstackClient.get).toHaveBeenCalledWith('/profile/posts?profile_user_id=456')
+      expect(mockSubstackClient.get).toHaveBeenCalledWith(
+        '/profile/posts?profile_user_id=456&limit=5&offset=10'
+      )
     })
 
     it('should handle missing posts property in response', async () => {
@@ -138,7 +142,9 @@ describe('PostService', () => {
       const result = await postService.getPostsForProfile(789, { limit: 20, offset: 5 })
 
       expect(result).toEqual([])
-      expect(mockSubstackClient.get).toHaveBeenCalledWith('/profile/posts?profile_user_id=789')
+      expect(mockSubstackClient.get).toHaveBeenCalledWith(
+        '/profile/posts?profile_user_id=789&limit=20&offset=5'
+      )
     })
 
     it('should throw error when HTTP client fails', async () => {

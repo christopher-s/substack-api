@@ -60,7 +60,7 @@ export class Note {
   async like(): Promise<void> {
     // Implementation will like the note via the client
     // This requires authentication and proper API endpoints
-    throw new Error('Note liking not implemented yet - requires like API')
+    throw new Error('Note liking is not supported by this version of the API')
   }
 
   /**
@@ -69,6 +69,6 @@ export class Note {
   async addComment(_text: string): Promise<Comment> {
     // Implementation will add a comment via the client
     // This requires authentication and proper API endpoints
-    throw new Error('Note commenting not implemented yet - requires comment API')
+    throw new Error('Note commenting is not supported by this version of the API')
   }
 }

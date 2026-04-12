@@ -66,3 +66,6 @@ out/
 
 # Yarn Integrity file
 .yarn-integrity
+
+# AI-generated documentation
+AGENTS.md

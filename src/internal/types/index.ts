@@ -43,6 +43,8 @@ export type { SubstackAttachment } from '@substack-api/internal/types/substack-a
 export type { SubstackTheme } from '@substack-api/internal/types/substack-theme'
 export type { SubstackUserLink } from '@substack-api/internal/types/substack-user-link'
 export type { SubstackPublicationUser } from '@substack-api/internal/types/substack-publication-user'
+export type { SubstackByline } from '@substack-api/internal/types/substack-byline'
+export { SubstackBylineCodec } from '@substack-api/internal/types/substack-byline'
 export type { SubstackProfileSubscription } from '@substack-api/internal/types/substack-profile-subscription'
 
 // Note API types

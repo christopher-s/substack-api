@@ -119,14 +119,16 @@ describe('OwnProfile - newNoteWithLink', () => {
 
     ownProfile = new OwnProfile(
       mockProfileData,
-      mockClient,
-      mockProfileService,
-      mockPostService,
-      mockNoteService,
-      mockCommentService,
-      mockFollowingService,
-      mockNewNoteService,
-      25,
+      {
+        publicationClient: mockClient,
+        profileService: mockProfileService,
+        postService: mockPostService,
+        noteService: mockNoteService,
+        commentService: mockCommentService,
+        followingService: mockFollowingService,
+        newNoteService: mockNewNoteService,
+        perPage: 25
+      },
       'testuser'
     )
   })

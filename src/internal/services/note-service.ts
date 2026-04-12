@@ -38,7 +38,7 @@ export class NoteService {
             id: response.item.comment.user_id,
             name: response.item.comment.name,
             handle: '', // Not available in comment response
-            photo_url: (response.item.comment as any).photo_url || ''
+            photo_url: response.item.comment.photo_url || ''
           }
         ]
       },

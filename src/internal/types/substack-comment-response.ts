@@ -14,7 +14,8 @@ export const SubstackCommentResponseCodec = t.type({
         date: t.string
       }),
       t.partial({
-        post_id: t.union([t.number, t.null])
+        post_id: t.union([t.number, t.null]),
+        photo_url: t.string
       })
     ])
   })

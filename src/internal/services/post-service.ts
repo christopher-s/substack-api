@@ -30,7 +30,7 @@ export class PostService {
     }
 
     // Transform the raw post data to match our codec expectations
-    const postData = this.transformPostData(rawResponse.post as any)
+    const postData = this.transformPostData(rawResponse.post as Record<string, unknown>)
 
     // Validate the response with SubstackFullPostCodec for full post data including body_html
     return decodeOrThrow(SubstackFullPostCodec, postData, 'Full post response')
@@ -39,12 +39,18 @@ export class PostService {
   /**
    * Transform raw API post data to match our codec structure
    */
-  private transformPostData(rawPost: any): any {
+  private transformPostData(rawPost: Record<string, unknown>): Record<string, unknown> {
     const transformedPost = { ...rawPost }
 
     // Transform postTags from objects to string array
-    if (rawPost.postTags && Array.isArray(rawPost.postTags)) {
-      transformedPost.postTags = rawPost.postTags.map((tag: any) => tag.name || tag)
+    const postTags = rawPost.postTags
+    if (postTags && Array.isArray(postTags)) {
+      transformedPost.postTags = postTags.map((tag: unknown) => {
+        if (typeof tag === 'object' && tag !== null && 'name' in tag) {
+          return (tag as { name: string }).name
+        }
+        return tag
+      })
     }
 
     return transformedPost
@@ -59,10 +65,10 @@ export class PostService {
    */
   async getPostsForProfile(
     profileId: number,
-    _options: { limit: number; offset: number }
+    options: { limit: number; offset: number }
   ): Promise<Array<SubstackPreviewPost>> {
     const response = await this.substackClient.get<{ posts: unknown[] }>(
-      `/profile/posts?profile_user_id=${profileId}`
+      `/profile/posts?profile_user_id=${profileId}&limit=${options.limit}&offset=${options.offset}`
     )
 
     const posts = response.posts || []

@@ -27,6 +27,12 @@ describe('HttpClient', () => {
       expect(() => new HttpClient('https://test.com', '')).toThrow('API token is required')
     })
 
+    it('should reject whitespace-only tokens', () => {
+      expect(() => new HttpClient('https://test.substack.com', '   ')).toThrow(
+        'API token is required'
+      )
+    })
+
     it('should create axios instance with correct base URL and headers', () => {
       const client = new HttpClient('https://test.substack.com', 'test-api-key')
 
@@ -61,16 +67,12 @@ describe('HttpClient', () => {
       expect(result).toEqual(mockResponse)
     })
 
-    it('should throw error on non-200 response', async () => {
-      mockAxiosInstance.get.mockResolvedValue({
-        status: 404,
-        statusText: 'Not Found',
-        data: {}
-      })
+    it('should propagate axios errors', async () => {
+      mockAxiosInstance.get.mockRejectedValue(new Error('Network Error'))
 
       const client = new HttpClient('https://test.substack.com', 'test-api-key')
 
-      await expect(client.get('/test')).rejects.toThrow('HTTP 404: Not Found')
+      await expect(client.get('/test')).rejects.toThrow('Network Error')
     })
   })
 
@@ -108,16 +110,12 @@ describe('HttpClient', () => {
       expect(result).toEqual(mockResponse)
     })
 
-    it('should throw error on non-200 response', async () => {
-      mockAxiosInstance.post.mockResolvedValue({
-        status: 500,
-        statusText: 'Internal Server Error',
-        data: {}
-      })
+    it('should propagate axios errors', async () => {
+      mockAxiosInstance.post.mockRejectedValue(new Error('Server Error'))
 
       const client = new HttpClient('https://test.substack.com', 'test-api-key')
 
-      await expect(client.post('/test', {})).rejects.toThrow('HTTP 500: Internal Server Error')
+      await expect(client.post('/test', {})).rejects.toThrow('Server Error')
     })
   })
 
@@ -155,16 +153,12 @@ describe('HttpClient', () => {
       expect(result).toEqual(mockResponse)
     })
 
-    it('should throw error on non-200 response', async () => {
-      mockAxiosInstance.put.mockResolvedValue({
-        status: 403,
-        statusText: 'Forbidden',
-        data: {}
-      })
+    it('should propagate axios errors', async () => {
+      mockAxiosInstance.put.mockRejectedValue(new Error('Forbidden'))
 
       const client = new HttpClient('https://test.substack.com', 'test-api-key')
 
-      await expect(client.put('/test', {})).rejects.toThrow('HTTP 403: Forbidden')
+      await expect(client.put('/test', {})).rejects.toThrow('Forbidden')
     })
   })
 })

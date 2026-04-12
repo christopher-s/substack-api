@@ -278,14 +278,14 @@ describe('NoteBuilder - Coverage Tests', () => {
     it('should test NoteWithLinkBuilder validation errors', () => {
       const noteWithLinkBuilder = new NoteWithLinkBuilder(mockClient, 'https://example.com')
 
-      // Test empty note validation in NoteWithLinkBuilder's toNoteRequestWithState
+      // Test empty note validation in NoteWithLinkBuilder's toNoteRequest
       expect(() => {
-        ;(noteWithLinkBuilder as any).toNoteRequestWithState({ paragraphs: [] })
+        ;(noteWithLinkBuilder as any).toNoteRequest({ paragraphs: [] })
       }).toThrow('Note must contain at least one paragraph')
 
-      // Test empty paragraph validation in NoteWithLinkBuilder's toNoteRequestWithState
+      // Test empty paragraph validation in NoteWithLinkBuilder's toNoteRequest
       expect(() => {
-        ;(noteWithLinkBuilder as any).toNoteRequestWithState({
+        ;(noteWithLinkBuilder as any).toNoteRequest({
           paragraphs: [{ segments: [], lists: [] }]
         })
       }).toThrow('Each paragraph must contain at least one content block')

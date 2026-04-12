@@ -73,17 +73,16 @@ describe('OwnProfile Entity', () => {
         .mockImplementation((link: string) => new NoteWithLinkBuilder(mockClient, link))
     } as unknown as jest.Mocked<NewNoteService>
 
-    ownProfile = new OwnProfile(
-      mockProfileData,
-      mockClient,
-      mockProfileService,
-      mockPostService,
-      mockNoteService,
-      mockCommentService,
-      mockFollowingService,
-      mockNewNoteService,
-      25
-    )
+    ownProfile = new OwnProfile(mockProfileData, {
+      publicationClient: mockClient,
+      profileService: mockProfileService,
+      postService: mockPostService,
+      noteService: mockNoteService,
+      commentService: mockCommentService,
+      followingService: mockFollowingService,
+      newNoteService: mockNewNoteService,
+      perPage: 25
+    })
   })
 
   it('should inherit from Profile', () => {
@@ -287,17 +286,19 @@ describe('OwnProfile Entity', () => {
     const ownProfileWithResolver = new OwnProfile(
       mockProfileData,
       {
-        get: jest.fn(),
-        post: jest.fn(),
-        request: jest.fn()
-      } as unknown as jest.Mocked<HttpClient>,
-      localProfileService,
-      mockPostService,
-      mockNoteService,
-      mockCommentService,
-      localFollowingService,
-      mockNewNoteService,
-      25,
+        publicationClient: {
+          get: jest.fn(),
+          post: jest.fn(),
+          request: jest.fn()
+        } as unknown as jest.Mocked<HttpClient>,
+        profileService: localProfileService,
+        postService: mockPostService,
+        noteService: mockNoteService,
+        commentService: mockCommentService,
+        followingService: localFollowingService,
+        newNoteService: mockNewNoteService,
+        perPage: 25
+      },
       'resolved-own-slug'
     )
 
@@ -639,9 +640,10 @@ describe('OwnProfile Entity', () => {
     })
 
     it('should handle empty notes response', async () => {
-      const mockResponse = { notes: [] }
-      const mockClient = ownProfile['publicationClient'] as jest.Mocked<HttpClient>
-      mockClient.get.mockResolvedValue(mockResponse)
+      mockNoteService.getNotesForLoggedUser.mockResolvedValue({
+        notes: [],
+        nextCursor: undefined
+      })
 
       const notes = []
       for await (const note of ownProfile.notes()) {
@@ -652,9 +654,7 @@ describe('OwnProfile Entity', () => {
     })
 
     it('should handle missing notes property', async () => {
-      const mockResponse = {}
-      const mockClient = ownProfile['publicationClient'] as jest.Mocked<HttpClient>
-      mockClient.get.mockResolvedValue(mockResponse)
+      mockNoteService.getNotesForLoggedUser.mockResolvedValue({} as any)
 
       const notes = []
       for await (const note of ownProfile.notes()) {
@@ -664,16 +664,18 @@ describe('OwnProfile Entity', () => {
       expect(notes).toHaveLength(0)
     })
 
-    it('should handle API error gracefully for notes', async () => {
-      const mockClient = ownProfile['publicationClient'] as jest.Mocked<HttpClient>
-      mockClient.get.mockRejectedValue(new Error('API error'))
+    it('should propagate API errors from notes()', async () => {
+      mockNoteService.getNotesForLoggedUser.mockRejectedValue(new Error('API error'))
 
-      const notes = []
-      for await (const note of ownProfile.notes()) {
-        notes.push(note)
+      const collectNotes = async () => {
+        const notes = []
+        for await (const note of ownProfile.notes()) {
+          notes.push(note)
+        }
+        return notes
       }
 
-      expect(notes).toHaveLength(0)
+      await expect(collectNotes()).rejects.toThrow('API error')
     })
   })
 })
