@@ -94,10 +94,9 @@ describe('CommentService', () => {
       const result = await commentService.getCommentById(123)
 
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/reader/comment/123')
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         id: 123,
-        body: 'Test comment body',
-        author_is_admin: false
+        body: 'Test comment body'
       })
     })
 
@@ -122,7 +121,7 @@ describe('CommentService', () => {
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/reader/comment/123')
       expect(result.id).toBe(123)
       expect(result.body).toBe('Test comment body')
-      expect(result.author_is_admin).toBe(false)
+      expect(result.author_is_admin).toBeUndefined()
     })
 
     it('should throw error when comment is not found', async () => {

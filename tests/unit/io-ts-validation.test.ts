@@ -8,7 +8,7 @@ import {
   SubstackCommentCodec,
   SubstackCommentResponseCodec
 } from '@substack-api/internal/types'
-import { decodeOrThrow, decodeEither } from '@substack-api/internal/validation'
+import { decodeOrThrow } from '@substack-api/internal/validation'
 import { isLeft, isRight } from 'fp-ts/Either'
 
 describe('io-ts validation codecs', () => {
@@ -22,7 +22,7 @@ describe('io-ts validation codecs', () => {
         truncated_body_text: 'This is a test...'
       }
 
-      const result = decodeEither(SubstackPreviewPostCodec, validPost)
+      const result = SubstackPreviewPostCodec.decode(validPost)
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackPreviewPostCodec, validPost, 'test post')
@@ -38,7 +38,7 @@ describe('io-ts validation codecs', () => {
         post_date: '2023-01-01T00:00:00Z'
       }
 
-      const result = decodeEither(SubstackPreviewPostCodec, invalidPost)
+      const result = SubstackPreviewPostCodec.decode(invalidPost)
       expect(isLeft(result)).toBe(true)
 
       expect(() => {
@@ -53,7 +53,7 @@ describe('io-ts validation codecs', () => {
         post_date: '2023-01-01T00:00:00Z'
       }
 
-      const result = decodeEither(SubstackPreviewPostCodec, minimalPost)
+      const result = SubstackPreviewPostCodec.decode(minimalPost)
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackPreviewPostCodec, minimalPost, 'minimal post')
@@ -81,7 +81,7 @@ describe('io-ts validation codecs', () => {
         restacks: 3
       }
 
-      const result = decodeEither(SubstackFullPostCodec, validFullPost)
+      const result = SubstackFullPostCodec.decode(validFullPost)
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackFullPostCodec, validFullPost, 'test full post')
@@ -103,7 +103,7 @@ describe('io-ts validation codecs', () => {
         canonical_url: 'https://example.com/minimal-full-post'
       }
 
-      const result = decodeEither(SubstackFullPostCodec, minimalFullPost)
+      const result = SubstackFullPostCodec.decode(minimalFullPost)
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackFullPostCodec, minimalFullPost, 'minimal full post')
@@ -123,7 +123,7 @@ describe('io-ts validation codecs', () => {
         postTags: 'invalid-tags' // Should be array of strings
       }
 
-      const result = decodeEither(SubstackFullPostCodec, invalidFullPost)
+      const result = SubstackFullPostCodec.decode(invalidFullPost)
       expect(isLeft(result)).toBe(true)
     })
 
@@ -136,7 +136,7 @@ describe('io-ts validation codecs', () => {
         reactions: ['invalid'] // Should be record of string to number
       }
 
-      const result = decodeEither(SubstackFullPostCodec, invalidFullPost)
+      const result = SubstackFullPostCodec.decode(invalidFullPost)
       expect(isLeft(result)).toBe(true)
     })
   })
@@ -149,7 +149,7 @@ describe('io-ts validation codecs', () => {
         author_is_admin: false
       }
 
-      const result = decodeEither(SubstackCommentCodec, validComment)
+      const result = SubstackCommentCodec.decode(validComment)
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackCommentCodec, validComment, 'test comment')
@@ -164,7 +164,7 @@ describe('io-ts validation codecs', () => {
         body: 'This is a comment'
       }
 
-      const result = decodeEither(SubstackCommentCodec, commentWithoutAdmin)
+      const result = SubstackCommentCodec.decode(commentWithoutAdmin)
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackCommentCodec, commentWithoutAdmin, 'test comment')
@@ -177,7 +177,7 @@ describe('io-ts validation codecs', () => {
         body: 'This is a comment'
       }
 
-      const result = decodeEither(SubstackCommentCodec, invalidComment)
+      const result = SubstackCommentCodec.decode(invalidComment)
       expect(isLeft(result)).toBe(true)
     })
   })
@@ -197,7 +197,7 @@ describe('io-ts validation codecs', () => {
         }
       }
 
-      const result = decodeEither(SubstackCommentResponseCodec, validResponse)
+      const result = SubstackCommentResponseCodec.decode(validResponse)
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackCommentResponseCodec, validResponse, 'test response')
@@ -220,7 +220,7 @@ describe('io-ts validation codecs', () => {
         }
       }
 
-      const result = decodeEither(SubstackCommentResponseCodec, responseWithNullPostId)
+      const result = SubstackCommentResponseCodec.decode(responseWithNullPostId)
       expect(isRight(result)).toBe(true)
     })
 
@@ -237,7 +237,7 @@ describe('io-ts validation codecs', () => {
         }
       }
 
-      const result = decodeEither(SubstackCommentResponseCodec, invalidResponse)
+      const result = SubstackCommentResponseCodec.decode(invalidResponse)
       expect(isLeft(result)).toBe(true)
     })
   })

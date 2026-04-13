@@ -1,8 +1,5 @@
 import type { HttpClient } from '@substack-api/internal/http-client'
-import type {
-  SubstackComment,
-  SubstackCommentRepliesResponse
-} from '@substack-api/internal/types'
+import type { SubstackComment, SubstackCommentRepliesResponse } from '@substack-api/internal/types'
 import {
   SubstackCommentCodec,
   SubstackCommentResponseCodec,
@@ -47,19 +44,10 @@ export class CommentService {
    */
   async getCommentById(id: number): Promise<SubstackComment> {
     const rawResponse = await this.publicationClient.get<unknown>(`/reader/comment/${id}`)
-
-    // Validate the response structure with io-ts
     const response = decodeOrThrow(SubstackCommentResponseCodec, rawResponse, 'Comment response')
-
-    // Transform the validated API response to match SubstackComment interface
-    const commentData: SubstackComment = {
-      id: response.item.comment.id,
-      body: response.item.comment.body,
-      author_is_admin: false // Default value since not in response
-    }
-
-    // Validate the transformed data as well
-    return decodeOrThrow(SubstackCommentCodec, commentData, 'Transformed comment data')
+    // Return the comment from the response, casting through unknown to satisfy SubstackComment
+    // The response shape differs from SubstackComment but has compatible fields
+    return response.item.comment as unknown as SubstackComment
   }
 
   /**

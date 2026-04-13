@@ -1,5 +1,13 @@
 import { HttpClient } from '@substack-api/internal/http-client'
-import { Category, Comment, FullPost, Note, OwnProfile, Profile, PublicationPost } from '@substack-api/domain'
+import {
+  Category,
+  Comment,
+  FullPost,
+  Note,
+  OwnProfile,
+  Profile,
+  PublicationPost
+} from '@substack-api/domain'
 import type { EntityDeps } from '@substack-api/domain/entity-deps'
 import {
   CommentService,
@@ -10,15 +18,11 @@ import {
   NoteService,
   PostService,
   ProfileService,
-  PublicationService,
-  SearchService
+  PublicationService
 } from '@substack-api/internal/services'
+import type { FeedTab, ProfileFeedTab } from '@substack-api/internal/services/discovery-service'
 import type {
   FeedItem,
-  FeedTab,
-  ProfileFeedTab
-} from '@substack-api/internal/services/discovery-service'
-import type {
   SubstackInboxItem,
   SubstackFacepile,
   SubstackCategoryPublication,
@@ -48,7 +52,6 @@ export class SubstackClient {
   private readonly connectivityService: ConnectivityService
   private readonly newNoteService: NewNoteService
   private readonly discoveryService: DiscoveryService
-  private readonly searchService: SearchService
   private readonly publicationService: PublicationService
   private readonly perPage: number
   private readonly token: string | undefined
@@ -99,7 +102,6 @@ export class SubstackClient {
     this.connectivityService = new ConnectivityService(this.substackClient)
     this.newNoteService = new NewNoteService(this.substackClient)
     this.discoveryService = new DiscoveryService(this.substackClient)
-    this.searchService = new SearchService(this.substackClient)
     this.publicationService = new PublicationService(this.publicationClient)
   }
 
@@ -328,7 +330,7 @@ export class SubstackClient {
    */
   async *search(query: string, options: { limit?: number } = {}): AsyncGenerator<FeedItem> {
     yield* this.paginateFeed(
-      (cursor) => this.searchService.search(query, { cursor }),
+      (cursor) => this.discoveryService.search(query, { cursor }),
       options.limit
     )
   }
@@ -343,7 +345,7 @@ export class SubstackClient {
     query: string,
     options?: { page?: number }
   ): Promise<{ results: SubstackProfileSearchResult[]; more: boolean }> {
-    return await this.searchService.searchProfiles(query, options)
+    return await this.discoveryService.searchProfiles(query, options)
   }
 
   /**
@@ -359,7 +361,7 @@ export class SubstackClient {
     let page = 1
     let totalYielded = 0
     while (true) {
-      const response = await this.searchService.searchProfiles(query, { page })
+      const response = await this.discoveryService.searchProfiles(query, { page })
       for (const result of response.results) {
         if (options.limit && totalYielded >= options.limit) return
         yield result
@@ -378,7 +380,7 @@ export class SubstackClient {
    */
   async *exploreSearch(options: { tab?: string; limit?: number } = {}): AsyncGenerator<FeedItem> {
     yield* this.paginateFeed(
-      (cursor) => this.searchService.exploreSearch({ tab: options.tab, cursor }),
+      (cursor) => this.discoveryService.exploreSearch({ tab: options.tab, cursor }),
       options.limit
     )
   }
@@ -395,8 +397,7 @@ export class SubstackClient {
     options: { sort?: 'top' | 'new'; limit?: number } = {}
   ): AsyncGenerator<PublicationPost> {
     yield* this.paginateOffset(
-      (offset, limit) =>
-        this.publicationService.getArchive({ sort: options.sort, offset, limit }),
+      (offset, limit) => this.publicationService.getArchive({ sort: options.sort, offset, limit }),
       options.limit
     )
   }

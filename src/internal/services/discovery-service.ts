@@ -1,14 +1,17 @@
 import type { HttpClient } from '@substack-api/internal/http-client'
 import type {
+  FeedItem,
   SubstackCategory,
   SubstackCategoryPublication,
   SubstackInboxItem,
+  SubstackProfileSearchResult,
   SubstackTrendingResponse
 } from '@substack-api/internal/types'
 import {
   SubstackCategoryCodec,
   SubstackCategoryPublicationCodec,
   SubstackInboxItemCodec,
+  SubstackProfileSearchResponseCodec,
   SubstackTrendingResponseCodec
 } from '@substack-api/internal/types'
 import { decodeOrThrow } from '@substack-api/internal/validation'
@@ -22,17 +25,6 @@ export type FeedTab = 'for-you' | 'top' | 'popular' | 'catchup' | 'notes' | 'exp
  * Supported tabs for the profile activity feed endpoint.
  */
 export type ProfileFeedTab = 'posts' | 'notes' | 'comments' | 'likes'
-
-/**
- * A feed item from the reader feed, search, or profile activity endpoints.
- * These endpoints return heterogeneous items (posts, comments/notes) mixed together.
- * The `type` field discriminates the item kind.
- */
-export interface FeedItem {
-  type: string
-  entity_key: string
-  [key: string]: unknown
-}
 
 /**
  * Service for discovery endpoints: trending, feed, categories, profile activity
@@ -59,7 +51,10 @@ export class DiscoveryService {
    * Get trending posts with associated publications
    * GET /api/v1/trending (anonymous)
    */
-  async getTrending(options?: { limit?: number; offset?: number }): Promise<SubstackTrendingResponse> {
+  async getTrending(options?: {
+    limit?: number
+    offset?: number
+  }): Promise<SubstackTrendingResponse> {
     const params = new URLSearchParams()
     if (options?.limit !== undefined) {
       params.set('limit', String(options.limit))
@@ -170,13 +165,63 @@ export class DiscoveryService {
     }
   }
 
+  /**
+   * Search for posts, people, publications, and notes
+   * GET /api/v1/top/search?query={query} (anonymous, paginated)
+   */
+  async search(
+    query: string,
+    options?: { cursor?: string }
+  ): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
+    const params = new URLSearchParams({ query })
+    if (options?.cursor) {
+      params.set('cursor', options.cursor)
+    }
+    return this.fetchCursorFeed(`/top/search?${params.toString()}`)
+  }
+
+  /**
+   * Search for user profiles
+   * GET /api/v1/profile/search?query={query}&page={page} (anonymous, page-paginated)
+   */
+  async searchProfiles(
+    query: string,
+    options?: { page?: number }
+  ): Promise<{ results: SubstackProfileSearchResult[]; more: boolean }> {
+    const params = new URLSearchParams({ query })
+    if (options?.page !== undefined) {
+      params.set('page', String(options.page))
+    }
+    const response = await this.substackClient.get<unknown>(`/profile/search?${params.toString()}`)
+    const decoded = decodeOrThrow(SubstackProfileSearchResponseCodec, response, 'Profile search')
+    return { results: decoded.results, more: decoded.more }
+  }
+
+  /**
+   * Explore search with different tabs
+   * GET /api/v1/search/explore/web?tab={tab}&type=base (anonymous, paginated)
+   */
+  async exploreSearch(options?: {
+    tab?: string
+    cursor?: string
+  }): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
+    const tab = options?.tab || 'explore'
+    const params = new URLSearchParams({ tab, type: 'base' })
+    if (options?.cursor) {
+      params.set('cursor', options.cursor)
+    }
+    return this.fetchCursorFeed(`/search/explore/web?${params.toString()}`)
+  }
+
   // ── Private helpers ────────────────────────────────────────────────
 
   /**
    * Shared cursor-feed fetcher for paginated feed endpoints.
    * Handles the common pattern: fetch URL, normalize items/nextCursor.
    */
-  private async fetchCursorFeed(url: string): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
+  private async fetchCursorFeed(
+    url: string
+  ): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
     const response = await this.substackClient.get<{
       items?: FeedItem[]
       nextCursor?: string | null

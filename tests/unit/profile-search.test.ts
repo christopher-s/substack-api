@@ -1,15 +1,15 @@
-import { SearchService } from '@substack-api/internal/services/search-service'
+import { DiscoveryService } from '@substack-api/internal/services/discovery-service'
 import { HttpClient } from '@substack-api/internal/http-client'
 
 describe('SearchService - searchProfiles', () => {
   let mockClient: jest.Mocked<HttpClient>
-  let service: SearchService
+  let service: DiscoveryService
 
   beforeEach(() => {
     jest.clearAllMocks()
     mockClient = new HttpClient('https://substack.com') as jest.Mocked<HttpClient>
     mockClient.get = jest.fn()
-    service = new SearchService(mockClient)
+    service = new DiscoveryService(mockClient)
   })
 
   it('should fetch profile search results', async () => {
