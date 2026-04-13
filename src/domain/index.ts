@@ -3,6 +3,8 @@ export { OwnProfile } from '@substack-api/domain/own-profile'
 export { PreviewPost, FullPost } from '@substack-api/domain/post'
 export { Note } from '@substack-api/domain/note'
 export { Comment } from '@substack-api/domain/comment'
+export { Category } from '@substack-api/domain/category'
+export { PublicationPost } from '@substack-api/domain/publication-post'
 export {
   NoteBuilder,
   NoteWithLinkBuilder,

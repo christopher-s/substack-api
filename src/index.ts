@@ -6,6 +6,8 @@ export {
   FullPost,
   Note,
   Comment,
+  Category,
+  PublicationPost,
   NoteBuilder,
   NoteWithLinkBuilder,
   ParagraphBuilder,
@@ -23,3 +25,12 @@ export type {
 } from '@substack-api/types'
 
 export type { TextSegment, ListItem, List } from '@substack-api/domain'
+
+export type { FeedTab, ProfileFeedTab } from '@substack-api/internal/services/discovery-service'
+
+export type { SubstackCategoryPublication } from '@substack-api/internal/types'
+export type { SubstackLiveStreamResponse } from '@substack-api/internal/types'
+export type { SubstackTrendingResponse } from '@substack-api/internal/types'
+
+export type { SubstackCommentRepliesResponse } from '@substack-api/internal/types'
+export type { SubstackProfileSearchResult } from '@substack-api/internal/types'

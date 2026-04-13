@@ -18,7 +18,7 @@ describe('CommentService', () => {
     ) as jest.Mocked<HttpClient>
     mockPublicationClient.get = jest.fn()
 
-    commentService = new CommentService(mockPublicationClient)
+    commentService = new CommentService(mockPublicationClient, mockPublicationClient)
   })
 
   describe('getCommentsForPost', () => {

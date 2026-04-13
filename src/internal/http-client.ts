@@ -7,20 +7,20 @@ import rateLimit from 'axios-rate-limit'
 export class HttpClient {
   private readonly httpClient: AxiosInstance
 
-  constructor(baseUrl: string, token: string, maxRequestsPerSecond: number = 25) {
-    if (!token || typeof token !== 'string' || token.trim().length === 0) {
-      throw new Error('API token is required')
+  constructor(baseUrl: string, token?: string, maxRequestsPerSecond: number = 25) {
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15',
+      'Accept-Encoding': 'gzip, deflate, br'
+    }
+    if (token) {
+      headers.Cookie = `substack.sid=${token}`
     }
     const instance = axios.create({
       baseURL: baseUrl,
-      headers: {
-        Cookie: `substack.sid=${token}`,
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15',
-        'Accept-Encoding': 'gzip, deflate, br'
-      }
+      headers
     })
     this.httpClient = rateLimit(instance, {
       maxRequests: maxRequestsPerSecond,

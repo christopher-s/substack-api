@@ -23,14 +23,16 @@ describe('HttpClient', () => {
   })
 
   describe('constructor', () => {
-    it('should throw error when token is missing', () => {
-      expect(() => new HttpClient('https://test.com', '')).toThrow('API token is required')
+    it('should create client without token (anonymous mode)', () => {
+      expect(() => new HttpClient('https://test.com')).not.toThrow()
     })
 
-    it('should reject whitespace-only tokens', () => {
-      expect(() => new HttpClient('https://test.substack.com', '   ')).toThrow(
-        'API token is required'
-      )
+    it('should create client with empty string token (anonymous mode)', () => {
+      expect(() => new HttpClient('https://test.com', '')).not.toThrow()
+    })
+
+    it('should create client with whitespace-only token (anonymous mode)', () => {
+      expect(() => new HttpClient('https://test.substack.com', '   ')).not.toThrow()
     })
 
     it('should create axios instance with correct base URL and headers', () => {
@@ -48,6 +50,14 @@ describe('HttpClient', () => {
         }
       })
       expect(client).toBeDefined()
+    })
+
+    it('should not set Cookie header when no token provided (anonymous)', () => {
+      new HttpClient('https://test.substack.com')
+
+      const createCall = mockedAxios.create.mock.calls[0][0] as { headers: Record<string, string> }
+      expect(createCall.headers).not.toHaveProperty('Cookie')
+      expect(createCall.headers).toHaveProperty('Accept')
     })
   })
 

@@ -1,6 +1,13 @@
 import type { HttpClient } from '@substack-api/internal/http-client'
-import type { SubstackComment } from '@substack-api/internal/types'
-import { SubstackCommentCodec, SubstackCommentResponseCodec } from '@substack-api/internal/types'
+import type {
+  SubstackComment,
+  SubstackCommentRepliesResponse
+} from '@substack-api/internal/types'
+import {
+  SubstackCommentCodec,
+  SubstackCommentResponseCodec,
+  SubstackCommentRepliesResponseCodec
+} from '@substack-api/internal/types'
 import { decodeOrThrow } from '@substack-api/internal/validation'
 
 /**
@@ -8,7 +15,10 @@ import { decodeOrThrow } from '@substack-api/internal/validation'
  * Returns internal types that can be transformed into domain models
  */
 export class CommentService {
-  constructor(private readonly publicationClient: HttpClient) {}
+  constructor(
+    private readonly publicationClient: HttpClient,
+    private readonly substackClient: HttpClient
+  ) {}
 
   /**
    * Get comments for a post
@@ -50,5 +60,24 @@ export class CommentService {
 
     // Validate the transformed data as well
     return decodeOrThrow(SubstackCommentCodec, commentData, 'Transformed comment data')
+  }
+
+  /**
+   * Get threaded replies to a comment
+   * GET /api/v1/reader/comment/{id}/replies (anonymous, cursor-paginated)
+   */
+  async getReplies(
+    commentId: number,
+    options?: { cursor?: string }
+  ): Promise<SubstackCommentRepliesResponse> {
+    const params = new URLSearchParams()
+    if (options?.cursor) {
+      params.set('cursor', options.cursor)
+    }
+    const query = params.toString() ? `?${params.toString()}` : ''
+    const response = await this.substackClient.get<unknown>(
+      `/reader/comment/${commentId}/replies${query}`
+    )
+    return decodeOrThrow(SubstackCommentRepliesResponseCodec, response, 'Comment replies')
   }
 }
