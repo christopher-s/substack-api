@@ -13,11 +13,6 @@ jobs:
     build:
         name: Running build
         runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                ci-env:
-                    - '1'
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -35,11 +30,6 @@ jobs:
     test:
         name: Running unit tests
         runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                ci-env:
-                    - '1'
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -64,7 +54,7 @@ jobs:
                   junit.xml
 
             - name: Upload coverage to Codecov
-              uses: codecov/codecov-action@v3
+              uses: codecov/codecov-action@v4
               with:
                 token: ${{ secrets.CODECOV_TOKEN }}
                 files: ./coverage/lcov.info
@@ -75,11 +65,6 @@ jobs:
     integration:
         name: Running integration tests
         runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                ci-env:
-                    - '1'
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -104,11 +89,6 @@ jobs:
     lint:
         name: Running linters
         runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                ci-env:
-                    - '1'
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -128,12 +108,7 @@ jobs:
     e2e:
         name: Running E2E tests
         runs-on: ubuntu-latest
-        if: github.repository == 'jakub-k-slys/substack-api' && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'pull_request')
-        strategy:
-            fail-fast: false
-            matrix:
-                ci-env:
-                    - '1'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
         steps:
             - name: Checkout code
               uses: actions/checkout@v4

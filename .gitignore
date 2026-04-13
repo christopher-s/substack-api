@@ -68,4 +68,4 @@ out/
 .yarn-integrity
 
 # AI-generated documentation
-AGENTS.md
+/AGENTS.md

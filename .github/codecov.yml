@@ -13,5 +13,6 @@ coverage:
     precision: 2
 ignore:
     - docs
+    - "src/internal/types"
 comment:
     layout: diff, files
