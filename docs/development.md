@@ -33,7 +33,7 @@ For the most consistent development experience, use the provided dev container c
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/jakub-k-slys/substack-api.git
+   git clone https://github.com/christopher-s/substack-api.git
    cd substack-api
    ```
 

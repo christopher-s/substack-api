@@ -18,9 +18,9 @@ Welcome to the Substack API client documentation. This modern TypeScript library
 
 ## Quick Links
 
-- [GitHub Repository](https://github.com/jakub-k-slys/substack-api)
+- [GitHub Repository](https://github.com/christopher-s/substack-api)
 - [NPM Package](https://www.npmjs.com/package/substack-api)
-- [Issue Tracker](https://github.com/jakub-k-slys/substack-api/issues)
+- [Issue Tracker](https://github.com/christopher-s/substack-api/issues)
 
 ## Contents
 

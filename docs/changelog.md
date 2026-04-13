@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Release Notes
 
-For the latest releases and detailed release notes, please visit our [GitHub Releases](https://github.com/jakub-k-slys/substack-api/releases) page.
+For the latest releases and detailed release notes, please visit our [GitHub Releases](https://github.com/christopher-s/substack-api/releases) page.
 
 ## Migration Guide
 

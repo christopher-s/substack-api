@@ -97,7 +97,7 @@ If you want to contribute to the library or run it from source:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/jakub-k-slys/substack-api.git
+   git clone https://github.com/christopher-s/substack-api.git
    cd substack-api
    ```
 

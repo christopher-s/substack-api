@@ -1,6 +1,6 @@
 project = 'Substack API'
-copyright = '2023, Jakub Slys'
-author = 'Jakub Slys'
+copyright = '2025, christopher-s'
+author = 'christopher-s'
 
 release = '0.1'
 version = '0.1.0'

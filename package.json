@@ -36,7 +36,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jakub-k-slys/substack-api.git"
+    "url": "git+https://github.com/christopher-s/substack-api.git"
   },
   "keywords": [
     "substack",
@@ -44,12 +44,12 @@
     "client",
     "typescript"
   ],
-  "author": "Jakub Slys",
+  "author": "christopher-s",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jakub-k-slys/substack-api/issues"
+    "url": "https://github.com/christopher-s/substack-api/issues"
   },
-  "homepage": "https://github.com/jakub-k-slys/substack-api#readme",
+  "homepage": "https://github.com/christopher-s/substack-api#readme",
   "devDependencies": {
     "@eslint/js": "^9.29.0",
     "@rollup/plugin-typescript": "^12.3.0",
