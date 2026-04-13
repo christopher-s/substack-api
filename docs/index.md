@@ -4,16 +4,17 @@ Welcome to the Substack API client documentation. This modern TypeScript library
 
 ## Features
 
-- 🏗️ **Modern Entity Model** - Object-oriented API with fluent navigation (`profile.posts()`, `post.comments()`)
-- 🔄 **Async Iterators** - Seamless pagination with `for await` syntax  
-- 🛡️ **Type Safety** - Full TypeScript support with entity classes (Profile, Post, Note, Comment)
-- 🔐 **Cookie Authentication** - Secure authentication using substack.sid cookies
-- 📝 **Content Creation** - Create posts, notes, and comments through OwnProfile
-- 💬 **Social Features** - Like, comment, follow, and subscribe functionality
-- 📄 **Smart Pagination** - Built-in pagination with configurable limits
-- 🚀 **Built-in Caching** - Automatic in-memory caching with TTL for improved performance
-- ⚡ **Error Handling** - Comprehensive error handling with custom error types
-- 🔧 **Configurable** - Support for different hostnames and custom configurations
+- **Anonymous Access** - Read public content without authentication; most features work without a token
+- **Discovery & Search** - Browse trending posts, search content and profiles, explore categories
+- **Publication Archive** - Access publication posts, archives, and homepages
+- **Modern Entity Model** - Object-oriented API with fluent navigation (`profile.posts()`, `post.comments()`)
+- **Async Iterators** - Seamless pagination with `for await` syntax
+- **Type Safety** - Full TypeScript support with entity classes (Profile, Post, Note, Comment)
+- **Cookie Authentication** - Secure authentication using substack.sid cookies
+- **Note Creation** - Build and publish notes through the NoteBuilder pattern on OwnProfile
+- **Smart Pagination** - Built-in pagination with configurable limits
+- **Error Handling** - Comprehensive error handling with custom error types
+- **Configurable** - Support for different hostnames, rate limits, and custom configurations
 
 ## Quick Links
 

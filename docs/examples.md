@@ -1,6 +1,6 @@
 # Examples
 
-This section provides practical examples of using the modern SubstackClient entity-based API in various real-world scenarios.
+Practical examples of using the Substack API client in real-world scenarios.
 
 ## Basic Setup
 
@@ -9,33 +9,248 @@ This section provides practical examples of using the modern SubstackClient enti
 ```typescript
 import { SubstackClient } from 'substack-api';
 
-// Initialize with substack.sid cookie
+// Authenticated usage (requires a connect.sid cookie)
 const client = new SubstackClient({
-  token: 'your-connect-sid-cookie-value',
-  publicationUrl: 'example.substack.com'  // optional
+  publicationUrl: 'https://example.substack.com',
+  token: 'your-connect-sid-cookie-value'
 });
 
-// Test connection
+// Test connection (requires authentication)
 const isConnected = await client.testConnectivity();
 if (!isConnected) {
   throw new Error('Failed to connect to Substack API');
 }
 ```
 
+### Anonymous Client (Read-Only)
+
+```typescript
+// No token needed -- works for all public endpoints
+const client = new SubstackClient({
+  publicationUrl: 'https://example.substack.com'
+});
+
+// Browse profiles, posts, search, trending, categories -- all anonymous
+const profile = await client.profileForSlug('some-writer');
+const trending = await client.trending();
+const categories = await client.categories();
+```
+
 ### Environment Setup
 
 ```typescript
-// .env file
-// SUBSTACK_TOKEN=your-connect-sid-cookie-value
-// SUBSTACK_PUBLICATION_URL=yoursite.substack.com
-
 import dotenv from 'dotenv';
 dotenv.config();
 
 const client = new SubstackClient({
-  token: process.env.SUBSTACK_TOKEN!,
-  publicationUrl: process.env.SUBSTACK_PUBLICATION_URL
+  publicationUrl: process.env.SUBSTACK_PUBLICATION_URL!,
+  token: process.env.SUBSTACK_TOKEN // undefined = anonymous mode
 });
+```
+
+## Anonymous Usage
+
+### Trending Posts
+
+```typescript
+async function showTrending() {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  // Get a single page of trending posts
+  const trending = await client.trending({ limit: 10 });
+  console.log(`Trending posts: ${trending.posts.length}`);
+
+  // Iterate all trending pages
+  for await (const page of client.trendingFeed({ limit: 25 })) {
+    for (const post of page.posts) {
+      console.log(`- ${post.title}`);
+    }
+  }
+
+  // Get top posts from the homepage feed
+  const topPosts = await client.topPosts();
+  for (const item of topPosts) {
+    console.log(`Top: ${item.entity_key}`);
+  }
+}
+```
+
+### Search
+
+```typescript
+async function searchContent(query: string) {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  // Search for posts, notes, publications
+  for await (const item of client.search(query, { limit: 20 })) {
+    console.log(`[${item.type}] ${item.entity_key}`);
+  }
+
+  // Search for user profiles
+  const profileResults = await client.profileSearch(query);
+  console.log(`Found ${profileResults.results.length} profiles`);
+  for (const result of profileResults.results) {
+    console.log(`- ${result.name} (@${result.handle})`);
+    if (result.bio) console.log(`  Bio: ${result.bio}`);
+    if (result.followerCount) console.log(`  Followers: ${result.followerCount}`);
+  }
+
+  // Iterate all profile search results across pages
+  for await (const profile of client.profileSearchAll(query, { limit: 50 })) {
+    console.log(`${profile.name} (@${profile.handle})`);
+  }
+
+  // Explore search with different tabs
+  for await (const item of client.exploreSearch({ tab: 'notes', limit: 10 })) {
+    console.log(`[${item.type}] ${item.entity_key}`);
+  }
+}
+```
+
+### Discovery Feed
+
+```typescript
+async function browseDiscovery() {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  // Browse different feed tabs
+  const tabs = ['for-you', 'top', 'popular', 'catchup', 'notes', 'explore'] as const;
+
+  for (const tab of tabs) {
+    console.log(`\n--- ${tab.toUpperCase()} ---`);
+    let count = 0;
+    for await (const item of client.discoverFeed({ tab, limit: 5 })) {
+      console.log(`[${item.type}] ${item.entity_key}`);
+      count++;
+    }
+    console.log(`  (${count} items)`);
+  }
+}
+```
+
+### Categories
+
+```typescript
+async function browseCategories() {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  // List all categories and subcategories
+  const categories = await client.categories();
+  for (const cat of categories) {
+    console.log(`\n${cat.name} (${cat.slug})`);
+    for (const sub of cat.subcategories) {
+      console.log(`  - ${sub.name} (${sub.slug})`);
+    }
+  }
+
+  // Get publications in a category
+  if (categories.length > 0) {
+    const result = await client.categoryPublications(categories[0].id);
+    console.log(`\nPublications in "${categories[0].name}":`);
+    for (const pub of result.publications) {
+      console.log(`- ${pub.name}`);
+    }
+    console.log(`More available: ${result.more}`);
+  }
+}
+```
+
+### Publication Archive
+
+```typescript
+async function browsePublicationArchive() {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  // Browse the publication's archive (sorted by newest)
+  console.log('Recent posts from publication archive:');
+  for await (const post of client.publicationArchive({ limit: 10 })) {
+    console.log(`- ${post.title}`);
+    console.log(`  ${post.url}`);
+    console.log(`  Published: ${post.publishedAt.toLocaleDateString()}`);
+  }
+
+  // Browse top posts from archive
+  console.log('\nTop posts:');
+  for await (const post of client.publicationArchive({ sort: 'top', limit: 5 })) {
+    console.log(`- ${post.title}`);
+    if (post.reactions) {
+      const totalReactions = Object.values(post.reactions).reduce((a, b) => a + b, 0);
+      console.log(`  Reactions: ${totalReactions}`);
+    }
+  }
+
+  // Get full posts (includes body_html)
+  console.log('\nFull posts with HTML body:');
+  for await (const post of client.publicationPosts({ limit: 3 })) {
+    console.log(`- ${post.title}`);
+    if (post.bodyHtml) {
+      console.log(`  Body length: ${post.bodyHtml.length} characters`);
+    }
+  }
+
+  // Get homepage posts
+  const homepagePosts = await client.publicationHomepage();
+  console.log(`\nHomepage: ${homepagePosts.length} posts`);
+  for (const post of homepagePosts) {
+    console.log(`- ${post.title} (${post.publishedAt.toLocaleDateString()})`);
+  }
+}
+```
+
+### Profile Activity and Likes
+
+```typescript
+async function showProfileActivity(profileId: number) {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  // Get a profile's activity feed (posts, notes, comments)
+  console.log('Profile activity:');
+  for await (const item of client.profileActivity(profileId, { limit: 10 })) {
+    console.log(`[${item.type}] ${item.entity_key}`);
+  }
+
+  // Filter by content type
+  console.log('\nJust their posts:');
+  for await (const item of client.profileActivity(profileId, { tab: 'posts', limit: 5 })) {
+    console.log(`[${item.type}] ${item.entity_key}`);
+  }
+
+  // Get a profile's likes
+  console.log('\nLiked content:');
+  for await (const item of client.profileLikes(profileId, { limit: 10 })) {
+    console.log(`[${item.type}] ${item.entity_key}`);
+  }
+}
+
+// Usage
+const profile = await client.profileForSlug('some-writer');
+await showProfileActivity(profile.id);
+```
+
+### Publication Feed
+
+```typescript
+async function showPublicationFeed(publicationId: number) {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  for await (const item of client.publicationFeed(publicationId, { limit: 10 })) {
+    console.log(`[${item.type}] ${item.entity_key}`);
+  }
+}
 ```
 
 ## Profile Management
@@ -44,20 +259,18 @@ const client = new SubstackClient({
 
 ```typescript
 async function getMyProfile() {
-  try {
-    const myProfile = await client.ownProfile();
-    
-    console.log(`Welcome ${myProfile.name}!`);
-    console.log(`Username: @${myProfile.slug}`);
-    console.log(`Email: ${myProfile.email || 'Not available'}`);
-    console.log(`Followers: ${myProfile.followerCount}`);
-    console.log(`Bio: ${myProfile.bio || 'No bio set'}`);
-    
-    return myProfile;
-  } catch (error) {
-    console.error('Failed to get profile:', error.message);
-    throw error;
-  }
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com',
+    token: process.env.SUBSTACK_TOKEN!
+  });
+
+  const myProfile = await client.ownProfile();
+
+  console.log(`Welcome ${myProfile.name}!`);
+  console.log(`Username: @${myProfile.slug}`);
+  console.log(`Bio: ${myProfile.bio ?? 'No bio set'}`);
+
+  return myProfile;
 }
 ```
 
@@ -65,299 +278,312 @@ async function getMyProfile() {
 
 ```typescript
 async function exploreProfiles() {
-  try {
-    // Get profile by username
-    const profile = await client.profileForSlug('interesting-writer');
-    console.log(`Found: ${profile.name} (@${profile.slug})`);
-    console.log(`Followers: ${profile.followerCount}`);
-    console.log(`Following them: ${profile.isFollowing ? 'Yes' : 'No'}`);
-    
-    // Get profile by ID
-    const profileById = await client.profileForId(12345);
-    console.log(`Profile by ID: ${profileById.name}`);
-    
-    return { profile, profileById };
-  } catch (error) {
-    console.error('Error exploring profiles:', error.message);
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  // Get profile by slug (anonymous)
+  const profile = await client.profileForSlug('interesting-writer');
+  console.log(`Found: ${profile.name} (@${profile.slug})`);
+  console.log(`Bio: ${profile.bio ?? 'No bio'}`);
+  console.log(`Avatar: ${profile.avatarUrl}`);
+
+  // Get profile by ID (anonymous)
+  const profileById = await client.profileForId(12345);
+  console.log(`Profile by ID: ${profileById.name}`);
+
+  // Search for profiles by name
+  const searchResults = await client.profileSearch('technology writer');
+  console.log(`\nSearch results (${searchResults.results.length}):`);
+  for (const result of searchResults.results) {
+    console.log(`- ${result.name} (@${result.handle})`);
+    if (result.followerCount) {
+      console.log(`  Followers: ${result.followerCount}`);
+    }
   }
 }
 ```
 
-## Content Discovery
+## Content Browsing
 
 ### Browse Posts from a Profile
 
 ```typescript
 async function browseContent(username: string) {
-  try {
-    const profile = await client.profileForSlug(username);
-    console.log(`📚 Content from ${profile.name}:\n`);
-    
-    // Get recent posts with details
-    for await (const post of profile.posts({ limit: 10 })) {
-      console.log(`📄 "${post.title}"`);
-      console.log(`   📅 Published: ${post.publishedAt?.toLocaleDateString()}`);
-      console.log(`   ✍️  Author: ${post.author.name}`);
-      console.log(`   💖 Reactions: ${post.reactions?.length || 0}`);
-      console.log(`   💬 Comments: ${post.commentCount}`);
-      console.log(`   🔗 URL: ${post.canonicalUrl}`);
-      
-      // Get a preview of comments
-      let commentCount = 0;
-      for await (const comment of post.comments({ limit: 2 })) {
-        if (commentCount === 0) console.log(`   Recent comments:`);
-        console.log(`     💬 ${comment.author.name}: ${comment.body.substring(0, 60)}...`);
-        commentCount++;
-      }
-      
-      if (commentCount === 0) {
-        console.log(`   (No comments yet)`);
-      }
-      
-      console.log(''); // Empty line
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  const profile = await client.profileForSlug(username);
+  console.log(`Content from ${profile.name}:\n`);
+
+  for await (const post of profile.posts({ limit: 10 })) {
+    console.log(`"${post.title}"`);
+    console.log(`  Published: ${post.publishedAt.toLocaleDateString()}`);
+    console.log(`  Author: ${post.author.name} (@${post.author.handle})`);
+    console.log(`  Likes: ${post.likesCount}`);
+
+    // Preview of comments
+    let commentCount = 0;
+    for await (const comment of post.comments({ limit: 2 })) {
+      if (commentCount === 0) console.log('  Recent comments:');
+      console.log(`    - ${comment.body.substring(0, 60)}...`);
+      commentCount++;
     }
-  } catch (error) {
-    console.error('Error browsing content:', error.message);
+
+    if (commentCount === 0) {
+      console.log('  (No comments yet)');
+    }
+
+    console.log('');
   }
 }
 
-// Usage
 await browseContent('example-writer');
+```
+
+### Fetch Full Post Content
+
+```typescript
+async function readFullPost(postId: number) {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  const post = await client.postForId(postId);
+
+  console.log(`Title: ${post.title}`);
+  console.log(`URL: ${post.url}`);
+  console.log(`Published: ${post.publishedAt.toLocaleDateString()}`);
+  console.log(`Tags: ${post.postTags?.join(', ') ?? 'none'}`);
+
+  if (post.reactions) {
+    for (const [type, count] of Object.entries(post.reactions)) {
+      console.log(`  ${type}: ${count}`);
+    }
+  }
+
+  if (post.coverImage) {
+    console.log(`Cover: ${post.coverImage}`);
+  }
+
+  // Full HTML body
+  console.log(`\nBody (${post.htmlBody.length} chars):`);
+  console.log(post.htmlBody.substring(0, 500) + '...');
+}
 ```
 
 ### Discover Notes
 
 ```typescript
 async function exploreNotes(username: string) {
-  try {
-    const profile = await client.profileForSlug(username);
-    console.log(`📝 Notes from ${profile.name}:\n`);
-    
-    for await (const note of profile.notes({ limit: 15 })) {
-      console.log(`"${note.body}"`);
-      console.log(`   👤 ${note.author.name}`);
-      console.log(`   🕐 ${note.createdAt.toLocaleDateString()}`);
-      console.log(`   💖 ${note.reactions?.length || 0} reactions`);
-      console.log('');
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  const profile = await client.profileForSlug(username);
+  console.log(`Notes from ${profile.name}:\n`);
+
+  for await (const note of profile.notes({ limit: 15 })) {
+    console.log(`"${note.body.substring(0, 100)}"`);
+    console.log(`  By: ${note.author.name} (@${note.author.handle})`);
+    console.log(`  Published: ${note.publishedAt.toLocaleDateString()}`);
+    console.log(`  Likes: ${note.likesCount}`);
+
+    // Check for comments/replies
+    let replyCount = 0;
+    for await (const comment of note.comments()) {
+      replyCount++;
+      if (replyCount <= 2) {
+        console.log(`  Reply: ${comment.body.substring(0, 60)}...`);
+      }
     }
-  } catch (error) {
-    console.error('Error exploring notes:', error.message);
+    if (replyCount > 2) {
+      console.log(`  ... and ${replyCount - 2} more replies`);
+    }
+
+    console.log('');
   }
 }
 ```
 
-## Content Creation
-
-### Publishing Posts
+### Comment Replies
 
 ```typescript
-async function publishContent() {
-  try {
-    const myProfile = await client.ownProfile();
-    
-    // Create a draft first
-    const draft = await myProfile.createPost({
-      title: 'My Thoughts on Modern Technology',
-      body: `
-        <h2>The Future is Here</h2>
-        <p>Technology continues to evolve at an unprecedented pace...</p>
-        <p>Here are my key observations:</p>
-        <ul>
-          <li>AI is becoming more accessible</li>
-          <li>Remote work is the new normal</li>
-          <li>Digital privacy is increasingly important</li>
-        </ul>
-      `,
-      isDraft: true
-    });
-    
-    console.log(`✅ Draft created: "${draft.title}"`);
-    console.log(`   ID: ${draft.id}`);
-    console.log(`   Status: ${draft.isDraft ? 'Draft' : 'Published'}`);
-    
-    // Publish immediately
-    const published = await myProfile.createPost({
-      title: 'Quick Update from the Team',
-      body: `
-        <p>Hey everyone! 👋</p>
-        <p>Just wanted to share a quick update on what we've been working on...</p>
-      `,
-      isDraft: false
-    });
-    
-    console.log(`🚀 Published: "${published.title}"`);
-    console.log(`   URL: ${published.canonicalUrl}`);
-    
-    return { draft, published };
-  } catch (error) {
-    console.error('Error publishing content:', error.message);
+async function readCommentThread(commentId: number) {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  // Get the original comment
+  const comment = await client.commentForId(commentId);
+  console.log(`Original: ${comment.body}`);
+
+  // Get replies (single page)
+  const replies = await client.commentReplies(commentId);
+  console.log(`\n${replies.commentBranches.length} reply branches`);
+
+  // Iterate all reply pages
+  console.log('\nAll replies:');
+  for await (const page of client.commentRepliesFeed(commentId, { limit: 50 })) {
+    for (const branch of page.commentBranches) {
+      console.log(`  Branch with ${branch.descendantComments.length} replies`);
+    }
   }
 }
 ```
 
-### Creating Notes
+### Post Reactors
 
 ```typescript
-async function shareThoughts() {
-  try {
-    const myProfile = await client.ownProfile();
-    
-    // Simple note
-    const simpleNote = await myProfile.createNote({
-      body: '🚀 Just shipped a new feature! Excited to see what you all think.'
-    });
-    
-    console.log(`📝 Note published: ${simpleNote.id}`);
-    
-    // Note with more detail
-    const detailedNote = await myProfile.createNote({
-      body: `💡 Pro tip: When writing newsletters, always start with your reader's biggest challenge. 
+async function showReactions(postId: number) {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
 
-What problem are you solving for them today?
-
-#writing #newsletters #substack`
-    });
-    
-    console.log(`📝 Detailed note published: ${detailedNote.id}`);
-    
-    // Status update
-    const statusNote = await myProfile.createNote({
-      body: `📊 This week's stats:
-• 3 new posts published
-• 150+ new subscribers  
-• Amazing engagement from the community
-
-Thanks for being awesome! 🙌`
-    });
-    
-    console.log(`📊 Status update published: ${statusNote.id}`);
-    
-    return { simpleNote, detailedNote, statusNote };
-  } catch (error) {
-    console.error('Error sharing thoughts:', error.message);
-  }
+  const facepile = await client.postReactors(postId);
+  console.log('Users who reacted:');
+  // facepile structure depends on API response
+  console.log(JSON.stringify(facepile, null, 2));
 }
 ```
 
-## Social Engagement
+## Note Creation
 
-### Like and Comment on Content
+### Simple Note
 
 ```typescript
-async function engageWithContent() {
-  try {
-    // Find interesting profiles to engage with
-    const profile = await client.profileForSlug('thought-leader');
-    
-    console.log(`🤝 Engaging with ${profile.name}'s content...\n`);
-    
-    // Engage with their recent posts
-    for await (const post of profile.posts({ limit: 3 })) {
-      console.log(`📄 "${post.title}"`);
-      
-      // Like the post
-      try {
-        await post.like();
-        console.log(`   ✅ Liked`);
-      } catch (error) {
-        console.log(`   ⚠️  Already liked or failed to like`);
-      }
-      
-      // Add a thoughtful comment
-      try {
-        const comment = await post.addComment(
-          'Great insights! This really resonates with my experience. Thanks for sharing your perspective.'
-        );
-        console.log(`   💬 Added comment: ${comment.id}`);
-      } catch (error) {
-        console.log(`   ⚠️  Failed to comment: ${error.message}`);
-      }
-      
-      console.log('');
-    }
-    
-    // Engage with their notes
-    for await (const note of profile.notes({ limit: 5 })) {
-      console.log(`📝 Note: "${note.body.substring(0, 50)}..."`);
-      
-      try {
-        await note.like();
-        console.log(`   ✅ Liked note`);
-      } catch (error) {
-        console.log(`   ⚠️  Already liked note or failed`);
-      }
-      
-      // Occasionally comment on interesting notes
-      if (note.body.toLowerCase().includes('tip') || note.body.includes('💡')) {
-        try {
-          const comment = await note.addComment('This is really helpful! 💯');
-          console.log(`   💬 Commented on note: ${comment.id}`);
-        } catch (error) {
-          console.log(`   ⚠️  Failed to comment on note`);
-        }
-      }
-      
-      console.log('');
-    }
-  } catch (error) {
-    console.error('Error engaging with content:', error.message);
-  }
+async function publishSimpleNote() {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com',
+    token: process.env.SUBSTACK_TOKEN!
+  });
+
+  const myProfile = await client.ownProfile();
+
+  const note = await myProfile.newNote()
+    .paragraph()
+    .text('Just shipped a new feature!')
+    .publish();
+
+  console.log(`Note published: ${note.user_id}`);
 }
 ```
 
-### Follow Interesting People
+### Formatted Note
 
 ```typescript
-async function buildNetwork() {
-  try {
-    const myProfile = await client.ownProfile();
-    
-    // List of interesting writers to follow
-    const writersToCheck = [
-      'tech-writer',
-      'business-insights', 
-      'creative-storyteller',
-      'industry-expert'
-    ];
-    
-    console.log('🌐 Building network...\n');
-    
-    for (const username of writersToCheck) {
-      try {
-        const profile = await client.profileForSlug(username);
-        
-        console.log(`👤 ${profile.name} (@${profile.slug})`);
-        console.log(`   Bio: ${profile.bio?.substring(0, 100) || 'No bio'}...`);
-        console.log(`   Followers: ${profile.followerCount}`);
-        
-        if (!profile.isFollowing) {
-          await profile.follow();
-          console.log(`   ✅ Now following`);
-        } else {
-          console.log(`   ✅ Already following`);
-        }
-        
-        // Check out their recent content
-        for await (const post of profile.posts({ limit: 1 })) {
-          console.log(`   📄 Latest: "${post.title}"`);
-          break;
-        }
-        
-        console.log('');
-      } catch (error) {
-        console.log(`   ❌ Error with ${username}: ${error.message}\n`);
-      }
+async function publishFormattedNote() {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com',
+    token: process.env.SUBSTACK_TOKEN!
+  });
+
+  const myProfile = await client.ownProfile();
+
+  const note = await myProfile.newNote()
+    .paragraph()
+    .text('Key takeaways from today: ')
+    .bold('engagement is everything')
+    .paragraph()
+    .text('Check out ')
+    .link('our blog', 'https://example.com')
+    .paragraph()
+    .italic('What do you think?')
+    .publish();
+
+  console.log('Formatted note published');
+}
+```
+
+### Note with a List
+
+```typescript
+async function publishListNote() {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com',
+    token: process.env.SUBSTACK_TOKEN!
+  });
+
+  const myProfile = await client.ownProfile();
+
+  const note = await myProfile.newNote()
+    .paragraph()
+    .text('Top 3 reads this week:')
+    .numberedList()
+    .item().text('Distributed consensus patterns').finish()
+    .item().text('TypeScript ').bold('best practices').finish()
+    .item().link('API Design Guide', 'https://example.com/api').finish()
+    .finish()
+    .publish();
+
+  console.log('List note published');
+}
+```
+
+### Note with Link Attachment
+
+```typescript
+async function shareLink() {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com',
+    token: process.env.SUBSTACK_TOKEN!
+  });
+
+  const myProfile = await client.ownProfile();
+
+  const note = await myProfile.newNoteWithLink('https://example.com/article')
+    .paragraph()
+    .text('Worth reading on distributed systems.')
+    .publish();
+
+  console.log('Link note published');
+}
+```
+
+### Build Without Publishing
+
+```typescript
+async function previewNote() {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com',
+    token: process.env.SUBSTACK_TOKEN!
+  });
+
+  const myProfile = await client.ownProfile();
+
+  // Build the request without sending it
+  const request = myProfile.newNote()
+    .paragraph()
+    .text('Preview this note')
+    .build();
+
+  console.log('Note request:', JSON.stringify(request, null, 2));
+}
+```
+
+## Following Management
+
+### Browse Your Following List
+
+```typescript
+async function browseFollowing() {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com',
+    token: process.env.SUBSTACK_TOKEN!
+  });
+
+  const myProfile = await client.ownProfile();
+
+  console.log('People you follow:\n');
+  for await (const user of myProfile.following({ limit: 50 })) {
+    console.log(`- ${user.name} (@${user.slug})`);
+
+    // Check their latest post
+    for await (const post of user.posts({ limit: 1 })) {
+      console.log(`  Latest: "${post.title}"`);
+      break;
     }
-    
-    // Show current following count
-    let followingCount = 0;
-    for await (const user of myProfile.following({ limit: 1000 })) {
-      followingCount++;
-    }
-    console.log(`📊 Now following ${followingCount} people`);
-    
-  } catch (error) {
-    console.error('Error building network:', error.message);
   }
 }
 ```
@@ -368,277 +594,246 @@ async function buildNetwork() {
 
 ```typescript
 async function contentDashboard() {
-  try {
-    const myProfile = await client.ownProfile();
-    
-    console.log(`📊 Content Dashboard for ${myProfile.name}\n`);
-    console.log(`👥 Total Followers: ${myProfile.followerCount}\n`);
-    
-    // Analyze recent posts
-    console.log(`📄 Recent Posts Performance:`);
-    
-    const posts = [];
-    for await (const post of myProfile.posts({ limit: 10 })) {
-      posts.push(post);
-    }
-    
-    // Calculate totals
-    const totalReactions = posts.reduce((sum, post) => sum + (post.reactions?.length || 0), 0);
-    const totalComments = posts.reduce((sum, post) => sum + post.commentCount, 0);
-    
-    console.log(`   Total posts analyzed: ${posts.length}`);
-    console.log(`   Total reactions: ${totalReactions}`);
-    console.log(`   Total comments: ${totalComments}`);
-    console.log(`   Average reactions per post: ${(totalReactions / posts.length).toFixed(1)}`);
-    console.log(`   Average comments per post: ${(totalComments / posts.length).toFixed(1)}\n`);
-    
-    // Top performing posts
-    const sortedPosts = posts.sort((a, b) => 
-      (b.reactions?.length || 0) - (a.reactions?.length || 0)
-    );
-    
-    console.log(`🏆 Top Performing Posts:`);
-    sortedPosts.slice(0, 3).forEach((post, index) => {
-      console.log(`   ${index + 1}. "${post.title}"`);
-      console.log(`      💖 ${post.reactions?.length || 0} reactions`);
-      console.log(`      💬 ${post.commentCount} comments`);
-      console.log(`      📅 ${post.publishedAt?.toLocaleDateString()}`);
-      console.log('');
-    });
-    
-    // Recent notes engagement
-    console.log(`📝 Recent Notes Activity:`);
-    
-    const notes = [];
-    for await (const note of myProfile.notes({ limit: 10 })) {
-      notes.push(note);
-    }
-    
-    const noteReactions = notes.reduce((sum, note) => sum + (note.reactions?.length || 0), 0);
-    console.log(`   Total notes: ${notes.length}`);
-    console.log(`   Total note reactions: ${noteReactions}`);
-    console.log(`   Average reactions per note: ${(noteReactions / notes.length).toFixed(1)}\n`);
-    
-    // Most engaging note
-    const topNote = notes.reduce((max, note) => 
-      (note.reactions?.length || 0) > (max.reactions?.length || 0) ? note : max
-    );
-    
-    console.log(`🌟 Most Engaging Note:`);
-    console.log(`   "${topNote.body.substring(0, 100)}..."`);
-    console.log(`   💖 ${topNote.reactions?.length || 0} reactions`);
-    console.log(`   📅 ${topNote.createdAt.toLocaleDateString()}`);
-    
-  } catch (error) {
-    console.error('Error generating dashboard:', error.message);
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com',
+    token: process.env.SUBSTACK_TOKEN!
+  });
+
+  const myProfile = await client.ownProfile();
+  console.log(`Content Dashboard for ${myProfile.name}\n`);
+
+  // Analyze recent posts
+  const posts = [];
+  for await (const post of myProfile.posts({ limit: 10 })) {
+    posts.push(post);
+  }
+
+  if (posts.length === 0) {
+    console.log('No posts found.');
+    return;
+  }
+
+  // Calculate metrics
+  const totalLikes = posts.reduce((sum, post) => sum + post.likesCount, 0);
+  const avgLikes = (totalLikes / posts.length).toFixed(1);
+
+  console.log(`Posts analyzed: ${posts.length}`);
+  console.log(`Total likes: ${totalLikes}`);
+  console.log(`Average likes per post: ${avgLikes}`);
+
+  // Top performing posts
+  const sorted = [...posts].sort((a, b) => b.likesCount - a.likesCount);
+  console.log(`\nTop 3 posts:`);
+  sorted.slice(0, 3).forEach((post, index) => {
+    console.log(`  ${index + 1}. "${post.title}" (${post.likesCount} likes)`);
+    console.log(`     Published: ${post.publishedAt.toLocaleDateString()}`);
+  });
+
+  // Recent notes engagement
+  console.log(`\nRecent notes:`);
+  let noteCount = 0;
+  for await (const note of myProfile.notes({ limit: 10 })) {
+    console.log(`  - "${note.body.substring(0, 60)}..." (${note.likesCount} likes)`);
+    noteCount++;
+  }
+  if (noteCount === 0) {
+    console.log('  (No recent notes)');
   }
 }
 ```
 
-### Community Engagement Tracking
+### Publication Analytics
 
 ```typescript
-async function trackEngagement() {
-  try {
-    const myProfile = await client.ownProfile();
-    
-    console.log(`🤝 Community Engagement Report\n`);
-    
-    // Analyze who you're following
-    console.log(`👥 Following Analysis:`);
-    
-    const followingList = [];
-    for await (const user of myProfile.following({ limit: 100 })) {
-      followingList.push(user);
+async function publicationAnalytics() {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  // Collect posts from publication archive
+  const posts = [];
+  for await (const post of client.publicationArchive({ limit: 50 })) {
+    posts.push(post);
+  }
+
+  console.log(`Publication Archive Analysis`);
+  console.log(`Total posts: ${posts.length}`);
+
+  // Calculate total reactions
+  let totalReactions = 0;
+  for (const post of posts) {
+    if (post.reactions) {
+      totalReactions += Object.values(post.reactions).reduce((a, b) => a + b, 0);
     }
-    
-    console.log(`   Total following: ${followingList.length}\n`);
-    
-    // Check recent activity from people you follow
-    console.log(`📊 Recent Activity from Network:`);
-    
-    let totalNewPosts = 0;
-    let totalNewNotes = 0;
-    
-    for (const user of followingList.slice(0, 10)) { // Check first 10
-      console.log(`\n   👤 ${user.name} (@${user.slug}):`);
-      
-      // Count recent posts (last 7 days)
-      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      
-      let recentPosts = 0;
-      for await (const post of user.posts({ limit: 10 })) {
-        if (post.publishedAt && post.publishedAt > oneWeekAgo) {
-          recentPosts++;
-        }
-      }
-      
-      let recentNotes = 0;
-      for await (const note of user.notes({ limit: 10 })) {
-        if (note.createdAt > oneWeekAgo) {
-          recentNotes++;
-        }
-      }
-      
-      console.log(`      📄 ${recentPosts} posts this week`);
-      console.log(`      📝 ${recentNotes} notes this week`);
-      
-      totalNewPosts += recentPosts;
-      totalNewNotes += recentNotes;
-    }
-    
-    console.log(`\n📈 Network Summary:`);
-    console.log(`   Total new posts this week: ${totalNewPosts}`);
-    console.log(`   Total new notes this week: ${totalNewNotes}`);
-    console.log(`   Activity level: ${totalNewPosts + totalNewNotes > 20 ? 'High' : totalNewPosts + totalNewNotes > 10 ? 'Medium' : 'Low'}`);
-    
-  } catch (error) {
-    console.error('Error tracking engagement:', error.message);
+  }
+  console.log(`Total reactions: ${totalReactions}`);
+
+  // Sort by reaction count
+  const sorted = posts.filter(p => p.reactions).sort((a, b) => {
+    const aTotal = Object.values(a.reactions!).reduce((x, y) => x + y, 0);
+    const bTotal = Object.values(b.reactions!).reduce((x, y) => x + y, 0);
+    return bTotal - aTotal;
+  });
+
+  console.log(`\nTop 5 posts by reactions:`);
+  sorted.slice(0, 5).forEach((post, index) => {
+    const total = Object.values(post.reactions!).reduce((a, b) => a + b, 0);
+    console.log(`  ${index + 1}. "${post.title}" (${total} reactions)`);
+  });
+
+  // Posts by section
+  const sections = new Map<string, number>();
+  for (const post of posts) {
+    const section = post.sectionName ?? 'Uncategorized';
+    sections.set(section, (sections.get(section) ?? 0) + 1);
+  }
+  console.log(`\nPosts by section:`);
+  for (const [section, count] of sections) {
+    console.log(`  ${section}: ${count} posts`);
   }
 }
 ```
 
-## Advanced Use Cases
-
-### Automated Content Curation
+### Profile Analysis
 
 ```typescript
-async function curateContent() {
-  try {
-    const myProfile = await client.ownProfile();
-    const interestingPosts = [];
-    
-    console.log('🔍 Curating interesting content from network...\n');
-    
-    // Get following users
-    for await (const user of myProfile.following({ limit: 20 })) {
-      // Look for posts with specific keywords
-      for await (const post of user.posts({ limit: 5 })) {
-        const keywords = ['AI', 'technology', 'innovation', 'future', 'insight'];
-        const hasKeyword = keywords.some(keyword => 
-          post.title.toLowerCase().includes(keyword.toLowerCase()) ||
-          post.body.toLowerCase().includes(keyword.toLowerCase())
-        );
-        
-        if (hasKeyword && (post.reactions?.length || 0) >= 5) {
-          interestingPosts.push({
-            post,
-            author: user,
-            relevanceScore: post.reactions?.length || 0
-          });
-        }
-      }
-    }
-    
-    // Sort by relevance
-    interestingPosts.sort((a, b) => b.relevanceScore - a.relevanceScore);
-    
-    console.log(`📚 Curated ${interestingPosts.length} interesting posts:\n`);
-    
-    // Display top 5
-    for (const item of interestingPosts.slice(0, 5)) {
-      console.log(`📄 "${item.post.title}"`);
-      console.log(`   ✍️  ${item.author.name} (@${item.author.slug})`);
-      console.log(`   💖 ${item.relevanceScore} reactions`);
-      console.log(`   🔗 ${item.post.canonicalUrl}`);
-      console.log('');
-    }
-    
-    // Create a curated note
-    if (interestingPosts.length > 0) {
-      const curatedNote = await myProfile.createNote({
-        body: `📚 Weekly curated reads from my network! Found ${interestingPosts.length} interesting posts about technology and innovation. 
+async function analyzeProfile(username: string) {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
 
-The community is sharing amazing insights! 🚀
+  const profile = await client.profileForSlug(username);
+  console.log(`Analyzing ${profile.name} (@${profile.slug})\n`);
 
-#curation #technology #community`
-      });
-      
-      console.log(`📝 Curation note published: ${curatedNote.id}`);
+  // Collect posts
+  const posts = [];
+  for await (const post of profile.posts({ limit: 50 })) {
+    posts.push(post);
+  }
+
+  console.log(`Total posts analyzed: ${posts.length}`);
+
+  // Calculate average likes
+  const totalLikes = posts.reduce((sum, post) => sum + post.likesCount, 0);
+  console.log(`Average likes per post: ${(totalLikes / posts.length).toFixed(1)}`);
+
+  // Most popular post
+  const mostPopular = posts.reduce((max, post) =>
+    post.likesCount > max.likesCount ? post : max
+  );
+  console.log(`Most popular: "${mostPopular.title}" (${mostPopular.likesCount} likes)`);
+
+  // Posting frequency (last 30 days)
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const recentPosts = posts.filter(post => post.publishedAt > thirtyDaysAgo);
+  console.log(`Posts in last 30 days: ${recentPosts.length}`);
+}
+```
+
+## Complete Application Examples
+
+### Content Curation Tool
+
+```typescript
+async function curateContent(topic: string) {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  const interestingPosts = [];
+
+  // Search for posts on a topic
+  for await (const item of client.search(topic, { limit: 20 })) {
+    if (item.type === 'post') {
+      interestingPosts.push(item);
     }
-    
-    return interestingPosts;
-  } catch (error) {
-    console.error('Error curating content:', error.message);
+  }
+
+  console.log(`Found ${interestingPosts.length} posts about "${topic}"`);
+
+  // Also check trending for popular content
+  const trending = await client.trending({ limit: 10 });
+  console.log(`\nCurrent trending: ${trending.posts.length} posts`);
+
+  return interestingPosts;
+}
+```
+
+### Community Explorer
+
+```typescript
+async function exploreCommunity() {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
+
+  // List all categories
+  const categories = await client.categories();
+  console.log('Substack Categories:\n');
+
+  for (const cat of categories) {
+    console.log(`${cat.name}`);
+
+    // Get top publications in this category
+    const result = await client.categoryPublications(cat.id, { limit: 3 });
+    for (const pub of result.publications) {
+      console.log(`  - ${pub.name}`);
+    }
+  }
+
+  // Search for profiles
+  console.log('\n\nProfile search for "technology":');
+  const searchResults = await client.profileSearch('technology');
+  for (const result of searchResults.results.slice(0, 5)) {
+    console.log(`- ${result.name} (@${result.handle})`);
+    if (result.followerCount) {
+      console.log(`  Followers: ${result.followerCount}`);
+    }
+    if (result.bio) {
+      console.log(`  Bio: ${result.bio.substring(0, 80)}...`);
+    }
   }
 }
 ```
 
-### Engagement Automation
+### Automated Content Report
 
 ```typescript
-async function automatedEngagement() {
-  try {
-    const myProfile = await client.ownProfile();
-    
-    console.log('🤖 Starting automated engagement...\n');
-    
-    const keywords = ['great', 'excellent', 'insight', 'helpful', 'amazing'];
-    const supportiveComments = [
-      'Great insights! Thanks for sharing.',
-      'This is really helpful. Appreciate the perspective!',
-      'Excellent point! I hadn\'t thought of it that way.',
-      'Really valuable content. Thanks for posting this.',
-      'Insightful as always! Keep up the great work.'
-    ];
-    
-    let engagementsCount = 0;
-    const maxEngagements = 10;
-    
-    // Engage with recent content from network
-    for await (const user of myProfile.following({ limit: 50 })) {
-      if (engagementsCount >= maxEngagements) break;
-      
-      // Look at their recent posts
-      for await (const post of user.posts({ limit: 2 })) {
-        if (engagementsCount >= maxEngagements) break;
-        
-        // Check if it's worth engaging (has some activity)
-        if ((post.reactions?.length || 0) >= 3 && post.commentCount < 10) {
-          try {
-            // Like the post
-            await post.like();
-            
-            // Add a supportive comment occasionally
-            if (Math.random() < 0.3) { // 30% chance
-              const randomComment = supportiveComments[
-                Math.floor(Math.random() * supportiveComments.length)
-              ];
-              await post.addComment(randomComment);
-              
-              console.log(`💬 Commented on "${post.title}" by ${user.name}`);
-            } else {
-              console.log(`💖 Liked "${post.title}" by ${user.name}`);
-            }
-            
-            engagementsCount++;
-            
-            // Add delay to be respectful
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-          } catch (error) {
-            console.log(`⚠️  Failed to engage with post by ${user.name}: ${error.message}`);
-          }
-        }
-      }
-    }
-    
-    console.log(`\n✅ Completed ${engagementsCount} automated engagements`);
-    
-    // Create a summary note
-    const summaryNote = await myProfile.createNote({
-      body: `🤝 Just spent some time engaging with amazing content from my network! 
+async function generateReport() {
+  const client = new SubstackClient({
+    publicationUrl: 'https://example.substack.com'
+  });
 
-${engagementsCount} interactions with fellow creators.
+  const report = {
+    trending: 0,
+    categories: 0,
+    searchResults: 0,
+    archivePosts: 0
+  };
 
-Love this community! 💙 #community #engagement`
-    });
-    
-    console.log(`📝 Summary note published: ${summaryNote.id}`);
-    
-  } catch (error) {
-    console.error('Error in automated engagement:', error.message);
+  // Trending
+  const trending = await client.trending({ limit: 10 });
+  report.trending = trending.posts.length;
+
+  // Categories
+  const categories = await client.categories();
+  report.categories = categories.length;
+
+  // Search
+  for await (const item of client.search('newsletter', { limit: 10 })) {
+    report.searchResults++;
   }
+
+  // Publication archive
+  for await (const post of client.publicationArchive({ limit: 10 })) {
+    report.archivePosts++;
+  }
+
+  console.log('Content Report:');
+  console.log(JSON.stringify(report, null, 2));
+
+  return report;
 }
 ```
 
@@ -649,191 +844,109 @@ Love this community! 💙 #community #engagement`
 ```typescript
 async function robustContentAccess() {
   const client = new SubstackClient({
-    token: process.env.SUBSTACK_TOKEN!
+    publicationUrl: 'https://example.substack.com',
+    token: process.env.SUBSTACK_TOKEN
   });
-  
-  try {
-    // Test connectivity first
+
+  // Test connectivity (requires token)
+  if (client instanceof SubstackClient && process.env.SUBSTACK_TOKEN) {
     const isConnected = await client.testConnectivity();
     if (!isConnected) {
-      throw new Error('Failed to connect to Substack API - check your authentication');
+      throw new Error('Failed to connect -- check your authentication');
     }
-    
-    // Get profile with retry logic
-    let profile;
-    let retries = 3;
-    
-    while (retries > 0) {
-      try {
-        profile = await client.profileForSlug('example-user');
-        break;
-      } catch (error) {
-        retries--;
-        if (error.message.includes('429')) {
-          console.log(`Rate limited, waiting before retry... (${retries} retries left)`);
-          await new Promise(resolve => setTimeout(resolve, 5000));
-        } else if (error.message.includes('404')) {
-          throw new Error('User not found');
-        } else if (retries === 0) {
-          throw error;
-        }
-      }
-    }
-    
-    if (!profile) {
-      throw new Error('Failed to get profile after retries');
-    }
-    
-    console.log(`Successfully accessed profile: ${profile.name}`);
-    
-    // Access posts with individual error handling
-    let successfulPosts = 0;
-    let failedPosts = 0;
-    
-    for await (const post of profile.posts({ limit: 10 })) {
-      try {
-        console.log(`📄 "${post.title}"`);
-        console.log(`   💖 ${post.reactions?.length || 0} reactions`);
-        
-        // Try to get comments (might fail for some posts)
-        try {
-          let commentCount = 0;
-          for await (const comment of post.comments({ limit: 3 })) {
-            commentCount++;
-          }
-          console.log(`   💬 ${commentCount} recent comments loaded`);
-        } catch (commentError) {
-          console.log(`   ⚠️  Comments unavailable: ${commentError.message}`);
-        }
-        
-        successfulPosts++;
-      } catch (postError) {
-        console.log(`   ❌ Error accessing post: ${postError.message}`);
-        failedPosts++;
-      }
-    }
-    
-    console.log(`\n📊 Results: ${successfulPosts} successful, ${failedPosts} failed`);
-    
-  } catch (error) {
-    if (error.message.includes('401')) {
-      console.error('❌ Authentication failed - check your API key');
-    } else if (error.message.includes('403')) {
-      console.error('❌ Permission denied - check your account permissions');
-    } else if (error.message.includes('429')) {
-      console.error('❌ Rate limit exceeded - please wait before trying again');
-    } else if (error.message.includes('500')) {
-      console.error('❌ Server error - please try again later');
-    } else {
-      console.error('❌ Unexpected error:', error.message);
-    }
-    
-    // Log additional debugging info
-    console.error('Error details:', {
-      timestamp: new Date().toISOString(),
-      userAgent: 'Substack API Client',
-      error: error.message
-    });
   }
+
+  // Get profile with retry logic
+  let profile;
+  let retries = 3;
+
+  while (retries > 0) {
+    try {
+      profile = await client.profileForSlug('example-user');
+      break;
+    } catch (error) {
+      retries--;
+      const msg = (error as Error).message;
+      if (msg.includes('429')) {
+        console.log(`Rate limited, waiting... (${retries} retries left)`);
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      } else if (msg.includes('not found')) {
+        throw new Error('User not found');
+      } else if (retries === 0) {
+        throw error;
+      }
+    }
+  }
+
+  if (!profile) {
+    throw new Error('Failed to get profile after retries');
+  }
+
+  console.log(`Accessed profile: ${profile.name}`);
+
+  // Access posts with individual error handling
+  let successful = 0;
+  let failed = 0;
+
+  for await (const post of profile.posts({ limit: 10 })) {
+    try {
+      console.log(`"${post.title}" (${post.likesCount} likes)`);
+
+      // Try to get comments (may fail for some posts)
+      try {
+        let commentCount = 0;
+        for await (const comment of post.comments({ limit: 3 })) {
+          commentCount++;
+        }
+        console.log(`  ${commentCount} comments loaded`);
+      } catch (commentError) {
+        console.log(`  Comments unavailable: ${(commentError as Error).message}`);
+      }
+
+      successful++;
+    } catch (postError) {
+      console.log(`  Error accessing post: ${(postError as Error).message}`);
+      failed++;
+    }
+  }
+
+  console.log(`\nResults: ${successful} successful, ${failed} failed`);
 }
 ```
 
-## Complete Application Examples
-
-### Newsletter Analytics Tool
+### Error Handling During Iteration
 
 ```typescript
-async function newsletterAnalytics() {
+async function safeIteration() {
   const client = new SubstackClient({
-    token: process.env.SUBSTACK_TOKEN!
+    publicationUrl: 'https://example.substack.com'
   });
-  
+
   try {
-    const myProfile = await client.ownProfile();
-    
-    console.log(`📊 Newsletter Analytics for ${myProfile.name}\n`);
-    
-    // Collect all posts for analysis
-    const allPosts = [];
-    for await (const post of myProfile.posts()) {
-      allPosts.push(post);
+    const profile = await client.profileForSlug('example-user');
+
+    for await (const post of profile.posts({ limit: 20 })) {
+      try {
+        await processPost(post);
+      } catch (error) {
+        console.warn(`Failed to process "${post.title}": ${(error as Error).message}`);
+        // Continue with next post
+      }
     }
-    
-    // Basic metrics
-    console.log(`📈 Overview:`);
-    console.log(`   Total posts: ${allPosts.length}`);
-    console.log(`   Total followers: ${myProfile.followerCount}`);
-    
-    // Calculate engagement metrics
-    const totalReactions = allPosts.reduce((sum, post) => sum + (post.reactions?.length || 0), 0);
-    const totalComments = allPosts.reduce((sum, post) => sum + post.commentCount, 0);
-    
-    console.log(`   Total reactions: ${totalReactions}`);
-    console.log(`   Total comments: ${totalComments}`);
-    console.log(`   Avg reactions per post: ${(totalReactions / allPosts.length).toFixed(1)}`);
-    console.log(`   Avg comments per post: ${(totalComments / allPosts.length).toFixed(1)}\n`);
-    
-    // Publishing frequency
-    const now = new Date();
-    const periods = [
-      { name: 'Last 7 days', days: 7 },
-      { name: 'Last 30 days', days: 30 },
-      { name: 'Last 90 days', days: 90 }
-    ];
-    
-    console.log(`📅 Publishing Frequency:`);
-    for (const period of periods) {
-      const cutoff = new Date(now.getTime() - period.days * 24 * 60 * 60 * 1000);
-      const recentPosts = allPosts.filter(post => 
-        post.publishedAt && post.publishedAt > cutoff
-      );
-      console.log(`   ${period.name}: ${recentPosts.length} posts`);
-    }
-    
-    // Top performing content
-    console.log(`\n🏆 Top Performing Posts:`);
-    const topPosts = allPosts
-      .sort((a, b) => (b.reactions?.length || 0) - (a.reactions?.length || 0))
-      .slice(0, 5);
-    
-    topPosts.forEach((post, index) => {
-      console.log(`   ${index + 1}. "${post.title}"`);
-      console.log(`      💖 ${post.reactions?.length || 0} reactions, 💬 ${post.commentCount} comments`);
-      console.log(`      📅 ${post.publishedAt?.toLocaleDateString()}`);
-    });
-    
-    // Engagement trends (simplified)
-    console.log(`\n📊 Recent Engagement Trend:`);
-    const recent10 = allPosts
-      .filter(post => post.publishedAt)
-      .sort((a, b) => (b.publishedAt?.getTime() || 0) - (a.publishedAt?.getTime() || 0))
-      .slice(0, 10);
-    
-    const avgRecentEngagement = recent10.reduce((sum, post) => 
-      sum + (post.reactions?.length || 0) + post.commentCount, 0) / recent10.length;
-    
-    console.log(`   Average engagement (last 10 posts): ${avgRecentEngagement.toFixed(1)}`);
-    
-    // Create analytics summary note
-    const analyticsNote = await myProfile.createNote({
-      body: `📊 Newsletter Analytics Update:
-
-📈 ${allPosts.length} total posts published
-💖 ${totalReactions} total reactions received  
-💬 ${totalComments} total comments
-👥 ${myProfile.followerCount} followers
-
-Thanks for being an amazing community! 🙌
-
-#analytics #newsletter #community`
-    });
-    
-    console.log(`\n📝 Analytics summary note published: ${analyticsNote.id}`);
-    
   } catch (error) {
-    console.error('Analytics error:', error.message);
+    const msg = (error as Error).message;
+    if (msg.includes('401')) {
+      console.error('Authentication failed -- check your token');
+    } else if (msg.includes('429')) {
+      console.error('Rate limit exceeded -- wait before trying again');
+    } else {
+      console.error('Unexpected error:', msg);
+    }
   }
 }
-```
 
-These examples demonstrate the power and flexibility of the modern SubstackClient entity-based API. The entity model makes it easy to navigate relationships, interact with content, and build sophisticated applications on top of Substack's platform.
+async function processPost(post: any) {
+  // Your processing logic here
+  console.log(`Processing: ${post.title}`);
+}
+```
