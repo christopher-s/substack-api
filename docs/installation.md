@@ -2,13 +2,11 @@
 
 ## Requirements
 
-- Node.js 16 or higher  
-- npm or yarn package manager
-- A Substack account with publication access
+- Node.js 16 or higher
+- npm, yarn, or pnpm package manager
+- A Substack account (only required for authenticated operations -- most features work anonymously)
 
 ## NPM Installation
-
-You can install the package using npm:
 
 ```bash
 npm install substack-api
@@ -16,10 +14,14 @@ npm install substack-api
 
 ## Yarn Installation
 
-If you prefer using yarn:
-
 ```bash
 yarn add substack-api
+```
+
+## PNPM Installation
+
+```bash
+pnpm add substack-api
 ```
 
 ## TypeScript Configuration
@@ -39,14 +41,42 @@ For optimal TypeScript integration, ensure your `tsconfig.json` includes:
 
 ## Verification
 
-To verify the installation, you can create a simple test file:
+### Anonymous Verification
+
+You can verify the installation without any authentication or configuration:
+
+```typescript
+import { SubstackClient } from 'substack-api';
+
+const client = new SubstackClient({});
+
+async function test() {
+  try {
+    // Browse trending content -- no token needed
+    const trending = await client.trending({ limit: 3 });
+    console.log('Connection working! Trending posts:', trending.posts.length);
+
+    // Look up a profile
+    const profile = await client.profileForSlug('username');
+    console.log('Found profile:', profile.name);
+  } catch (error) {
+    console.error('Error:', error.message);
+  }
+}
+
+test();
+```
+
+### Authenticated Verification
+
+If you have a token, you can verify authenticated operations:
 
 ```typescript
 import { SubstackClient } from 'substack-api';
 
 const client = new SubstackClient({
-  token: 'your-connect-sid-cookie-value',
-  publicationUrl: 'example.substack.com'
+  publicationUrl: 'example.substack.com', // optional -- set if using publication-scoped methods
+  token: 'your-connect-sid-cookie-value'
 });
 
 async function test() {
@@ -73,17 +103,17 @@ If you want to contribute to the library or run it from source:
 
 2. Install dependencies:
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. Build the project:
    ```bash
-   npm run build
+   pnpm build
    ```
 
 4. Run tests:
    ```bash
-   npm test
+   pnpm test
    ```
 
 ## Next Steps

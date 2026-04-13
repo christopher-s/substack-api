@@ -50,7 +50,10 @@ describe('SubstackClient', () => {
     mockProfileService.getProfileById = jest.fn()
     mockProfileService.getProfileBySlug = jest.fn()
 
-    mockCommentService = new CommentService(mockPublicationClient) as jest.Mocked<CommentService>
+    mockCommentService = new CommentService(
+      mockPublicationClient,
+      mockSubstackClient
+    ) as jest.Mocked<CommentService>
     mockCommentService.getCommentById = jest.fn()
     mockCommentService.getCommentsForPost = jest.fn()
 

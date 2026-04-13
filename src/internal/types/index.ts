@@ -43,6 +43,8 @@ export type { SubstackAttachment } from '@substack-api/internal/types/substack-a
 export type { SubstackTheme } from '@substack-api/internal/types/substack-theme'
 export type { SubstackUserLink } from '@substack-api/internal/types/substack-user-link'
 export type { SubstackPublicationUser } from '@substack-api/internal/types/substack-publication-user'
+export type { SubstackByline } from '@substack-api/internal/types/substack-byline'
+export { SubstackBylineCodec } from '@substack-api/internal/types/substack-byline'
 export type { SubstackProfileSubscription } from '@substack-api/internal/types/substack-profile-subscription'
 
 // Note API types
@@ -82,3 +84,42 @@ export { PotentialHandlesCodec } from '@substack-api/internal/types/potential-ha
 // Subscriber lists (kept as-is with composition pattern)
 export type { SubscriberListsT } from '@substack-api/internal/types/subscriber-lists'
 export { SubscriberLists } from '@substack-api/internal/types/subscriber-lists'
+
+// Discovery types
+export type { SubstackCategory } from '@substack-api/internal/types/substack-category'
+export { SubstackCategoryCodec } from '@substack-api/internal/types/substack-category'
+
+export type { SubstackCategoryPublication } from '@substack-api/internal/types/substack-category-publication'
+export { SubstackCategoryPublicationCodec } from '@substack-api/internal/types/substack-category-publication'
+
+export type { SubstackInboxItem } from '@substack-api/internal/types/substack-inbox-item'
+export { SubstackInboxItemCodec } from '@substack-api/internal/types/substack-inbox-item'
+
+// Publication types
+export type { SubstackPublicationPost } from '@substack-api/internal/types/substack-publication-post'
+export { SubstackPublicationPostCodec } from '@substack-api/internal/types/substack-publication-post'
+
+export type { SubstackPublicationFullPost } from '@substack-api/internal/types/substack-publication-full-post'
+export { SubstackPublicationFullPostCodec } from '@substack-api/internal/types/substack-publication-full-post'
+
+export type { SubstackFacepile } from '@substack-api/internal/types/substack-facepile'
+export { SubstackFacepileCodec } from '@substack-api/internal/types/substack-facepile'
+
+// Live stream types
+export type { SubstackLiveStreamResponse } from '@substack-api/internal/types/substack-live-stream'
+export { SubstackLiveStreamResponseCodec } from '@substack-api/internal/types/substack-live-stream'
+
+// Trending types
+export type { SubstackTrendingResponse } from '@substack-api/internal/types/substack-trending'
+export { SubstackTrendingResponseCodec } from '@substack-api/internal/types/substack-trending'
+
+// Comment replies types
+export type { SubstackCommentRepliesResponse } from '@substack-api/internal/types/substack-comment-replies'
+export { SubstackCommentRepliesResponseCodec } from '@substack-api/internal/types/substack-comment-replies'
+
+// Profile search types
+export type { SubstackProfileSearchResult } from '@substack-api/internal/types/substack-profile-search'
+export { SubstackProfileSearchResponseCodec } from '@substack-api/internal/types/substack-profile-search'
+
+// Feed item type
+export type { FeedItem } from '@substack-api/internal/types/feed-item'

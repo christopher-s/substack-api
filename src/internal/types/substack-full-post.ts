@@ -1,4 +1,5 @@
 import * as t from 'io-ts'
+import { SubstackBylineCodec } from '@substack-api/internal/types/substack-byline'
 
 /**
  * Raw API response shape for full posts from /posts/by-id/:id endpoint
@@ -18,9 +19,11 @@ export const SubstackFullPostCodec = t.intersection([
     body_html: t.string,
     htmlBody: t.string,
     reactions: t.record(t.string, t.number),
+    reaction_count: t.number,
     restacks: t.number,
     postTags: t.array(t.string),
-    cover_image: t.string
+    cover_image: t.string,
+    publishedBylines: t.array(SubstackBylineCodec)
   })
 ])
 

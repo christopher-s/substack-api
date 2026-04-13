@@ -171,5 +171,11 @@ describe('ProfileService', () => {
       await expect(profileService.getProfileBySlug('sluguser')).rejects.toThrow('API Error')
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/user/sluguser/public_profile')
     })
+
+    it('should reject invalid slug format', async () => {
+      await expect(profileService.getProfileBySlug('../admin')).rejects.toThrow(
+        'Invalid slug format'
+      )
+    })
   })
 })

@@ -384,7 +384,7 @@ describe('Note Entity', () => {
   describe('like()', () => {
     it('should throw error for unimplemented like functionality', async () => {
       await expect(note.like()).rejects.toThrow(
-        'Note liking not implemented yet - requires like API'
+        'Note liking is not supported by this version of the API'
       )
     })
   })
@@ -392,7 +392,7 @@ describe('Note Entity', () => {
   describe('addComment()', () => {
     it('should throw error for unimplemented comment functionality', async () => {
       await expect(note.addComment('Test comment')).rejects.toThrow(
-        'Note commenting not implemented yet - requires comment API'
+        'Note commenting is not supported by this version of the API'
       )
     })
   })

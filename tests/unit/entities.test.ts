@@ -4,7 +4,9 @@ import {
   PostService,
   ProfileService,
   NoteService,
-  CommentService
+  CommentService,
+  FollowingService,
+  NewNoteService
 } from '@substack-api/internal/services'
 import type { HttpClient } from '@substack-api/internal/http-client'
 
@@ -89,15 +91,16 @@ describe('SubstackClient Entity Model', () => {
         getCommentById: jest.fn()
       } as unknown as CommentService
 
-      const profile = new Profile(
-        mockData,
+      const profile = new Profile(mockData, {
         publicationClient,
-        mockProfileService,
-        mockPostService,
-        mockNoteService,
-        mockCommentService,
-        25
-      )
+        profileService: mockProfileService,
+        postService: mockPostService,
+        noteService: mockNoteService,
+        commentService: mockCommentService,
+        followingService: {} as unknown as FollowingService,
+        newNoteService: {} as unknown as NewNoteService,
+        perPage: 25
+      })
 
       expect(profile).toBeInstanceOf(Profile)
       expect(profile.id).toBe(123)
@@ -127,7 +130,16 @@ describe('SubstackClient Entity Model', () => {
         getPostsForProfile: jest.fn()
       } as unknown as PostService
 
-      const post = new PreviewPost(mockData, publicationClient, mockCommentService, mockPostService)
+      const post = new PreviewPost(mockData, {
+        publicationClient,
+        commentService: mockCommentService,
+        postService: mockPostService,
+        profileService: {} as unknown as ProfileService,
+        noteService: {} as unknown as NoteService,
+        followingService: {} as unknown as FollowingService,
+        newNoteService: {} as unknown as NewNoteService,
+        perPage: 25
+      })
 
       expect(post).toBeInstanceOf(PreviewPost)
       expect(post.id).toBe(456)

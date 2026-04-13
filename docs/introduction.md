@@ -1,148 +1,220 @@
 # Introduction
 
-The Substack API client is a modern, type-safe TypeScript library that provides a comprehensive interface for interacting with Substack's platform. Whether you're building automation tools, analytics dashboards, content management systems, or social features, this library makes it easy to integrate with Substack.
+The Substack API client is a modern, type-safe TypeScript library that provides a comprehensive interface for interacting with Substack's platform. Whether you're building automation tools, analytics dashboards, content management systems, or content discovery applications, this library makes it easy to integrate with Substack.
+
+Most features work **without authentication** -- you can browse trending posts, search content, explore categories, and read public profiles, posts, notes, and comments anonymously. A token is only required for authenticated operations like testing connectivity and accessing your own profile.
 
 ## Who This Is For
 
 ### Content Creators & Publishers
-- **Newsletter automation** - Schedule posts, manage drafts, track engagement
-- **Audience analytics** - Monitor follower growth, engagement rates, content performance  
-- **Content distribution** - Cross-post to multiple publications, manage syndication
-- **Community management** - Moderate comments, engage with readers, build relationships
+- **Newsletter automation** - Track engagement and monitor your publication
+- **Audience analytics** - Monitor follower growth, engagement rates, content performance
+- **Community management** - Read and analyze comments, understand reader engagement
 
 ### Developers & Technical Teams
 - **API integration** - Clean, typed interface for Substack's APIs
-- **Automation workflows** - Build custom publishing pipelines and content workflows
+- **Automation workflows** - Build custom content pipelines and workflows
 - **Data analysis** - Extract insights from publication data and reader behavior
-- **Custom applications** - Build newsletter management tools, reader apps, content discovery platforms
+- **Custom applications** - Build content discovery platforms, reader apps, and newsletter tools
 
 ### Data Analysts & Marketers
 - **Performance tracking** - Monitor post performance, engagement metrics, growth trends
 - **Audience insights** - Understand reader behavior, preferences, and engagement patterns
 - **Competitive analysis** - Track industry publications and benchmark performance
-- **Growth optimization** - Identify high-performing content patterns and engagement strategies
+- **Content discovery** - Find trending content, explore categories, search across Substack
 
 ### Marketing & Growth Teams
 - **Lead generation** - Integrate newsletter signups with CRM systems and marketing funnels
-- **Email marketing** - Coordinate Substack content with broader email marketing campaigns
-- **Social media** - Automate social sharing and cross-platform content promotion
+- **Social media** - Discover shareable content from across Substack
 - **Analytics integration** - Connect Substack data with Google Analytics, Mixpanel, and other tools
 
 ## Key Features
 
-### 🏗️ Modern Entity Model
-Navigate Substack data naturally with object-oriented entities:
+### Anonymous Access
+Most of the library works without any authentication. Browse publications, search for content, and read public data freely:
+
 ```typescript
-// Fluent navigation through relationships
-for await (const post of profile.posts()) {
-  for await (const comment of post.comments()) {
-    await comment.like();
-  }
+// No token required -- anonymous read-only access
+const client = new SubstackClient({});
+
+// All of these work without a token
+const trending = await client.trending({ limit: 5 });
+const categories = await client.categories();
+const profile = await client.profileForSlug('username');
+const post = await client.postForId(12345);
+```
+
+### Discovery & Search
+Find content and people across Substack with built-in discovery methods:
+
+```typescript
+// Search for content
+for await (const item of client.search('machine learning', { limit: 10 })) {
+  console.log(item);
+}
+
+// Browse trending posts
+const trending = await client.trending({ limit: 10 });
+
+// Search for profiles
+const results = await client.profileSearch('sam altman');
+console.log(`Found ${results.results.length} profiles`);
+
+// Explore categories
+const categories = await client.categories();
+const pubs = await client.categoryPublications(categories[0].id, { limit: 10 });
+```
+
+### Publication Archive
+Access any publication's posts and archive:
+
+```typescript
+const client = new SubstackClient({
+  publicationUrl: 'example.substack.com' // required for publication methods
+});
+
+// Browse the publication's homepage
+const homepage = await client.publicationHomepage();
+
+// Iterate through all publication posts
+for await (const post of client.publicationPosts({ limit: 20 })) {
+  console.log(post.title);
+}
+
+// Browse the archive sorted by top or new
+for await (const post of client.publicationArchive({ sort: 'new', limit: 10 })) {
+  console.log(post.title);
 }
 ```
 
-### 🔄 Seamless Pagination  
-Automatic pagination handling with async iterators:
+### Modern Entity Model
+Navigate Substack data naturally with object-oriented entities:
+
 ```typescript
-// No manual pagination - just iterate
+// Fluent navigation through relationships
+const profile = await client.profileForSlug('username');
+for await (const post of profile.posts()) {
+  console.log(post.title);
+}
+```
+
+### Seamless Pagination
+Automatic pagination handling with async iterators:
+
+```typescript
+// No manual pagination -- just iterate
 for await (const post of profile.posts()) {
   console.log(post.title); // Handles all pages automatically
 }
 ```
 
-### 🛡️ Complete Type Safety
+### Complete Type Safety
 Full TypeScript support with comprehensive type definitions:
+
 ```typescript
-// Everything is typed - IDE autocomplete and compile-time checks
+// Everything is typed -- IDE autocomplete and compile-time checks
 const profile: Profile = await client.profileForSlug('username');
-const post: Post = await profile.posts({ limit: 1 }).next().value;
 ```
 
-### 🔐 Secure Authentication
-Cookie-based authentication using your Substack session:
+### Secure Authentication
+Cookie-based authentication using your Substack session (optional for most features):
+
 ```typescript
 const client = new SubstackClient({
-  token: 'your-connect-sid-cookie-value' // Extracted from browser
+  publicationUrl: 'example.substack.com', // optional -- required for publication-scoped methods
+  token: 'your-connect-sid-cookie-value'   // optional -- omit for anonymous access
 });
 ```
 
-### 📝 Content Creation & Management
-Full CRUD operations for posts, notes, and comments:
+### Note Creation
+Create notes through the builder pattern on your authenticated profile:
+
 ```typescript
 const myProfile = await client.ownProfile();
 
-// Create content
-await myProfile.createPost({ title: 'New Article', body: '...', isDraft: false });
-await myProfile.createNote({ body: 'Quick thought...' });
-
-// Social interactions  
-await post.like();
-await post.addComment('Great insights!');
-await profile.follow();
+const note = await myProfile
+  .newNote()
+  .paragraph()
+  .text('Published a new article today!')
+  .paragraph()
+  .bold('Key takeaway: ')
+  .text('Build in public.')
+  .publish();
 ```
 
-### 💬 Social Features
-Complete social interaction capabilities:
-- Like posts, notes, and comments
-- Follow and unfollow users
-- Add comments and engage in discussions
-- Track follower relationships and social connections
+### Analytics & Insights
+Track engagement and performance on public content:
 
-### 📊 Analytics & Insights
-Built-in support for tracking engagement and performance:
 ```typescript
-// Get comprehensive analytics
-const reactions = post.reactions?.length || 0;
-const comments = post.commentCount;
-const followers = profile.followerCount;
+const post = await client.postForId(12345);
+const likes = post.likesCount;
+const reactionCount = post.reactions ? Object.values(post.reactions).reduce((a, b) => a + b, 0) : 0;
 ```
-
-### 🚀 High Performance
-Optimized for efficiency with intelligent caching and request batching:
-- In-memory caching for frequently accessed data
-- Intelligent pagination to minimize API calls
-- Async iteration for memory-efficient processing of large datasets
 
 ## Architecture Overview
 
 The library is built around several key concepts:
 
 ### SubstackClient
-The main entry point that handles authentication and provides access to entities:
+The main entry point that handles configuration and provides access to entities:
+
 ```typescript
-const client = new SubstackClient({ token: 'cookie-value' });
+// Anonymous access (no publicationUrl needed)
+const client = new SubstackClient({});
+
+// Authenticated access
+const client = new SubstackClient({
+  publicationUrl: 'example.substack.com',
+  token: 'cookie-value'
+});
 ```
 
 ### Entity Classes
-Represent Substack objects with navigation and interaction methods:
+Represent Substack objects with navigation methods:
 - **Profile** - User profiles with read access to their content
-- **OwnProfile** - Your authenticated profile with content creation capabilities  
-- **Post** - Long-form articles and newsletters
+- **OwnProfile** - Your authenticated profile with note creation capabilities via `newNote()`
+- **FullPost** - Long-form articles and newsletters
 - **Note** - Short-form social content
 - **Comment** - Comments on posts and notes
 
 ### Async Iterators
 Provide seamless pagination for collections:
+
 ```typescript
 // All collections support async iteration
-profile.posts()      // AsyncIterable<Post>
-post.comments()      // AsyncIterable<Comment>  
+profile.posts()      // AsyncIterable<PreviewPost>
+post.comments()      // AsyncIterable<Comment>
 profile.notes()      // AsyncIterable<Note>
 ```
 
 ### Type Safety
 Comprehensive TypeScript definitions ensure compile-time safety:
+
 ```typescript
 interface Profile {
   id: number;
   name: string;
   slug: string;
-  followerCount: number;
-  posts(options?: { limit?: number }): AsyncIterable<Post>;
+  bio?: string;
+  avatarUrl: string;
+  posts(options?: { limit?: number }): AsyncIterable<PreviewPost>;
 }
 ```
 
 ## Use Case Examples
+
+### Content Discovery Tool
+```typescript
+const client = new SubstackClient({});
+
+// Find trending content
+const trending = await client.trending({ limit: 10 });
+
+// Search for specific topics
+for await (const item of client.search('typescript tips', { limit: 5 })) {
+  console.log(item);
+}
+```
 
 ### Newsletter Analytics Dashboard
 ```typescript
@@ -150,69 +222,52 @@ const myProfile = await client.ownProfile();
 
 // Track performance metrics
 for await (const post of myProfile.posts({ limit: 10 })) {
-  console.log(`"${post.title}": ${post.reactions?.length || 0} reactions`);
+  console.log(`"${post.title}": ${post.likesCount} likes`);
 }
 ```
 
-### Content Curation Bot
+### Publication Monitor
 ```typescript
-// Find and engage with trending content
-for await (const user of myProfile.following()) {
-  for await (const post of user.posts({ limit: 3 })) {
-    if ((post.reactions?.length || 0) > 10) {
-      await post.like();
-      await post.addComment('Great insights!');
-    }
-  }
-}
-```
-
-### Cross-Platform Publishing
-```typescript
-// Publish to Substack and sync elsewhere
-const post = await myProfile.createPost({
-  title: 'New Article',
-  body: content,
-  isDraft: false
+const client = new SubstackClient({
+  publicationUrl: 'interesting-pub.substack.com' // required for publication methods
 });
 
-// Sync to other platforms
-await syncToMedium(post);
-await shareOnTwitter(post.canonicalUrl);
+// Monitor new posts from a publication
+for await (const post of client.publicationArchive({ sort: 'new', limit: 5 })) {
+  console.log(`New: "${post.title}"`);
+}
 ```
 
-### Community Engagement Tracker
+### Profile Research
 ```typescript
-// Monitor community activity
-for await (const post of myProfile.posts()) {
-  for await (const comment of post.comments()) {
-    if (needsResponse(comment)) {
-      await comment.addComment(generateResponse(comment));
-    }
-  }
+// Look up a profile and explore their activity
+const profile = await client.profileForSlug('some-writer');
+console.log(`${profile.name}: ${profile.bio}`);
+
+for await (const post of profile.posts({ limit: 5 })) {
+  console.log(`- ${post.title}`);
 }
 ```
 
 ## Getting Started
 
 1. **Install the library**: `npm install substack-api`
-2. **Get your authentication cookie** from your browser's Substack session
-3. **Initialize the client** with your credentials  
-4. **Start exploring** with the entity model
+2. **Initialize the client** with a publication URL (token optional)
+3. **Start exploring** with the entity model
 
 ```typescript
 import { SubstackClient } from 'substack-api';
 
-const client = new SubstackClient({
-  token: process.env.SUBSTACK_TOKEN!
-});
+// Anonymous -- no token needed for most features
+const client = new SubstackClient({});
 
-// Test connection
-const isConnected = await client.testConnectivity();
+// Browse trending content
+const trending = await client.trending();
+console.log(`Found ${trending.posts.length} trending posts`);
 
-// Get your profile and start exploring
-const myProfile = await client.ownProfile();
-console.log(`Welcome ${myProfile.name}!`);
+// Look up a profile
+const profile = await client.profileForSlug('username');
+console.log(`Welcome ${profile.name}!`);
 ```
 
 ## What Makes This Different
@@ -220,16 +275,19 @@ console.log(`Welcome ${myProfile.name}!`);
 ### Entity-Oriented Design
 Unlike traditional REST clients that return raw JSON, this library provides rich entity objects with built-in navigation and interaction methods.
 
+### Anonymous-First
+Most features work without authentication. Browse publications, search content, read posts and profiles -- all without a token. Authentication is only needed for write operations and private data.
+
 ### Developer Experience First
 - Intuitive async iteration patterns
-- Comprehensive TypeScript support  
-- Intelligent error handling and retry logic
+- Comprehensive TypeScript support
+- Intelligent error handling
 - Extensive documentation with real-world examples
 
 ### Production Ready
 - Robust error handling for network issues and API changes
 - Efficient memory usage for large datasets
-- Rate limiting and request optimization
+- Configurable rate limiting
 - Comprehensive test coverage
 
 ### Community Focused
@@ -238,4 +296,4 @@ Unlike traditional REST clients that return raw JSON, this library provides rich
 - Comprehensive documentation and examples
 - Regular updates to support new Substack features
 
-The Substack API client makes it easy to build powerful applications on top of Substack's platform. Whether you're automating your newsletter workflow, building analytics tools, or creating new ways for creators to engage with their audience, this library provides the foundation you need.
+The Substack API client makes it easy to build powerful applications on top of Substack's platform. Whether you're automating your newsletter workflow, building analytics tools, or creating new ways to discover content, this library provides the foundation you need.

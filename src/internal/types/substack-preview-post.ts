@@ -1,4 +1,5 @@
 import * as t from 'io-ts'
+import { SubstackBylineCodec } from '@substack-api/internal/types/substack-byline'
 
 /**
  * Raw API response shape for posts - minimal validation
@@ -12,7 +13,9 @@ export const SubstackPreviewPostCodec = t.intersection([
   }),
   t.partial({
     subtitle: t.string,
-    truncated_body_text: t.string
+    truncated_body_text: t.string,
+    reaction_count: t.number,
+    publishedBylines: t.array(SubstackBylineCodec)
   })
 ])
 

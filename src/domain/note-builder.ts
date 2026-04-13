@@ -335,186 +335,7 @@ export class NoteBuilder {
   /**
    * Convert the builder's content to Substack's note format
    */
-  private toNoteRequest(): PublishNoteRequest {
-    // Validation: must have at least one paragraph
-    if (this.state.paragraphs.length === 0) {
-      throw new Error('Note must contain at least one paragraph')
-    }
-
-    // Validation: each paragraph must have content
-    for (const paragraph of this.state.paragraphs) {
-      if (paragraph.segments.length === 0 && paragraph.lists.length === 0) {
-        throw new Error('Each paragraph must contain at least one content block')
-      }
-    }
-
-    const content = this.state.paragraphs.flatMap((paragraph) => {
-      const elements = []
-
-      // Add paragraph content if it has segments
-      if (paragraph.segments.length > 0) {
-        elements.push({
-          type: 'paragraph' as const,
-          content: paragraph.segments.map((segment) => this.segmentToContent(segment))
-        })
-      }
-
-      // Add list content
-      for (const list of paragraph.lists) {
-        elements.push({
-          type: list.type === 'bullet' ? ('bulletList' as const) : ('orderedList' as const),
-          content: list.items.map((item) => ({
-            type: 'listItem' as const,
-            content: [
-              {
-                type: 'paragraph' as const,
-                content: item.segments.map((segment) => this.segmentToContent(segment))
-              }
-            ]
-          }))
-        })
-      }
-
-      return elements
-    })
-
-    const request: PublishNoteRequest = {
-      bodyJson: {
-        type: 'doc',
-        attrs: {
-          schemaVersion: 'v1'
-        },
-        content
-      },
-      tabId: 'for-you',
-      surface: 'feed',
-      replyMinimumRole: 'everyone'
-    }
-
-    if (this.state.attachmentIds && this.state.attachmentIds.length > 0) {
-      request.attachmentIds = this.state.attachmentIds
-    }
-
-    return request
-  }
-
-  /**
-   * Convert a text segment to Substack content format
-   */
-  protected segmentToContent(segment: TextSegment) {
-    const base = {
-      type: 'text' as const,
-      text: segment.text
-    }
-
-    if (segment.type === 'simple') {
-      return base
-    }
-
-    if (segment.type === 'link') {
-      if (!segment.url) {
-        throw new Error('Link segments must have a URL')
-      }
-      return {
-        ...base,
-        marks: [{ type: 'link' as const, attrs: { href: segment.url } }]
-      }
-    }
-
-    // For other formatting types
-    return {
-      ...base,
-      marks: [{ type: segment.type as 'bold' | 'italic' | 'code' | 'underline' }]
-    }
-  }
-
-  /**
-   * Build and validate the note
-   */
-  build(): PublishNoteRequest {
-    return this.toNoteRequest()
-  }
-
-  /**
-   * Publish the note
-   */
-  async publish(): Promise<PublishNoteResponse> {
-    const rawResponse = await this.substackClient.post<unknown>(
-      '/comment/feed/',
-      this.toNoteRequest()
-    )
-    return decodeOrThrow(PublishNoteResponseCodec, rawResponse, 'Publish note response')
-  }
-}
-
-/**
- * Extended NoteBuilder that creates an attachment for a link and publishes the note with the attachment
- */
-export class NoteWithLinkBuilder extends NoteBuilder {
-  constructor(
-    substackClient: HttpClient,
-    private readonly linkUrl: string
-  ) {
-    super(substackClient)
-  }
-
-  /**
-   * Add a paragraph to the note (used by ParagraphBuilder) - returns NoteWithLinkBuilder to preserve attachment logic
-   */
-  addParagraph(paragraph: { segments: TextSegment[]; lists: List[] }): NoteWithLinkBuilder {
-    return new NoteWithLinkBuilder(this.substackClient, this.linkUrl).copyState({
-      paragraphs: [...this.state.paragraphs, paragraph],
-      attachmentIds: this.state.attachmentIds
-    })
-  }
-
-  /**
-   * Publish the note with the link attachment
-   */
-  async publish(): Promise<PublishNoteResponse> {
-    // First, create the attachment for the link
-    const attachmentRequest: CreateAttachmentRequest = {
-      url: this.linkUrl,
-      type: 'link'
-    }
-
-    const rawAttachmentResponse = await this.substackClient.post<unknown>(
-      '/comment/attachment/',
-      attachmentRequest
-    )
-    const attachmentResponse = decodeOrThrow(
-      CreateAttachmentResponseCodec,
-      rawAttachmentResponse,
-      'Create attachment response'
-    )
-
-    // Update the state with the attachment ID
-    const updatedState: NoteBuilderState = {
-      paragraphs: this.state.paragraphs,
-      attachmentIds: [attachmentResponse.id]
-    }
-
-    // Create the request with attachment
-    const request = this.toNoteRequestWithState(updatedState)
-
-    // Publish the note with attachment
-    const rawPublishResponse = await this.substackClient.post<unknown>('/comment/feed/', request)
-    return decodeOrThrow(PublishNoteResponseCodec, rawPublishResponse, 'Publish note response')
-  }
-
-  /**
-   * Copy state to new instance - helper method
-   */
-  private copyState(state: NoteBuilderState): NoteWithLinkBuilder {
-    const newBuilder = new NoteWithLinkBuilder(this.substackClient, this.linkUrl)
-    ;(newBuilder as any).state = state
-    return newBuilder
-  }
-
-  /**
-   * Convert the builder's content to Substack's note format with custom state
-   */
-  private toNoteRequestWithState(state: NoteBuilderState): PublishNoteRequest {
+  protected toNoteRequest(state: NoteBuilderState = this.state): PublishNoteRequest {
     // Validation: must have at least one paragraph
     if (state.paragraphs.length === 0) {
       throw new Error('Note must contain at least one paragraph')
@@ -575,5 +396,110 @@ export class NoteWithLinkBuilder extends NoteBuilder {
     }
 
     return request
+  }
+
+  /**
+   * Convert a text segment to Substack content format
+   */
+  protected segmentToContent(segment: TextSegment) {
+    const base = {
+      type: 'text' as const,
+      text: segment.text
+    }
+
+    if (segment.type === 'simple') {
+      return base
+    }
+
+    if (segment.type === 'link') {
+      if (!segment.url) {
+        throw new Error('Link segments must have a URL')
+      }
+      return {
+        ...base,
+        marks: [{ type: 'link' as const, attrs: { href: segment.url } }]
+      }
+    }
+
+    // For other formatting types
+    return {
+      ...base,
+      marks: [{ type: segment.type as 'bold' | 'italic' | 'code' | 'underline' }]
+    }
+  }
+
+  /**
+   * Build and validate the note
+   */
+  build(): PublishNoteRequest {
+    return this.toNoteRequest()
+  }
+
+  /**
+   * Publish the note
+   */
+  async publish(): Promise<PublishNoteResponse> {
+    const rawResponse = await this.substackClient.post<unknown>(
+      '/comment/feed/',
+      this.toNoteRequest()
+    )
+    return decodeOrThrow(PublishNoteResponseCodec, rawResponse, 'Publish note response')
+  }
+}
+
+/**
+ * Extended NoteBuilder that creates an attachment for a link and publishes the note with the attachment
+ */
+export class NoteWithLinkBuilder extends NoteBuilder {
+  constructor(
+    substackClient: HttpClient,
+    private readonly linkUrl: string,
+    state?: NoteBuilderState
+  ) {
+    super(substackClient, state)
+  }
+
+  /**
+   * Add a paragraph to the note (used by ParagraphBuilder) - returns NoteWithLinkBuilder to preserve attachment logic
+   */
+  addParagraph(paragraph: { segments: TextSegment[]; lists: List[] }): NoteWithLinkBuilder {
+    return new NoteWithLinkBuilder(this.substackClient, this.linkUrl, {
+      paragraphs: [...this.state.paragraphs, paragraph],
+      attachmentIds: this.state.attachmentIds
+    })
+  }
+
+  /**
+   * Publish the note with the link attachment
+   */
+  async publish(): Promise<PublishNoteResponse> {
+    // First, create the attachment for the link
+    const attachmentRequest: CreateAttachmentRequest = {
+      url: this.linkUrl,
+      type: 'link'
+    }
+
+    const rawAttachmentResponse = await this.substackClient.post<unknown>(
+      '/comment/attachment/',
+      attachmentRequest
+    )
+    const attachmentResponse = decodeOrThrow(
+      CreateAttachmentResponseCodec,
+      rawAttachmentResponse,
+      'Create attachment response'
+    )
+
+    // Update the state with the attachment ID
+    const updatedState: NoteBuilderState = {
+      paragraphs: this.state.paragraphs,
+      attachmentIds: [attachmentResponse.id]
+    }
+
+    // Create the request with attachment
+    const request = this.toNoteRequest(updatedState)
+
+    // Publish the note with attachment
+    const rawPublishResponse = await this.substackClient.post<unknown>('/comment/feed/', request)
+    return decodeOrThrow(PublishNoteResponseCodec, rawPublishResponse, 'Publish note response')
   }
 }
