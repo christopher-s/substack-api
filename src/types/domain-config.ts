@@ -3,7 +3,7 @@
  */
 
 export interface SubstackConfig {
-  publicationUrl: string // Publication base URL (mandatory, e.g., 'https://yourpub.substack.com')
+  publicationUrl?: string // Publication base URL (optional — omit for anonymous discovery/search, required for publication-scoped methods)
   token?: string // API authentication token (optional — omit for anonymous read-only access)
   substackUrl?: string // Base URL for global Substack endpoints (optional, defaults to 'https://substack.com')
   urlPrefix?: string // URL prefix for API endpoints (optional, defaults to 'api/v1/')

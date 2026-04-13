@@ -55,6 +55,7 @@ export class SubstackClient {
   private readonly publicationService: PublicationService
   private readonly perPage: number
   private readonly token: string | undefined
+  private readonly hasPublication: boolean
 
   /**
    * Normalize URL by ensuring it has a protocol
@@ -69,9 +70,14 @@ export class SubstackClient {
 
   constructor(config: SubstackConfig) {
     this.token = config.token
+    this.hasPublication = !!config.publicationUrl
 
     // Normalize URLs to ensure they have protocols
-    const normalizedPublicationUrl = SubstackClient.normalizeUrl(config.publicationUrl)
+    // When no publicationUrl is provided, fall back to substackUrl so publicationClient
+    // still works for global endpoints (noteForId, commentForId, etc.)
+    const normalizedPublicationUrl = SubstackClient.normalizeUrl(
+      config.publicationUrl || config.substackUrl || 'substack.com'
+    )
     const normalizedSubstackUrl = SubstackClient.normalizeUrl(config.substackUrl || 'substack.com')
 
     // Determine URL prefix
@@ -110,6 +116,15 @@ export class SubstackClient {
     if (!this.token) {
       throw new Error(
         `Authentication required: provide a token in SubstackConfig to use ${methodName}()`
+      )
+    }
+  }
+
+  /** Throw a clear error when a publication-scoped method is called without a publicationUrl */
+  private requirePublication(methodName: string): void {
+    if (!this.hasPublication) {
+      throw new Error(
+        `Publication required: provide a publicationUrl in SubstackConfig to use ${methodName}()`
       )
     }
   }
@@ -396,6 +411,7 @@ export class SubstackClient {
   async *publicationArchive(
     options: { sort?: 'top' | 'new'; limit?: number } = {}
   ): AsyncGenerator<PublicationPost> {
+    this.requirePublication('publicationArchive')
     yield* this.paginateOffset(
       (offset, limit) => this.publicationService.getArchive({ sort: options.sort, offset, limit }),
       options.limit
@@ -409,6 +425,7 @@ export class SubstackClient {
    * @throws {Error} On network or API errors
    */
   async *publicationPosts(options: { limit?: number } = {}): AsyncGenerator<PublicationPost> {
+    this.requirePublication('publicationPosts')
     yield* this.paginateOffset(
       (offset, limit) => this.publicationService.getPosts({ offset, limit }),
       options.limit
@@ -419,6 +436,7 @@ export class SubstackClient {
    * Get recent posts from the configured publication's homepage
    */
   async publicationHomepage(): Promise<PublicationPost[]> {
+    this.requirePublication('publicationHomepage')
     const result = await this.publicationService.getHomepageData()
     return result.newPosts.map((post) => new PublicationPost(post))
   }
@@ -427,6 +445,7 @@ export class SubstackClient {
    * Get users who reacted to a post (facepile)
    */
   async postReactors(postId: number): Promise<SubstackFacepile> {
+    this.requirePublication('postReactors')
     return await this.publicationService.getPostFacepile(postId)
   }
 
@@ -434,6 +453,7 @@ export class SubstackClient {
    * Get active live stream for a publication (works anonymously)
    */
   async activeLiveStream(publicationId: number): Promise<SubstackLiveStreamResponse> {
+    this.requirePublication('activeLiveStream')
     return await this.publicationService.getActiveLiveStream(publicationId)
   }
 
@@ -441,6 +461,7 @@ export class SubstackClient {
    * Mark a post as seen (works anonymously)
    */
   async markPostSeen(postId: number): Promise<void> {
+    this.requirePublication('markPostSeen')
     await this.publicationService.markPostSeen(postId)
   }
 

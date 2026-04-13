@@ -20,8 +20,8 @@ Creates a new `SubstackClient` instance.
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `publicationUrl` | `string` | Yes | - | Publication base URL (e.g., `'yourpub.substack.com'`) |
-| `token` | `string` | No | - | API authentication token. Omit for anonymous read-only access |
+| `publicationUrl` | `string` | No | `undefined` | Publication base URL (e.g., `'yourpub.substack.com'`). Required for publication-scoped methods |
+| `token` | `string` | No | `undefined` | API authentication token. Omit for anonymous read-only access |
 | `substackUrl` | `string` | No | `'substack.com'` | Base URL for global Substack endpoints |
 | `urlPrefix` | `string` | No | `'api/v1'` | URL prefix for API endpoints |
 | `perPage` | `number` | No | `25` | Default items per page for pagination |
@@ -32,7 +32,10 @@ Creates a new `SubstackClient` instance.
 ```typescript
 import { SubstackClient } from 'substack-api';
 
-// Anonymous read-only access
+// Anonymous read-only access (no publicationUrl needed for discovery/search/profiles)
+const client = new SubstackClient({});
+
+// With a publication URL (required for publication-scoped methods)
 const client = new SubstackClient({
   publicationUrl: 'example.substack.com'
 });
@@ -542,7 +545,7 @@ for await (const item of client.exploreSearch({ tab: 'notes', limit: 20 })) {
 
 ## Publication Methods
 
-All of these methods work anonymously. They operate on the publication specified by `publicationUrl` in the `SubstackConfig`.
+These methods work anonymously but require `publicationUrl` to be set in the `SubstackConfig`. They operate on the publication specified by `publicationUrl`.
 
 ### publicationArchive()
 
@@ -553,7 +556,7 @@ publicationArchive(options?: {
 }): AsyncGenerator<PublicationPost>
 ```
 
-Gets posts from the configured publication's archive with automatic offset pagination.
+Gets posts from the configured publication's archive with automatic offset pagination. (requires publicationUrl)
 
 **Parameters:**
 - `options.sort` (`'top' | 'new'`, optional) -- Sort order. Defaults to `'new'`.
@@ -581,7 +584,7 @@ for await (const post of client.publicationArchive({ sort: 'new', limit: 20 })) 
 publicationPosts(options?: { limit?: number }): AsyncGenerator<PublicationPost>
 ```
 
-Gets full posts from the configured publication (includes `bodyHtml`). Uses offset-based pagination.
+Gets full posts from the configured publication (includes `bodyHtml`). Uses offset-based pagination. (requires publicationUrl)
 
 **Parameters:**
 - `options.limit` (`number`, optional) -- Max items to yield.
@@ -605,7 +608,7 @@ for await (const post of client.publicationPosts({ limit: 5 })) {
 publicationHomepage(): Promise<PublicationPost[]>
 ```
 
-Gets recent posts from the configured publication's homepage.
+Gets recent posts from the configured publication's homepage. (requires publicationUrl)
 
 **Returns:** `Promise<PublicationPost[]>` -- Array of recent publication posts.
 
@@ -624,7 +627,7 @@ for (const post of posts) {
 postReactors(postId: number): Promise<SubstackFacepile>
 ```
 
-Gets users who reacted to a post (facepile data).
+Gets users who reacted to a post (facepile data). (requires publicationUrl)
 
 **Parameters:**
 - `postId` (`number`, required) -- The post ID to get reactors for.
@@ -644,7 +647,7 @@ console.log(`Post has ${reactors.reactors.length} reactions`);
 activeLiveStream(publicationId: number): Promise<SubstackLiveStreamResponse>
 ```
 
-Gets the active live stream for a publication.
+Gets the active live stream for a publication. (requires publicationUrl)
 
 **Parameters:**
 - `publicationId` (`number`, required) -- The publication ID to check.
@@ -666,7 +669,7 @@ if (stream.video_url) {
 markPostSeen(postId: number): Promise<void>
 ```
 
-Marks a post as seen.
+Marks a post as seen. (requires publicationUrl)
 
 **Parameters:**
 - `postId` (`number`, required) -- The post ID to mark as seen.
@@ -1163,7 +1166,7 @@ console.log(`Published note: ${note.id}`);
 
 ```typescript
 interface SubstackConfig {
-  publicationUrl: string           // Publication base URL (required)
+  publicationUrl?: string          // Publication base URL (optional, required for publication-scoped methods)
   token?: string                   // API token — omit for anonymous read-only access
   substackUrl?: string             // Global Substack base URL (default: 'substack.com')
   urlPrefix?: string               // API URL prefix (default: 'api/v1')
@@ -1289,7 +1292,10 @@ const client = new SubstackClient({
   token: process.env.SUBSTACK_TOKEN
 });
 
-// Anonymous read-only
+// Anonymous read-only (no publicationUrl needed for discovery/search/profiles)
+const client = new SubstackClient({});
+
+// Anonymous with publication access
 const client = new SubstackClient({
   publicationUrl: 'example.substack.com'
 });

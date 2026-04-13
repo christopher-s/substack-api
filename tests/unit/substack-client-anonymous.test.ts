@@ -434,4 +434,67 @@ describe('SubstackClient anonymous and discovery methods', () => {
       expect(mockDiscoveryService.searchProfiles).toHaveBeenCalledWith('test', { page: 2 })
     })
   })
+
+  describe('optional publicationUrl', () => {
+    it('should create client without publicationUrl', () => {
+      const noPubClient = new SubstackClient({})
+      expect(noPubClient).toBeDefined()
+    })
+
+    it('should create client with only substackUrl', () => {
+      const client = new SubstackClient({ substackUrl: 'substack.com' })
+      expect(client).toBeDefined()
+    })
+
+    it('should throw when calling publicationHomepage without publicationUrl', async () => {
+      const noPubClient = new SubstackClient({})
+      await expect(noPubClient.publicationHomepage()).rejects.toThrow(
+        'Publication required: provide a publicationUrl in SubstackConfig to use publicationHomepage()'
+      )
+    })
+
+    it('should throw when calling postReactors without publicationUrl', async () => {
+      const noPubClient = new SubstackClient({})
+      await expect(noPubClient.postReactors(123)).rejects.toThrow(
+        'Publication required: provide a publicationUrl in SubstackConfig to use postReactors()'
+      )
+    })
+
+    it('should throw when calling activeLiveStream without publicationUrl', async () => {
+      const noPubClient = new SubstackClient({})
+      await expect(noPubClient.activeLiveStream(456)).rejects.toThrow(
+        'Publication required: provide a publicationUrl in SubstackConfig to use activeLiveStream()'
+      )
+    })
+
+    it('should throw when calling markPostSeen without publicationUrl', async () => {
+      const noPubClient = new SubstackClient({})
+      await expect(noPubClient.markPostSeen(789)).rejects.toThrow(
+        'Publication required: provide a publicationUrl in SubstackConfig to use markPostSeen()'
+      )
+    })
+
+    it('should throw when calling publicationArchive without publicationUrl', async () => {
+      const noPubClient = new SubstackClient({})
+      const gen = noPubClient.publicationArchive()
+      await expect(gen.next()).rejects.toThrow(
+        'Publication required: provide a publicationUrl in SubstackConfig to use publicationArchive()'
+      )
+    })
+
+    it('should throw when calling publicationPosts without publicationUrl', async () => {
+      const noPubClient = new SubstackClient({})
+      const gen = noPubClient.publicationPosts()
+      await expect(gen.next()).rejects.toThrow(
+        'Publication required: provide a publicationUrl in SubstackConfig to use publicationPosts()'
+      )
+    })
+
+    it('should treat empty string publicationUrl as absent', async () => {
+      const client = new SubstackClient({ publicationUrl: '' })
+      await expect(client.publicationHomepage()).rejects.toThrow(
+        'Publication required: provide a publicationUrl in SubstackConfig to use publicationHomepage()'
+      )
+    })
+  })
 })

@@ -35,9 +35,7 @@ Most of the library works without any authentication. Browse publications, searc
 
 ```typescript
 // No token required -- anonymous read-only access
-const client = new SubstackClient({
-  publicationUrl: 'example.substack.com'
-});
+const client = new SubstackClient({});
 
 // All of these work without a token
 const trending = await client.trending({ limit: 5 });
@@ -72,7 +70,7 @@ Access any publication's posts and archive:
 
 ```typescript
 const client = new SubstackClient({
-  publicationUrl: 'example.substack.com'
+  publicationUrl: 'example.substack.com' // required for publication methods
 });
 
 // Browse the publication's homepage
@@ -123,7 +121,7 @@ Cookie-based authentication using your Substack session (optional for most featu
 
 ```typescript
 const client = new SubstackClient({
-  publicationUrl: 'example.substack.com', // required
+  publicationUrl: 'example.substack.com', // optional -- required for publication-scoped methods
   token: 'your-connect-sid-cookie-value'   // optional -- omit for anonymous access
 });
 ```
@@ -161,10 +159,8 @@ The library is built around several key concepts:
 The main entry point that handles configuration and provides access to entities:
 
 ```typescript
-// Anonymous access
-const client = new SubstackClient({
-  publicationUrl: 'example.substack.com'
-});
+// Anonymous access (no publicationUrl needed)
+const client = new SubstackClient({});
 
 // Authenticated access
 const client = new SubstackClient({
@@ -209,9 +205,7 @@ interface Profile {
 
 ### Content Discovery Tool
 ```typescript
-const client = new SubstackClient({
-  publicationUrl: 'example.substack.com'
-});
+const client = new SubstackClient({});
 
 // Find trending content
 const trending = await client.trending({ limit: 10 });
@@ -235,7 +229,7 @@ for await (const post of myProfile.posts({ limit: 10 })) {
 ### Publication Monitor
 ```typescript
 const client = new SubstackClient({
-  publicationUrl: 'interesting-pub.substack.com'
+  publicationUrl: 'interesting-pub.substack.com' // required for publication methods
 });
 
 // Monitor new posts from a publication
@@ -265,9 +259,7 @@ for await (const post of profile.posts({ limit: 5 })) {
 import { SubstackClient } from 'substack-api';
 
 // Anonymous -- no token needed for most features
-const client = new SubstackClient({
-  publicationUrl: 'example.substack.com'
-});
+const client = new SubstackClient({});
 
 // Browse trending content
 const trending = await client.trending();

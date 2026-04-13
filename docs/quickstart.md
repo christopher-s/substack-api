@@ -22,14 +22,12 @@ npm install substack-api
 
 ## Anonymous Quickstart
 
-Most features work without any authentication. Just provide a publication URL:
+Most features work without any authentication. No configuration is needed for discovery and search:
 
 ```typescript
 import { SubstackClient } from 'substack-api';
 
-const client = new SubstackClient({
-  publicationUrl: 'example.substack.com'
-});
+const client = new SubstackClient({});
 
 // Browse trending content
 const trending = await client.trending({ limit: 5 });
@@ -48,8 +46,11 @@ console.log(`Found ${profiles.results.length} profiles`);
 const categories = await client.categories();
 console.log('Categories:', categories);
 
-// Browse a publication's posts
-for await (const post of client.publicationPosts({ limit: 10 })) {
+// Browse a publication's posts (requires publicationUrl)
+const pubClient = new SubstackClient({
+  publicationUrl: 'example.substack.com'
+});
+for await (const post of pubClient.publicationPosts({ limit: 10 })) {
   console.log(post.title);
 }
 ```
@@ -74,7 +75,7 @@ The Substack API uses cookie-based authentication. You need to extract your `sub
 import { SubstackClient } from 'substack-api';
 
 const client = new SubstackClient({
-  publicationUrl: 'yoursite.substack.com', // required
+  publicationUrl: 'yoursite.substack.com', // optional -- required for publication-scoped methods
   token: 'your-connect-sid-cookie-value'    // optional -- omit for anonymous access
 });
 
@@ -379,7 +380,7 @@ import {
 
 // Type-safe configuration
 const config: SubstackConfig = {
-  publicationUrl: 'example.substack.com', // required
+  publicationUrl: 'example.substack.com', // optional -- required for publication-scoped methods
   token: process.env.SUBSTACK_TOKEN      // optional
 };
 
@@ -409,9 +410,7 @@ import { SubstackClient } from 'substack-api';
 
 async function substackExplorer() {
   // Anonymous access -- no token needed
-  const client = new SubstackClient({
-    publicationUrl: 'example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   try {
     // Browse trending content
@@ -430,12 +429,6 @@ async function substackExplorer() {
     const categories = await client.categories();
     for (const category of categories.slice(0, 3)) {
       console.log(`- ${JSON.stringify(category)}`);
-    }
-
-    // Browse the publication
-    console.log('\nPublication posts:');
-    for await (const post of client.publicationPosts({ limit: 5 })) {
-      console.log(`  "${post.title}"`);
     }
 
     // Look up a profile
@@ -481,10 +474,8 @@ const client = new SubstackClient({
   token: process.env.SUBSTACK_TOKEN
 });
 
-// Or anonymous client (no token)
-const anonymousClient = new SubstackClient({
-  publicationUrl: process.env.SUBSTACK_PUBLICATION_URL!
-});
+// Or anonymous client (no token, no publicationUrl)
+const anonymousClient = new SubstackClient({});
 ```
 
 ## Next Steps

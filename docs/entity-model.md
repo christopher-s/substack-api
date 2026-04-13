@@ -23,16 +23,14 @@ const client = new SubstackClient({
 });
 
 // Anonymous usage (read-only, no token needed)
-const anonymousClient = new SubstackClient({
-  publicationUrl: 'https://yourpub.substack.com'
-});
+const anonymousClient = new SubstackClient({});
 ```
 
 ### SubstackConfig
 
 | Property | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `publicationUrl` | `string` | **Yes** | -- | Publication base URL (e.g., `'https://yourpub.substack.com'`) |
+| `publicationUrl` | `string` | No | `undefined` | Publication base URL (e.g., `'https://yourpub.substack.com'`). Required for publication-scoped methods |
 | `token` | `string` | No | `undefined` | API token; omit for anonymous read-only access |
 | `substackUrl` | `string` | No | `'substack.com'` | Base URL for global Substack endpoints |
 | `urlPrefix` | `string` | No | `'api/v1'` | URL prefix for API endpoints |
@@ -655,8 +653,7 @@ Most read operations work without authentication. Simply omit the `token` in you
 
 ```typescript
 const client = new SubstackClient({
-  publicationUrl: 'https://example.substack.com'
-  // No token -- anonymous read-only access
+  // publicationUrl is optional -- omit for discovery/search/profiles only
 });
 
 // These all work anonymously:
@@ -671,7 +668,11 @@ for await (const item of client.search('typescript')) {
   console.log(item);
 }
 
-for await (const post of client.publicationArchive({ limit: 10 })) {
+// Publication methods require publicationUrl:
+const pubClient = new SubstackClient({
+  publicationUrl: 'https://example.substack.com'
+});
+for await (const post of pubClient.publicationArchive({ limit: 10 })) {
   console.log(post.title);
 }
 ```

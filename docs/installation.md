@@ -43,14 +43,12 @@ For optimal TypeScript integration, ensure your `tsconfig.json` includes:
 
 ### Anonymous Verification
 
-You can verify the installation without any authentication -- just provide a publication URL:
+You can verify the installation without any authentication or configuration:
 
 ```typescript
 import { SubstackClient } from 'substack-api';
 
-const client = new SubstackClient({
-  publicationUrl: 'example.substack.com'
-});
+const client = new SubstackClient({});
 
 async function test() {
   try {
@@ -77,7 +75,7 @@ If you have a token, you can verify authenticated operations:
 import { SubstackClient } from 'substack-api';
 
 const client = new SubstackClient({
-  publicationUrl: 'example.substack.com',
+  publicationUrl: 'example.substack.com', // optional -- set if using publication-scoped methods
   token: 'your-connect-sid-cookie-value'
 });
 

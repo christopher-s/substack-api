@@ -26,9 +26,7 @@ if (!isConnected) {
 
 ```typescript
 // No token needed -- works for all public endpoints
-const client = new SubstackClient({
-  publicationUrl: 'https://example.substack.com'
-});
+const client = new SubstackClient({});
 
 // Browse profiles, posts, search, trending, categories -- all anonymous
 const profile = await client.profileForSlug('some-writer');
@@ -54,9 +52,7 @@ const client = new SubstackClient({
 
 ```typescript
 async function showTrending() {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   // Get a single page of trending posts
   const trending = await client.trending({ limit: 10 });
@@ -81,9 +77,7 @@ async function showTrending() {
 
 ```typescript
 async function searchContent(query: string) {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   // Search for posts, notes, publications
   for await (const item of client.search(query, { limit: 20 })) {
@@ -115,9 +109,7 @@ async function searchContent(query: string) {
 
 ```typescript
 async function browseDiscovery() {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   // Browse different feed tabs
   const tabs = ['for-you', 'top', 'popular', 'catchup', 'notes', 'explore'] as const;
@@ -138,9 +130,7 @@ async function browseDiscovery() {
 
 ```typescript
 async function browseCategories() {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   // List all categories and subcategories
   const categories = await client.categories();
@@ -168,7 +158,7 @@ async function browseCategories() {
 ```typescript
 async function browsePublicationArchive() {
   const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
+    publicationUrl: 'https://example.substack.com' // required for publication methods
   });
 
   // Browse the publication's archive (sorted by newest)
@@ -211,9 +201,7 @@ async function browsePublicationArchive() {
 
 ```typescript
 async function showProfileActivity(profileId: number) {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   // Get a profile's activity feed (posts, notes, comments)
   console.log('Profile activity:');
@@ -243,9 +231,8 @@ await showProfileActivity(profile.id);
 
 ```typescript
 async function showPublicationFeed(publicationId: number) {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  // publicationFeed uses the discovery API, no publicationUrl needed
+  const client = new SubstackClient({});
 
   for await (const item of client.publicationFeed(publicationId, { limit: 10 })) {
     console.log(`[${item.type}] ${item.entity_key}`);
@@ -278,9 +265,7 @@ async function getMyProfile() {
 
 ```typescript
 async function exploreProfiles() {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   // Get profile by slug (anonymous)
   const profile = await client.profileForSlug('interesting-writer');
@@ -310,9 +295,7 @@ async function exploreProfiles() {
 
 ```typescript
 async function browseContent(username: string) {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   const profile = await client.profileForSlug(username);
   console.log(`Content from ${profile.name}:\n`);
@@ -346,9 +329,7 @@ await browseContent('example-writer');
 
 ```typescript
 async function readFullPost(postId: number) {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   const post = await client.postForId(postId);
 
@@ -377,9 +358,7 @@ async function readFullPost(postId: number) {
 
 ```typescript
 async function exploreNotes(username: string) {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   const profile = await client.profileForSlug(username);
   console.log(`Notes from ${profile.name}:\n`);
@@ -411,9 +390,7 @@ async function exploreNotes(username: string) {
 
 ```typescript
 async function readCommentThread(commentId: number) {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   // Get the original comment
   const comment = await client.commentForId(commentId);
@@ -438,7 +415,7 @@ async function readCommentThread(commentId: number) {
 ```typescript
 async function showReactions(postId: number) {
   const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
+    publicationUrl: 'https://example.substack.com' // required for postReactors
   });
 
   const facepile = await client.postReactors(postId);
@@ -647,7 +624,7 @@ async function contentDashboard() {
 ```typescript
 async function publicationAnalytics() {
   const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
+    publicationUrl: 'https://example.substack.com' // required for publication methods
   });
 
   // Collect posts from publication archive
@@ -698,9 +675,7 @@ async function publicationAnalytics() {
 
 ```typescript
 async function analyzeProfile(username: string) {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   const profile = await client.profileForSlug(username);
   console.log(`Analyzing ${profile.name} (@${profile.slug})\n`);
@@ -737,9 +712,7 @@ async function analyzeProfile(username: string) {
 
 ```typescript
 async function curateContent(topic: string) {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   const interestingPosts = [];
 
@@ -764,9 +737,7 @@ async function curateContent(topic: string) {
 
 ```typescript
 async function exploreCommunity() {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   // List all categories
   const categories = await client.categories();
@@ -802,7 +773,7 @@ async function exploreCommunity() {
 ```typescript
 async function generateReport() {
   const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
+    publicationUrl: 'https://example.substack.com' // required for publicationArchive
   });
 
   const report = {
@@ -918,9 +889,7 @@ async function robustContentAccess() {
 
 ```typescript
 async function safeIteration() {
-  const client = new SubstackClient({
-    publicationUrl: 'https://example.substack.com'
-  });
+  const client = new SubstackClient({});
 
   try {
     const profile = await client.profileForSlug('example-user');
