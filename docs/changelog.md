@@ -37,11 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Comprehensive documentation restructuring
-- ReadTheDocs integration for better documentation hosting
 - Improved README with focus on quick start and key features
 
 ### Changed
-- Moved detailed API documentation to ReadTheDocs
 - Streamlined README following open-source best practices
 - Enhanced project structure and organization
 
