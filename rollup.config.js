@@ -17,26 +17,25 @@ const external = [
 ]
 
 export default [
-  // JavaScript bundle
+  // CJS + ESM bundles (compiled once, emitted twice)
   {
     input: 'src/index.ts',
-    output: {
-      file: 'dist/index.js',
-      format: 'cjs',
-      sourcemap: false
-    },
+    output: [
+      { file: 'dist/index.cjs', format: 'cjs', sourcemap: true },
+      { file: 'dist/index.mjs', format: 'es', sourcemap: true }
+    ],
     external,
     plugins: [
       typescript({
         tsconfig: './tsconfig.json',
-        declaration: false, // dts plugin handles declarations
+        declaration: false,
         compilerOptions: {
-          module: 'ESNext' // Override tsconfig - Rollup needs ES modules as input
+          module: 'ESNext'
         }
       })
     ]
   },
-  // TypeScript declarations bundle
+  // TypeScript declarations
   {
     input: 'src/index.ts',
     output: {
