@@ -29,23 +29,38 @@ export class NoteService {
 
     // Transform the validated comment response to the SubstackNote structure expected by Note entity
     // Only include minimal fields validated by SubstackNoteCodec
+    const comment = response.item.comment
     const noteData: SubstackNote = {
       entity_key: String(id),
+      type: 'comment',
       context: {
-        timestamp: response.item.comment.date,
+        type: 'comment',
+        timestamp: comment.date ?? '',
         users: [
           {
-            id: response.item.comment.user_id,
-            name: response.item.comment.name,
+            id: comment.user_id ?? 0,
+            name: comment.name ?? '',
             handle: '', // Not available in comment response
-            photo_url: response.item.comment.photo_url || ''
+            photo_url: comment.photo_url || '',
+            bestseller_tier: ''
           }
-        ]
+        ],
+        isFresh: false,
+        source: 'comment'
       },
       comment: {
-        id: response.item.comment.id,
-        body: response.item.comment.body,
-        reaction_count: 0 // Default value
+        id: comment.id,
+        body: comment.body,
+        user_id: comment.user_id,
+        type: 'comment',
+        date: comment.date,
+        name: comment.name,
+        reaction_count: 0,
+        reactions: {},
+        restacks: 0,
+        restacked: false,
+        children_count: 0,
+        language: 'en'
       },
       parentComments: []
     }

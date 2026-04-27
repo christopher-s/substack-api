@@ -16,7 +16,7 @@ export class Comment {
   ) {
     this.id = rawData.id
     this.body = rawData.body
-    this.isAdmin = rawData.author_is_admin
+    this.isAdmin = rawData.author_is_admin ?? undefined
     this.likesCount = (rawData as unknown as { reaction_count?: number; reactions?: Record<string, number> }).reaction_count ?? (rawData as unknown as { reaction_count?: number; reactions?: Record<string, number> }).reactions?.['❤'] ?? 0
   }
 }

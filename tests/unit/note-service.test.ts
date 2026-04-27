@@ -40,21 +40,35 @@ describe('NoteService', () => {
       // Verify the minimal SubstackNote structure
       expect(result).toEqual({
         entity_key: '123',
+        type: 'comment',
         context: {
+          type: 'comment',
           timestamp: '2023-01-01T00:00:00Z',
           users: [
             {
               id: 456,
               name: 'Test User',
               handle: '',
-              photo_url: ''
+              photo_url: '',
+              bestseller_tier: ''
             }
-          ]
+          ],
+          isFresh: false,
+          source: 'comment'
         },
         comment: {
           id: 123,
           body: 'Test note content',
-          reaction_count: 0
+          user_id: 456,
+          type: 'comment',
+          date: '2023-01-01T00:00:00Z',
+          name: 'Test User',
+          reaction_count: 0,
+          reactions: {},
+          restacks: 0,
+          restacked: false,
+          children_count: 0,
+          language: 'en'
         },
         parentComments: []
       })

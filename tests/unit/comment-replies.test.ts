@@ -30,9 +30,12 @@ describe('CommentService - getReplies', () => {
           },
           descendantComments: [
             {
-              id: 234075000,
-              body: 'Thanks!',
-              date: '2025-01-15T11:00:00Z'
+              type: 'comment',
+              comment: {
+                id: 234075000,
+                body: 'Thanks!',
+                date: '2025-01-15T11:00:00Z'
+              }
             }
           ]
         }

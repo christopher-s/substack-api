@@ -56,7 +56,7 @@ export class PreviewPost implements Post {
     this.publishedAt = new Date(rawData.post_date)
 
     // Extract author from publishedBylines if available
-    const byline = rawData.publishedBylines?.[0]
+    const byline = (rawData.publishedBylines as unknown as Array<{ id: number; name: string; handle: string; photo_url: string }> | null | undefined)?.[0]
     this.author = byline
       ? { id: byline.id, name: byline.name, handle: byline.handle, avatarUrl: byline.photo_url }
       : { id: 0, name: 'Unknown Author', handle: 'unknown', avatarUrl: '' }
@@ -149,7 +149,7 @@ export class FullPost implements Post {
     this.url = rawData.canonical_url
 
     // Extract author from publishedBylines if available
-    const byline = rawData.publishedBylines?.[0]
+    const byline = (rawData.publishedBylines as unknown as Array<{ id: number; name: string; handle: string; photo_url: string }> | null | undefined)?.[0]
     this.author = byline
       ? { id: byline.id, name: byline.name, handle: byline.handle, avatarUrl: byline.photo_url }
       : { id: 0, name: 'Unknown Author', handle: 'unknown', avatarUrl: '' }

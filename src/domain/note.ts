@@ -24,10 +24,10 @@ export class Note {
     this.id = rawData.entity_key
     this.body = rawData.comment?.body || ''
     this.likesCount = rawData.comment?.reaction_count || 0
-    this.publishedAt = new Date(rawData.context.timestamp)
+    this.publishedAt = new Date(rawData.context?.timestamp ?? Date.now())
 
     // Extract author info from context users
-    const firstUser = rawData.context.users[0]
+    const firstUser = rawData.context?.users[0]
     this.author = {
       id: firstUser?.id || 0,
       name: firstUser?.name || 'Unknown',
@@ -47,6 +47,15 @@ export class Note {
         const commentData = {
           id: parentComment.id,
           body: parentComment.body,
+          user_id: parentComment.user_id,
+          type: parentComment.type,
+          date: parentComment.date,
+          name: parentComment.name,
+          reaction_count: parentComment.reaction_count,
+          reactions: parentComment.reactions,
+          restacks: parentComment.restacks,
+          restacked: parentComment.restacked,
+          children_count: parentComment.children_count,
           author_is_admin: false // Not available in note comment format
         }
         yield new Comment(commentData, this.publicationClient)

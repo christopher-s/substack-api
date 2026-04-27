@@ -23,6 +23,6 @@ export interface SubstackNoteComment {
   restacked: boolean
   children_count: number
   attachments: SubstackAttachment[]
-  user_bestseller_tier?: number | null
+  user_bestseller_tier?: string | null
   user_primary_publication?: SubstackPublication
 }
