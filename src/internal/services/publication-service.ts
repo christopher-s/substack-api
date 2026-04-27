@@ -27,16 +27,31 @@ export class PublicationService {
    */
   async getHomepageData(): Promise<{
     newPosts: SubstackPublicationPost[]
+    pinnedPosts?: SubstackPublicationPost[]
+    sections?: unknown[]
+    publication?: unknown
   }> {
     const response = await this.publicationClient.get<{
       newPosts?: unknown[]
+      pinnedPosts?: unknown[]
+      sections?: unknown[]
+      publication?: unknown
     }>('/homepage_data')
 
     const posts = (response.newPosts || []).map((post, i) =>
       decodeOrThrow(SubstackPublicationPostCodec, post, `Homepage post ${i}`)
     )
 
-    return { newPosts: posts }
+    const pinned = (response.pinnedPosts || []).map((post, i) =>
+      decodeOrThrow(SubstackPublicationPostCodec, post, `Pinned post ${i}`)
+    )
+
+    return {
+      newPosts: posts,
+      pinnedPosts: pinned.length > 0 ? pinned : undefined,
+      sections: response.sections,
+      publication: response.publication
+    }
   }
 
   /**

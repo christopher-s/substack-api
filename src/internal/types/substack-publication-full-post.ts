@@ -1,6 +1,7 @@
 import * as t from 'io-ts'
 import { maybe } from '@substack-api/internal/types/helpers'
 import { SubstackPublicationPostCodec } from '@substack-api/internal/types/substack-publication-post'
+import { SubstackBylineCodec } from '@substack-api/internal/types/substack-byline'
 
 const SubstackPostTagCodec = t.type({
   id: t.number,
@@ -58,7 +59,7 @@ export const SubstackPublicationFullPostCodec = t.intersection([
     hasCashtag: maybe(t.boolean),
     comment_count: maybe(t.number),
     child_comment_count: maybe(t.number),
-    publishedBylines: maybe(t.array(t.unknown))
+    publishedBylines: maybe(t.array(SubstackBylineCodec))
   })
 ])
 
