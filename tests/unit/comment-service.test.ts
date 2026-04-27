@@ -132,4 +132,26 @@ describe('CommentService', () => {
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/reader/comment/123')
     })
   })
+
+  describe('getCommentsForPost pagination', () => {
+    it('should return more: true when API indicates more comments exist', async () => {
+      const mockComments = [
+        {
+          id: 1,
+          body: 'Comment 1'
+        },
+        {
+          id: 2,
+          body: 'Comment 2'
+        }
+      ]
+
+      mockPublicationClient.get.mockResolvedValue({ comments: mockComments, more: true })
+
+      const result = await commentService.getCommentsForPost(123)
+
+      expect(result.comments).toEqual(mockComments)
+      expect(result.more).toBe(true)
+    })
+  })
 })

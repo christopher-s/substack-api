@@ -178,5 +178,22 @@ describe('PostService', () => {
         /Post 1 in profile response/
       )
     })
+
+    it('should return nextCursor when present in response', async () => {
+      const mockPosts: SubstackPreviewPost[] = [
+        {
+          id: 1,
+          title: 'Post 1',
+          post_date: '2023-01-01T00:00:00Z'
+        }
+      ]
+
+      mockSubstackClient.get.mockResolvedValueOnce({ posts: mockPosts, nextCursor: 'cursor123' })
+
+      const result = await postService.getPostsForProfile(123, { limit: 10, offset: 0 })
+
+      expect(result.posts).toEqual(mockPosts)
+      expect(result.nextCursor).toBe('cursor123')
+    })
   })
 })

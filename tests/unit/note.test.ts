@@ -406,4 +406,84 @@ describe('Note Entity', () => {
       expect(note.publishedAt).toBeInstanceOf(Date)
     })
   })
+
+  describe('edge cases', () => {
+    it('should handle note with missing comment data', () => {
+      const noteWithoutComment = new Note(
+        {
+          entity_key: 'note-001',
+          type: 'note',
+          context: {
+            type: 'feed',
+            timestamp: '2023-01-01T00:00:00Z',
+            users: [
+              {
+                id: 1,
+                name: 'Test User',
+                handle: 'testuser',
+                photo_url: 'https://example.com/photo.jpg'
+              }
+            ]
+          }
+        },
+        mockPublicationClient
+      )
+
+      expect(noteWithoutComment.body).toBe('')
+      expect(noteWithoutComment.likesCount).toBe(0)
+      expect(noteWithoutComment.restacks).toBeUndefined()
+      expect(noteWithoutComment.reactions).toBeUndefined()
+      expect(noteWithoutComment.childrenCount).toBeUndefined()
+      expect(noteWithoutComment.type).toBe('note')
+    })
+
+    it('should handle note with missing context data', () => {
+      const noteWithoutContext = new Note(
+        {
+          entity_key: 'note-002',
+          type: 'note',
+          comment: {
+            id: 1,
+            body: 'Note body',
+            reaction_count: 5
+          }
+        },
+        mockPublicationClient
+      )
+
+      expect(noteWithoutContext.body).toBe('Note body')
+      expect(noteWithoutContext.likesCount).toBe(5)
+      expect(noteWithoutContext.author.name).toBe('Unknown')
+      expect(noteWithoutContext.author.handle).toBe('unknown')
+      expect(noteWithoutContext.publishedAt).toBeInstanceOf(Date)
+    })
+
+    it('should handle note with null comment fields', () => {
+      const noteWithNullComment = new Note(
+        {
+          entity_key: 'note-003',
+          type: 'note',
+          comment: {
+            id: 1,
+            body: 'Body',
+            reaction_count: null,
+            restacks: null,
+            reactions: null,
+            children_count: null
+          },
+          context: {
+            type: 'feed',
+            timestamp: '2023-01-01T00:00:00Z',
+            users: []
+          }
+        },
+        mockPublicationClient
+      )
+
+      expect(noteWithNullComment.likesCount).toBe(0)
+      expect(noteWithNullComment.restacks).toBeUndefined()
+      expect(noteWithNullComment.reactions).toBeUndefined()
+      expect(noteWithNullComment.childrenCount).toBeUndefined()
+    })
+  })
 })

@@ -623,5 +623,17 @@ describe('FullPost Entity', () => {
       // Test that comments method is available
       expect(typeof fullPost.comments).toBe('function')
     })
+
+    it('should throw when calling like()', async () => {
+      await expect(fullPost.like()).rejects.toThrow(
+        'Post liking is not supported by this version of the API'
+      )
+    })
+
+    it('should throw when calling addComment()', async () => {
+      await expect(fullPost.addComment({ body: 'Test' })).rejects.toThrow(
+        'Comment creation is not supported by this version of the API'
+      )
+    })
   })
 })

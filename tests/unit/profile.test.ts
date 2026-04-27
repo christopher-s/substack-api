@@ -17,6 +17,7 @@ describe('Profile Entity', () => {
   let mockNoteService: jest.Mocked<NoteService>
   let mockCommentService: jest.Mocked<CommentService>
   let profile: Profile
+  let mockProfileData: any
 
   beforeEach(() => {
     mockPublicationClient = {
@@ -47,7 +48,7 @@ describe('Profile Entity', () => {
       getCommentById: jest.fn()
     } as unknown as jest.Mocked<CommentService>
 
-    const mockProfileData = {
+    mockProfileData = {
       id: 123,
       handle: 'testuser',
       name: 'Test User',
@@ -934,6 +935,43 @@ describe('Profile Entity', () => {
       expect(mockNoteService.getNotesForProfile).toHaveBeenNthCalledWith(2, 123, {
         cursor: 'cursor1'
       })
+    })
+  })
+
+  describe('new profile fields', () => {
+    it('should handle primaryPublication with string id', () => {
+      const profileWithStringPubId = new Profile(
+        {
+          ...mockProfileData,
+          primaryPublication: {
+            id: '12345' as any,
+            name: 'Test Publication',
+            subdomain: 'testpub'
+          }
+        },
+        {
+          publicationClient: mockPublicationClient,
+          profileService: mockProfileService,
+          postService: mockPostService,
+          noteService: mockNoteService,
+          commentService: mockCommentService,
+          followingService: {} as unknown as FollowingService,
+          newNoteService: {} as unknown as NoteBuilderFactory,
+          perPage: 25
+        }
+      )
+
+      expect(profileWithStringPubId.primaryPublication).toEqual({
+        id: 12345,
+        name: 'Test Publication',
+        subdomain: 'testpub'
+      })
+    })
+
+    it('should expose subscriberCount, isFollowing, isSubscribed', () => {
+      expect(profile.subscriberCount).toBe(0)
+      expect(profile.isFollowing).toBe(false)
+      expect(profile.isSubscribed).toBe(false)
     })
   })
 })
