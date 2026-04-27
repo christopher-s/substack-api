@@ -42,6 +42,18 @@ export class PreviewPost implements Post {
     avatarUrl: string
   }
   public readonly publishedAt: Date
+  public readonly slug?: string
+  public readonly url?: string
+  public readonly coverImage?: string
+  public readonly reactions?: Record<string, number>
+  public readonly restacks?: number
+  public readonly postTags?: string[]
+  public readonly commentCount?: number
+  public readonly wordcount?: number
+  public readonly type?: string
+  public readonly audience?: string
+  public readonly description?: string
+  public readonly podcastUrl?: string
 
   private readonly deps: EntityDeps
 
@@ -54,6 +66,18 @@ export class PreviewPost implements Post {
     this.body = rawData.truncated_body_text || ''
     this.likesCount = rawData.reaction_count || 0
     this.publishedAt = new Date(rawData.post_date)
+    this.slug = rawData.slug || undefined
+    this.url = rawData.canonical_url || undefined
+    this.coverImage = rawData.cover_image || undefined
+    this.reactions = rawData.reactions || undefined
+    this.restacks = rawData.restacks || undefined
+    this.postTags = rawData.postTags?.map((tag) => tag.name) || undefined
+    this.commentCount = rawData.comment_count || undefined
+    this.wordcount = rawData.wordcount || undefined
+    this.type = rawData.type || undefined
+    this.audience = rawData.audience || undefined
+    this.description = rawData.description || undefined
+    this.podcastUrl = rawData.podcast_url || undefined
 
     // Extract author from publishedBylines if available
     const byline = (rawData.publishedBylines as unknown as Array<{ id: number; name: string; handle: string; photo_url: string }> | null | undefined)?.[0]
@@ -67,10 +91,10 @@ export class PreviewPost implements Post {
    */
   async *comments(options: { limit?: number } = {}): AsyncIterable<Comment> {
     try {
-      const commentsData = await this.deps.commentService.getCommentsForPost(this.id)
+      const response = await this.deps.commentService.getCommentsForPost(this.id)
 
       let count = 0
-      for (const commentData of commentsData) {
+      for (const commentData of response.comments) {
         if (options.limit && count >= options.limit) break
         yield new Comment(commentData, this.deps.publicationClient)
         count++
@@ -127,13 +151,19 @@ export class FullPost implements Post {
   }
   public readonly publishedAt: Date
   public readonly htmlBody: string
-  public readonly slug: string
+  public readonly slug?: string
   public readonly createdAt: Date
   public readonly reactions?: Record<string, number>
   public readonly restacks?: number
   public readonly postTags?: string[]
   public readonly coverImage?: string
-  public readonly url: string
+  public readonly url?: string
+  public readonly commentCount?: number
+  public readonly wordcount?: number
+  public readonly type?: string
+  public readonly audience?: string
+  public readonly description?: string
+  public readonly podcastUrl?: string
 
   private readonly deps: EntityDeps
 
@@ -146,7 +176,7 @@ export class FullPost implements Post {
     this.body = rawData.body_html || rawData.htmlBody || rawData.truncated_body_text || ''
     this.likesCount = rawData.reaction_count || 0
     this.publishedAt = new Date(rawData.post_date)
-    this.url = rawData.canonical_url
+    this.url = rawData.canonical_url || undefined
 
     // Extract author from publishedBylines if available
     const byline = (rawData.publishedBylines as unknown as Array<{ id: number; name: string; handle: string; photo_url: string }> | null | undefined)?.[0]
@@ -156,12 +186,18 @@ export class FullPost implements Post {
 
     // Prefer body_html from the full post response, fall back to htmlBody for backward compatibility
     this.htmlBody = rawData.body_html || rawData.htmlBody || ''
-    this.slug = rawData.slug
+    this.slug = rawData.slug || undefined
     this.createdAt = new Date(rawData.post_date)
-    this.reactions = rawData.reactions
-    this.restacks = rawData.restacks
-    this.postTags = rawData.postTags
-    this.coverImage = rawData.cover_image
+    this.reactions = rawData.reactions || undefined
+    this.restacks = rawData.restacks || undefined
+    this.postTags = rawData.postTags || undefined
+    this.coverImage = rawData.cover_image || undefined
+    this.commentCount = rawData.comment_count || undefined
+    this.wordcount = rawData.wordcount || undefined
+    this.type = rawData.type || undefined
+    this.audience = rawData.audience || undefined
+    this.description = rawData.description || undefined
+    this.podcastUrl = rawData.podcast_url || undefined
   }
 
   /**
@@ -169,10 +205,10 @@ export class FullPost implements Post {
    */
   async *comments(options: { limit?: number } = {}): AsyncIterable<Comment> {
     try {
-      const commentsData = await this.deps.commentService.getCommentsForPost(this.id)
+      const response = await this.deps.commentService.getCommentsForPost(this.id)
 
       let count = 0
-      for (const commentData of commentsData) {
+      for (const commentData of response.comments) {
         if (options.limit && count >= options.limit) break
         yield new Comment(commentData, this.deps.publicationClient)
         count++

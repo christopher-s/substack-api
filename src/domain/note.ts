@@ -9,6 +9,10 @@ export class Note {
   public readonly id: string
   public readonly body: string
   public readonly likesCount: number
+  public readonly restacks?: number
+  public readonly reactions?: Record<string, number>
+  public readonly childrenCount?: number
+  public readonly type?: string
   public readonly author: {
     id: number
     name: string
@@ -24,6 +28,10 @@ export class Note {
     this.id = rawData.entity_key
     this.body = rawData.comment?.body || ''
     this.likesCount = rawData.comment?.reaction_count || 0
+    this.restacks = rawData.comment?.restacks || undefined
+    this.reactions = rawData.comment?.reactions || undefined
+    this.childrenCount = rawData.comment?.children_count || undefined
+    this.type = rawData.comment?.type || rawData.type || undefined
     this.publishedAt = new Date(rawData.context?.timestamp ?? Date.now())
 
     // Extract author info from context users

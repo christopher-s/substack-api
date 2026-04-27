@@ -7,6 +7,14 @@ import type { HttpClient } from '@substack-api/internal/http-client'
 export class Comment {
   public readonly id: number
   public readonly body: string
+  public readonly userId?: number
+  public readonly name?: string
+  public readonly photoUrl?: string
+  public readonly date?: string
+  public readonly reactionCount?: number
+  public readonly reactions?: Record<string, number>
+  public readonly restacks?: number
+  public readonly childrenCount?: number
   public readonly isAdmin?: boolean
   public readonly likesCount?: number
 
@@ -16,7 +24,15 @@ export class Comment {
   ) {
     this.id = rawData.id
     this.body = rawData.body
+    this.userId = rawData.user_id ?? undefined
+    this.name = rawData.name ?? undefined
+    this.photoUrl = rawData.photo_url ?? undefined
+    this.date = rawData.date ?? undefined
+    this.reactionCount = rawData.reaction_count ?? undefined
+    this.reactions = rawData.reactions ?? undefined
+    this.restacks = rawData.restacks ?? undefined
+    this.childrenCount = rawData.children_count ?? undefined
     this.isAdmin = rawData.author_is_admin ?? undefined
-    this.likesCount = (rawData as unknown as { reaction_count?: number; reactions?: Record<string, number> }).reaction_count ?? (rawData as unknown as { reaction_count?: number; reactions?: Record<string, number> }).reactions?.['❤'] ?? 0
+    this.likesCount = rawData.reaction_count ?? rawData.reactions?.['❤'] ?? 0
   }
 }

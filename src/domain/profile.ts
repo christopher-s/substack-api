@@ -14,6 +14,10 @@ export class Profile {
   public readonly url: string
   public readonly avatarUrl: string
   public readonly bio: string | null | undefined
+  public readonly subscriberCount?: number
+  public readonly primaryPublication?: { id: number; name: string; subdomain: string }
+  public readonly isFollowing?: boolean
+  public readonly isSubscribed?: boolean
 
   constructor(
     protected readonly rawData: SubstackPublicProfile | SubstackFullProfile,
@@ -28,6 +32,32 @@ export class Profile {
     this.url = `https://substack.com/@${this.handle}`
     this.avatarUrl = rawData.photo_url
     this.bio = rawData.bio
+
+    // Expose fields available on full profile responses
+    this.subscriberCount =
+      (rawData as SubstackPublicProfile).subscriberCountNumber ??
+      (rawData as SubstackFullProfile).subscriberCountNumber ??
+      undefined
+    this.isFollowing =
+      (rawData as SubstackPublicProfile).isFollowing ??
+      (rawData as SubstackFullProfile).isFollowing ??
+      undefined
+    this.isSubscribed =
+      (rawData as SubstackPublicProfile).isSubscribed ??
+      (rawData as SubstackFullProfile).isSubscribed ??
+      undefined
+
+    const pub =
+      (rawData as SubstackPublicProfile).primaryPublication ??
+      (rawData as SubstackFullProfile).primaryPublication ??
+      undefined
+    if (pub && pub.id != null && pub.name && pub.subdomain) {
+      this.primaryPublication = {
+        id: typeof pub.id === 'number' ? pub.id : Number(pub.id),
+        name: pub.name,
+        subdomain: pub.subdomain
+      }
+    }
   }
 
   /**
@@ -38,16 +68,16 @@ export class Profile {
     let totalYielded = 0
 
     while (true) {
-      const postsData = await this.deps.postService.getPostsForProfile(this.id, {
+      const response = await this.deps.postService.getPostsForProfile(this.id, {
         limit: this.deps.perPage,
         offset
       })
 
-      if (!postsData) {
+      if (!response.posts || response.posts.length === 0) {
         break // No more posts to fetch
       }
 
-      for (const postData of postsData) {
+      for (const postData of response.posts) {
         if (options.limit && totalYielded >= options.limit) {
           return // Stop if we've reached the requested limit
         }
@@ -55,8 +85,8 @@ export class Profile {
         totalYielded++
       }
 
-      // If we got fewer posts than requested, we've reached the end
-      if (postsData.length < this.deps.perPage) {
+      // If we got fewer posts than requested or there's no next cursor, we've reached the end
+      if (response.posts.length < this.deps.perPage || !response.nextCursor) {
         break
       }
 

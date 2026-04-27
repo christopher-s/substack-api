@@ -42,7 +42,7 @@ describe('CommentService', () => {
       const result = await commentService.getCommentsForPost(123)
 
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/post/123/comments')
-      expect(result).toEqual(mockComments)
+      expect(result).toEqual({ comments: mockComments, more: false })
     })
 
     it('should return empty array when no comments exist', async () => {
@@ -52,7 +52,7 @@ describe('CommentService', () => {
       const result = await commentService.getCommentsForPost(123)
 
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/post/123/comments')
-      expect(result).toEqual([])
+      expect(result).toEqual({ comments: [], more: false })
     })
 
     it('should return empty array when comments field is null', async () => {
@@ -62,7 +62,7 @@ describe('CommentService', () => {
       const result = await commentService.getCommentsForPost(123)
 
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/post/123/comments')
-      expect(result).toEqual([])
+      expect(result).toEqual({ comments: [], more: false })
     })
 
     it('should throw error when request fails', async () => {

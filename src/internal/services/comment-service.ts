@@ -23,17 +23,20 @@ export class CommentService {
    * @returns Promise<SubstackComment[]> - Raw comment data from API (validated)
    * @throws {Error} When comments cannot be retrieved or validation fails
    */
-  async getCommentsForPost(postId: number): Promise<SubstackComment[]> {
-    const response = await this.publicationClient.get<{ comments?: unknown[] }>(
-      `/post/${postId}/comments`
-    )
+  async getCommentsForPost(postId: number): Promise<{ comments: SubstackComment[]; more: boolean }> {
+    const response = await this.publicationClient.get<{
+      comments?: unknown[]
+      more?: boolean
+    }>(`/post/${postId}/comments`)
 
     const comments = response.comments || []
 
     // Validate each comment with io-ts
-    return comments.map((comment, index) =>
+    const validatedComments = comments.map((comment, index) =>
       decodeOrThrow(SubstackCommentCodec, comment, `Comment ${index} in post response`)
     )
+
+    return { comments: validatedComments, more: response.more ?? false }
   }
 
   /**

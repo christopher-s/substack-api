@@ -115,7 +115,7 @@ describe('Profile Entity', () => {
           type: 'newsletter' as const
         }
       ]
-      mockPostService.getPostsForProfile.mockResolvedValue(mockPosts)
+      mockPostService.getPostsForProfile.mockResolvedValue({ posts: mockPosts, nextCursor: null })
 
       const posts = []
       for await (const post of profile.posts({ limit: 2 })) {
@@ -151,7 +151,7 @@ describe('Profile Entity', () => {
           type: 'newsletter' as const
         }
       ]
-      mockPostService.getPostsForProfile.mockResolvedValue(mockPosts)
+      mockPostService.getPostsForProfile.mockResolvedValue({ posts: mockPosts, nextCursor: null })
 
       const posts = []
       for await (const post of profile.posts({ limit: 1 })) {
@@ -163,8 +163,7 @@ describe('Profile Entity', () => {
     })
 
     it('should handle empty posts response', async () => {
-      const mockResponse = { posts: [] }
-      mockPublicationClient.get.mockResolvedValue(mockResponse)
+      mockPostService.getPostsForProfile.mockResolvedValue({ posts: [], nextCursor: null })
 
       const posts = []
       for await (const post of profile.posts()) {
@@ -175,8 +174,7 @@ describe('Profile Entity', () => {
     })
 
     it('should handle missing posts property', async () => {
-      const mockResponse = {}
-      mockPublicationClient.get.mockResolvedValue(mockResponse)
+      mockPostService.getPostsForProfile.mockResolvedValue({ posts: [], nextCursor: null })
 
       const posts = []
       for await (const post of profile.posts()) {
@@ -270,9 +268,9 @@ describe('Profile Entity', () => {
 
       // Setup sequential responses for pagination
       mockPostService.getPostsForProfile
-        .mockResolvedValueOnce(firstPagePosts) // offset=0, returns 2 posts (full page)
-        .mockResolvedValueOnce(secondPagePosts) // offset=2, returns 2 posts (full page)
-        .mockResolvedValueOnce(thirdPagePosts) // offset=4, returns 1 post (partial page - end)
+        .mockResolvedValueOnce({ posts: firstPagePosts, nextCursor: 'cursor2' }) // offset=0, returns 2 posts (full page)
+        .mockResolvedValueOnce({ posts: secondPagePosts, nextCursor: 'cursor3' }) // offset=2, returns 2 posts (full page)
+        .mockResolvedValueOnce({ posts: thirdPagePosts, nextCursor: null }) // offset=4, returns 1 post (partial page - end)
 
       const posts = []
       for await (const post of profileWithCustomPerPage.posts()) {

@@ -126,7 +126,7 @@ describe('PreviewPost Entity', () => {
           name: 'User 2'
         }
       ]
-      mockCommentService.getCommentsForPost.mockResolvedValue(mockComments)
+      mockCommentService.getCommentsForPost.mockResolvedValue({ comments: mockComments, more: false })
 
       const comments = []
       for await (const comment of post.comments({ limit: 2 })) {
@@ -159,7 +159,7 @@ describe('PreviewPost Entity', () => {
           name: 'User 2'
         }
       ]
-      mockCommentService.getCommentsForPost.mockResolvedValue(mockComments)
+      mockCommentService.getCommentsForPost.mockResolvedValue({ comments: mockComments, more: false })
 
       const comments = []
       for await (const comment of post.comments({ limit: 1 })) {
@@ -171,7 +171,7 @@ describe('PreviewPost Entity', () => {
     })
 
     it('should handle empty comments response', async () => {
-      mockCommentService.getCommentsForPost.mockResolvedValue([])
+      mockCommentService.getCommentsForPost.mockResolvedValue({ comments: [], more: false })
 
       const comments = []
       for await (const comment of post.comments()) {
@@ -182,7 +182,7 @@ describe('PreviewPost Entity', () => {
     })
 
     it('should handle missing comments property', async () => {
-      mockCommentService.getCommentsForPost.mockResolvedValue([])
+      mockCommentService.getCommentsForPost.mockResolvedValue({ comments: [], more: false })
 
       const comments = []
       for await (const comment of post.comments()) {
@@ -597,7 +597,7 @@ describe('FullPost Entity', () => {
           name: 'Commenter 2'
         }
       ]
-      mockCommentService.getCommentsForPost.mockResolvedValue(mockComments)
+      mockCommentService.getCommentsForPost.mockResolvedValue({ comments: mockComments, more: false })
 
       const comments = []
       for await (const comment of fullPost.comments({ limit: 2 })) {

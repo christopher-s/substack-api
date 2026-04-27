@@ -66,16 +66,24 @@ export class PostService {
   async getPostsForProfile(
     profileId: number,
     options: { limit: number; offset: number }
-  ): Promise<Array<SubstackPreviewPost>> {
-    const response = await this.substackClient.get<{ posts: unknown[] }>(
+  ): Promise<{
+    posts: SubstackPreviewPost[]
+    nextCursor?: string | null
+  }> {
+    const response = await this.substackClient.get<{
+      posts?: unknown[]
+      nextCursor?: string | null
+    }>(
       `/profile/posts?profile_user_id=${profileId}&limit=${options.limit}&offset=${options.offset}`
     )
 
     const posts = response.posts || []
 
     // Validate each post with io-ts
-    return posts.map((post, index) =>
+    const validatedPosts = posts.map((post, index) =>
       decodeOrThrow(SubstackPreviewPostCodec, post, `Post ${index} in profile response`)
     )
+
+    return { posts: validatedPosts, nextCursor: response.nextCursor }
   }
 }
