@@ -13,7 +13,7 @@ export class Profile {
   public readonly name: string
   public readonly url: string
   public readonly avatarUrl: string
-  public readonly bio?: string
+  public readonly bio: string | null | undefined
 
   constructor(
     protected readonly rawData: SubstackPublicProfile | SubstackFullProfile,

@@ -16,12 +16,12 @@ export class Category {
   }>
 
   constructor(rawData: SubstackCategory) {
-    this.id = rawData.id
+    this.id = Number(rawData.id)
     this.name = rawData.name
     this.slug = rawData.slug
     this.rank = rawData.rank
-    this.subcategories = rawData.subcategories.map((sub) => ({
-      id: sub.id,
+    this.subcategories = (rawData.subcategories || []).map((sub) => ({
+      id: Number(sub.id),
       name: sub.name,
       slug: sub.slug,
       rank: sub.rank

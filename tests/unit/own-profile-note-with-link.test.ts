@@ -7,7 +7,7 @@ import {
   NoteService,
   FollowingService,
   CommentService,
-  NewNoteService
+  NoteBuilderFactory
 } from '@substack-api/internal/services'
 
 // Mock dependencies
@@ -20,7 +20,7 @@ const MockPostService = PostService as jest.MockedClass<typeof PostService>
 const MockNoteService = NoteService as jest.MockedClass<typeof NoteService>
 const MockCommentService = CommentService as jest.MockedClass<typeof CommentService>
 const MockFollowingService = FollowingService as jest.MockedClass<typeof FollowingService>
-const MockNewNoteService = NewNoteService as jest.MockedClass<typeof NewNoteService>
+const MockNoteBuilderFactory = NoteBuilderFactory as jest.MockedClass<typeof NoteBuilderFactory>
 
 describe('OwnProfile - newNoteWithLink', () => {
   let mockClient: jest.Mocked<HttpClient>
@@ -29,7 +29,7 @@ describe('OwnProfile - newNoteWithLink', () => {
   let mockNoteService: jest.Mocked<NoteService>
   let mockCommentService: jest.Mocked<CommentService>
   let mockFollowingService: jest.Mocked<FollowingService>
-  let mockNewNoteService: jest.Mocked<NewNoteService>
+  let mockNoteBuilderFactory: jest.Mocked<NoteBuilderFactory>
   let ownProfile: OwnProfile
 
   const mockProfileData = {
@@ -108,14 +108,14 @@ describe('OwnProfile - newNoteWithLink', () => {
       mockClient,
       mockClient
     ) as jest.Mocked<FollowingService>
-    mockNewNoteService = new MockNewNoteService(mockClient) as jest.Mocked<NewNoteService>
+    mockNoteBuilderFactory = new MockNoteBuilderFactory(mockClient) as jest.Mocked<NoteBuilderFactory>
 
-    // Setup mock implementations for NewNoteService methods
-    mockNewNoteService.newNote = jest.fn().mockImplementation(() => {
+    // Setup mock implementations for NoteBuilderFactory methods
+    mockNoteBuilderFactory.newNote = jest.fn().mockImplementation(() => {
       const { NoteBuilder } = jest.requireActual('@substack-api/domain/note-builder')
       return new NoteBuilder(mockClient)
     })
-    mockNewNoteService.newNoteWithLink = jest.fn().mockImplementation((link: string) => {
+    mockNoteBuilderFactory.newNoteWithLink = jest.fn().mockImplementation((link: string) => {
       const { NoteWithLinkBuilder } = jest.requireActual('@substack-api/domain/note-builder')
       return new NoteWithLinkBuilder(mockClient, link)
     })
@@ -129,7 +129,7 @@ describe('OwnProfile - newNoteWithLink', () => {
         noteService: mockNoteService,
         commentService: mockCommentService,
         followingService: mockFollowingService,
-        newNoteService: mockNewNoteService,
+        newNoteService: mockNoteBuilderFactory,
         perPage: 25
       },
       'testuser'

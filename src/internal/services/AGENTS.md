@@ -18,7 +18,7 @@ The services layer handles HTTP communication with the Substack API. Each servic
 | `comment-service.ts` | `CommentService` | `getCommentsForPost(postId)`, `getCommentById(id)` | Fetches comments for a post or a single comment by ID |
 | `following-service.ts` | `FollowingService` | `getFollowing()`, `getOwnId()` | Retrieves the authenticated user's following list; `getOwnId()` resolves the current user ID |
 | `connectivity-service.ts` | `ConnectivityService` | `isConnected()` | Lightweight connectivity check via a PUT to `/user-setting` |
-| `new-note-service.ts` | `NewNoteService` | `newNote()`, `newNoteWithLink(link)` | Factory for `NoteBuilder` and `NoteWithLinkBuilder` instances |
+| `new-note-service.ts` | `NoteBuilderFactory` | `newNote()`, `newNoteWithLink(link)` | Factory for `NoteBuilder` and `NoteWithLinkBuilder` instances |
 
 ## For AI Agents
 
@@ -41,7 +41,7 @@ The services layer handles HTTP communication with the Substack API. Each servic
 - **Constructor injection**: All services accept `HttpClient` (or multiple clients) via `private readonly` constructor parameters.
 - **`decodeOrThrow`**: Standard pattern for io-ts validation -- decodes raw API data and throws a descriptive `Error` on failure.
 - **Pagination**: Note methods use cursor-based pagination via an optional `cursor` parameter, returning `PaginatedSubstackNotes` with `notes` and `nextCursor`.
-- **Builder factory**: `NewNoteService` does not perform HTTP calls itself; it returns builder instances (`NoteBuilder`, `NoteWithLinkBuilder`) that handle the actual note creation.
+- **Builder factory**: `NoteBuilderFactory` does not perform HTTP calls itself; it returns builder instances (`NoteBuilder`, `NoteWithLinkBuilder`) that handle the actual note creation.
 - **Error handling**: Services throw plain `Error` objects with descriptive messages. They do not catch or wrap errors from the HTTP layer.
 
 ## Dependencies
@@ -49,5 +49,5 @@ The services layer handles HTTP communication with the Substack API. Each servic
 - **`@substack-api/internal/http-client`**: `HttpClient` type used for all HTTP operations.
 - **`@substack-api/internal/types`**: io-ts codecs (`SubstackFullPostCodec`, `SubstackPreviewPostCodec`, `SubstackCommentCodec`, `SubstackCommentResponseCodec`, `SubstackFullProfileCodec`, `SubstackUserProfileCodec`, `PotentialHandlesCodec`, `SubscriberLists`) and corresponding type definitions.
 - **`@substack-api/internal/validation`**: `decodeOrThrow` helper for runtime validation.
-- **`@substack-api/domain/note-builder`**: `NoteBuilder` and `NoteWithLinkBuilder` classes used by `NewNoteService`.
+- **`@substack-api/domain/note-builder`**: `NoteBuilder` and `NoteWithLinkBuilder` classes used by `NoteBuilderFactory`.
 - **`fp-ts/Either`** and **`io-ts/PathReporter`**: Used by `FollowingService` for manual codec validation.

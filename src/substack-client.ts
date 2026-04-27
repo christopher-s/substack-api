@@ -14,7 +14,7 @@ import {
   ConnectivityService,
   DiscoveryService,
   FollowingService,
-  NewNoteService,
+  NoteBuilderFactory,
   NoteService,
   PostService,
   ProfileService,
@@ -34,6 +34,9 @@ import type {
 } from '@substack-api/internal/types'
 import type { SubstackConfig } from '@substack-api/types'
 
+const DEFAULT_PER_PAGE = 25
+const DEFAULT_MAX_RPS = 25
+
 /**
  * Modern SubstackClient with entity-based API
  *
@@ -50,7 +53,7 @@ export class SubstackClient {
   private readonly commentService: CommentService
   private readonly followingService: FollowingService
   private readonly connectivityService: ConnectivityService
-  private readonly newNoteService: NewNoteService
+  private readonly newNoteService: NoteBuilderFactory
   private readonly discoveryService: DiscoveryService
   private readonly publicationService: PublicationService
   private readonly perPage: number
@@ -84,8 +87,8 @@ export class SubstackClient {
     const urlPrefix = config.urlPrefix !== undefined ? config.urlPrefix : 'api/v1'
 
     // Store configuration
-    this.perPage = config.perPage || 25
-    const maxRequestsPerSecond = config.maxRequestsPerSecond || 25
+    this.perPage = config.perPage || DEFAULT_PER_PAGE
+    const maxRequestsPerSecond = config.maxRequestsPerSecond || DEFAULT_MAX_RPS
 
     // Construct full base URL for publication-specific endpoints
     const publicationBaseUrl = urlPrefix
@@ -106,7 +109,7 @@ export class SubstackClient {
     this.commentService = new CommentService(this.publicationClient, this.substackClient)
     this.followingService = new FollowingService(this.publicationClient, this.substackClient)
     this.connectivityService = new ConnectivityService(this.substackClient)
-    this.newNoteService = new NewNoteService(this.substackClient)
+    this.newNoteService = new NoteBuilderFactory(this.substackClient)
     this.discoveryService = new DiscoveryService(this.substackClient)
     this.publicationService = new PublicationService(this.publicationClient)
   }
@@ -249,7 +252,7 @@ export class SubstackClient {
     while (true) {
       const response = await this.commentService.getReplies(commentId, { cursor })
       yield response
-      totalYielded += response.commentBranches.length
+      totalYielded += response.commentBranches?.length ?? 0
 
       if (options.limit && totalYielded >= options.limit) return
       if (!response.nextCursor) break

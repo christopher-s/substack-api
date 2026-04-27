@@ -16,7 +16,7 @@ Entities are instantiated by the service layer (`src/internal/services/`) and re
 |------|-----------|-------------|
 | `index.ts` | Re-exports all entities, builders, and types | Barrel file that serves as the public API surface for the domain layer. Consumers import from `@substack-api/domain` which resolves here. |
 | `profile.ts` | `Profile` | Read-only user profile entity. Exposes `id`, `slug`, `handle`, `name`, `url`, `avatarUrl`, and `bio`. Provides async iterators `posts()` (offset-based pagination) and `notes()` (cursor-based pagination) that yield `PreviewPost` and `Note` instances respectively. Accepts injected services for posts, notes, comments, and profiles. |
-| `own-profile.ts` | `OwnProfile` | Authenticated user profile extending `Profile` with write capabilities. Adds `newNote()` (returns a `NoteBuilder`), `newNoteWithLink()` (returns a `NoteWithLinkBuilder` for link-attached notes), `following()` (async iterator of `Profile` for followed users), and overrides `notes()` to use an authenticated cursor-based endpoint. Requires additional `FollowingService` and `NewNoteService` dependencies. |
+| `own-profile.ts` | `OwnProfile` | Authenticated user profile extending `Profile` with write capabilities. Adds `newNote()` (returns a `NoteBuilder`), `newNoteWithLink()` (returns a `NoteWithLinkBuilder` for link-attached notes), `following()` (async iterator of `Profile` for followed users), and overrides `notes()` to use an authenticated cursor-based endpoint. Requires additional `FollowingService` and `NoteBuilderFactory` dependencies. |
 | `post.ts` | `PreviewPost`, `FullPost`, `Post` (interface) | `Post` interface defines the shared contract (`id`, `title`, `subtitle`, `body`, `comments()`, `like()`, `addComment()`). `PreviewPost` holds truncated content from list endpoints and exposes `fullPost()` to lazily fetch the `FullPost` with complete HTML body, slug, reactions, restacks, tags, and cover image. Both implement async `comments()` iterators yielding `Comment` entities. |
 | `note.ts` | `Note` | Note entity representing a Substack note. Extracts `id` (from `entity_key`), `body`, `likesCount`, `author`, and `publishedAt` from raw `SubstackNote` data. Provides `comments()` async iterator over parent comments and stub methods `like()` and `addComment()` (not yet implemented). |
 | `comment.ts` | `Comment` | Comment entity with `id`, `body`, `isAdmin`, and `likesCount` fields. A simple data wrapper around `SubstackComment` with no methods. `likesCount` is currently a TODO placeholder. |
@@ -29,7 +29,7 @@ Entities are instantiated by the service layer (`src/internal/services/`) and re
 - Entities receive raw API data (`SubstackNote`, `SubstackPreviewPost`, etc.) and injected services via constructors. They do not make direct HTTP calls -- they delegate to services.
 - All pagination uses async iterators (`AsyncIterable<T>`). Posts use offset-based pagination; notes use cursor-based pagination. Both accept an optional `limit` option.
 - The `NoteBuilder` hierarchy uses immutable builder pattern: every method returns a new instance carrying the accumulated state. To finalize, call `build()` (returns the request payload) or `publish()` (posts to the API).
-- `OwnProfile` extends `Profile` via class inheritance. It passes all parent dependencies through `super()` and adds its own services (`FollowingService`, `NewNoteService`).
+- `OwnProfile` extends `Profile` via class inheritance. It passes all parent dependencies through `super()` and adds its own services (`FollowingService`, `NoteBuilderFactory`).
 - Several fields are marked TODO (e.g., `likesCount` on `PreviewPost` and `Comment`, author extraction on posts). Do not assume these are fully wired.
 
 ### Testing Requirements
@@ -52,7 +52,7 @@ Entities are instantiated by the service layer (`src/internal/services/`) and re
 | From | To | Usage |
 |------|----|-------|
 | All entities | `@substack-api/internal/http-client` | `HttpClient` for authenticated API requests |
-| `Profile`, `OwnProfile` | `@substack-api/internal/services` (`ProfileService`, `PostService`, `NoteService`, `CommentService`, `FollowingService`, `NewNoteService`) | Delegated data fetching and pagination |
+| `Profile`, `OwnProfile` | `@substack-api/internal/services` (`ProfileService`, `PostService`, `NoteService`, `CommentService`, `FollowingService`, `NoteBuilderFactory`) | Delegated data fetching and pagination |
 | `PreviewPost`, `FullPost` | `@substack-api/internal/services` (`PostService`, `CommentService`) | Post retrieval and comment fetching |
 | All entities | `@substack-api/internal` types | Raw data type definitions (`SubstackPublicProfile`, `SubstackNote`, `SubstackPreviewPost`, etc.) |
 | `Note`, `PreviewPost`, `FullPost` | `@substack-api/domain/comment` | Instantiating `Comment` entities from raw comment data |

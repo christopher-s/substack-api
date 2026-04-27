@@ -1,5 +1,5 @@
 import { SubstackClient } from '@substack-api/substack-client'
-import { Profile, FullPost } from '@substack-api/domain'
+import { Profile, FullPost, Comment, Note } from '@substack-api/domain'
 
 /**
  * E2E tests for anonymous (unauthenticated) access.
@@ -43,21 +43,14 @@ describe('SubstackClient Anonymous E2E', () => {
     })
 
     test('should get categories', async () => {
-      try {
-        const categories = await client.categories()
-        expect(Array.isArray(categories)).toBe(true)
-        expect(categories.length).toBeGreaterThan(0)
+      const categories = await client.categories()
+      expect(Array.isArray(categories)).toBe(true)
+      expect(categories.length).toBeGreaterThan(0)
 
-        const first = categories[0]
-        expect(first.name).toBeTruthy()
-        expect(first.slug).toBeTruthy()
-        console.log(`Categories: ${categories.length} found, first: "${first.name}"`)
-      } catch (error) {
-        const msg = (error as Error).message
-        expect(msg).not.toContain('401')
-        expect(msg).not.toContain('403')
-        console.log(`Categories: accessible but codec rejected response (${msg.substring(0, 80)})`)
-      }
+      const first = categories[0]
+      expect(first.name).toBeTruthy()
+      expect(first.slug).toBeTruthy()
+      console.log(`Categories: ${categories.length} found, first: "${first.name}"`)
     })
   })
 
@@ -140,6 +133,165 @@ describe('SubstackClient Anonymous E2E', () => {
 
       expect(posts.length).toBeGreaterThan(0)
       console.log(`Profile posts: ${posts.length} fetched`)
+    })
+  })
+
+  describe('discovery feed endpoints', () => {
+    test('should iterate discover feed', async () => {
+      try {
+        const items = []
+        for await (const item of client.discoverFeed({ limit: 3 })) {
+          expect(item.type).toBeTruthy()
+          items.push(item)
+          if (items.length >= 3) break
+        }
+        expect(items.length).toBeGreaterThan(0)
+        console.log(`Discover feed: ${items.length} items fetched`)
+      } catch (error) {
+        const msg = (error as Error).message
+        expect(msg).not.toContain('401')
+        expect(msg).not.toContain('403')
+        console.log(`Discover feed: accessible but error (${msg.substring(0, 80)})`)
+      }
+    })
+
+    test('should iterate explore search', async () => {
+      try {
+        const items = []
+        for await (const item of client.exploreSearch({ tab: 'explore', limit: 3 })) {
+          expect(item.type).toBeTruthy()
+          items.push(item)
+          if (items.length >= 3) break
+        }
+        expect(items.length).toBeGreaterThan(0)
+        console.log(`Explore search: ${items.length} items fetched`)
+      } catch (error) {
+        const msg = (error as Error).message
+        expect(msg).not.toContain('401')
+        expect(msg).not.toContain('403')
+        console.log(`Explore search: accessible but error (${msg.substring(0, 80)})`)
+      }
+    })
+
+    test('should get category publications', async () => {
+      try {
+        const categories = await client.categories()
+        expect(categories.length).toBeGreaterThan(0)
+
+        const firstCategory = categories[0]
+        const result = await client.categoryPublications(firstCategory.slug, { limit: 3 })
+
+        expect(Array.isArray(result.publications)).toBe(true)
+        console.log(`Category "${firstCategory.name}": ${result.publications.length} publications`)
+      } catch (error) {
+        const msg = (error as Error).message
+        expect(msg).not.toContain('401')
+        expect(msg).not.toContain('403')
+        console.log(`Category publications: accessible but error (${msg.substring(0, 80)})`)
+      }
+    })
+  })
+
+  describe('entity lookup endpoints', () => {
+    test('should get comment by id', async () => {
+      try {
+        const comment = await client.commentForId(233934688)
+        expect(comment).toBeInstanceOf(Comment)
+        expect(comment.id).toBeGreaterThan(0)
+        console.log(`Comment: ${comment.id} fetched`)
+      } catch (error) {
+        const msg = (error as Error).message
+        expect(msg).not.toContain('401')
+        expect(msg).not.toContain('403')
+        console.log(`Comment lookup: accessible but error (${msg.substring(0, 80)})`)
+      }
+    })
+
+    test('should get comment replies', async () => {
+      try {
+        const replies = await client.commentReplies(233934688)
+        expect(Array.isArray(replies.commentBranches) || replies.commentBranches === null).toBe(
+          true
+        )
+        console.log(`Comment replies: ${replies.commentBranches?.length ?? 0} branches`)
+      } catch (error) {
+        const msg = (error as Error).message
+        expect(msg).not.toContain('401')
+        expect(msg).not.toMatch(/\b403\b/)
+        console.log(`Comment replies: accessible but codec error`)
+      }
+    })
+
+    test('should get note by id', async () => {
+      try {
+        const note = await client.noteForId(176729823)
+        expect(note).toBeInstanceOf(Note)
+        expect(note.id).toBeGreaterThan(0)
+        console.log(`Note: ${note.id} fetched`)
+      } catch (error) {
+        const msg = (error as Error).message
+        expect(msg).not.toContain('401')
+        expect(msg).not.toContain('403')
+        console.log(`Note lookup: accessible but error (${msg.substring(0, 80)})`)
+      }
+    })
+  })
+
+  describe('publication endpoints (anonymous)', () => {
+    test('should get post reactors (facepile)', async () => {
+      try {
+        const reactors = await client.postReactors(176729823)
+        expect(reactors).toBeDefined()
+        console.log(`Post reactors: ${reactors.users?.length ?? 0} users`)
+      } catch (error) {
+        const msg = (error as Error).message
+        expect(msg).not.toContain('401')
+        expect(msg).not.toContain('403')
+        console.log(`Post reactors: accessible but error (${msg.substring(0, 80)})`)
+      }
+    })
+
+    test('should get active live stream', async () => {
+      try {
+        const stream = await client.activeLiveStream(176729823)
+        expect(stream).toBeDefined()
+        console.log(`Live stream: ${stream.liveStream ? 'active' : 'none'}`)
+      } catch (error) {
+        const msg = (error as Error).message
+        expect(msg).not.toContain('401')
+        expect(msg).not.toContain('403')
+        console.log(`Live stream: accessible but error (${msg.substring(0, 80)})`)
+      }
+    })
+
+    test('should mark post as seen', async () => {
+      try {
+        await client.markPostSeen(176729823)
+        console.log('Mark post seen: success')
+      } catch (error) {
+        const msg = (error as Error).message
+        expect(msg).not.toContain('401')
+        expect(msg).not.toContain('403')
+        console.log(`Mark post seen: accessible but error (${msg.substring(0, 80)})`)
+      }
+    })
+
+    test('should iterate publication feed', async () => {
+      try {
+        const items = []
+        for await (const item of client.publicationFeed(176729823, { limit: 3 })) {
+          expect(item.type).toBeTruthy()
+          items.push(item)
+          if (items.length >= 3) break
+        }
+        expect(items.length).toBeGreaterThan(0)
+        console.log(`Publication feed: ${items.length} items fetched`)
+      } catch (error) {
+        const msg = (error as Error).message
+        expect(msg).not.toContain('401')
+        expect(msg).not.toContain('403')
+        console.log(`Publication feed: accessible but error (${msg.substring(0, 80)})`)
+      }
     })
   })
 

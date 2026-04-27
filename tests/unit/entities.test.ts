@@ -6,7 +6,7 @@ import {
   NoteService,
   CommentService,
   FollowingService,
-  NewNoteService
+  NoteBuilderFactory
 } from '@substack-api/internal/services'
 import type { HttpClient } from '@substack-api/internal/http-client'
 
@@ -98,7 +98,7 @@ describe('SubstackClient Entity Model', () => {
         noteService: mockNoteService,
         commentService: mockCommentService,
         followingService: {} as unknown as FollowingService,
-        newNoteService: {} as unknown as NewNoteService,
+        newNoteService: {} as unknown as NoteBuilderFactory,
         perPage: 25
       })
 
@@ -137,7 +137,7 @@ describe('SubstackClient Entity Model', () => {
         profileService: {} as unknown as ProfileService,
         noteService: {} as unknown as NoteService,
         followingService: {} as unknown as FollowingService,
-        newNoteService: {} as unknown as NewNoteService,
+        newNoteService: {} as unknown as NoteBuilderFactory,
         perPage: 25
       })
 

@@ -6,7 +6,7 @@ import {
   NoteService,
   CommentService,
   FollowingService,
-  NewNoteService
+  NoteBuilderFactory
 } from '@substack-api/internal/services'
 import type { HttpClient } from '@substack-api/internal/http-client'
 
@@ -90,7 +90,7 @@ describe('Profile Entity', () => {
       noteService: mockNoteService,
       commentService: mockCommentService,
       followingService: {} as unknown as FollowingService,
-      newNoteService: {} as unknown as NewNoteService,
+      newNoteService: {} as unknown as NoteBuilderFactory,
       perPage: 25
     })
   })
@@ -212,7 +212,7 @@ describe('Profile Entity', () => {
         noteService: mockNoteService,
         commentService: mockCommentService,
         followingService: {} as unknown as FollowingService,
-        newNoteService: {} as unknown as NewNoteService,
+        newNoteService: {} as unknown as NoteBuilderFactory,
         perPage: 2
       })
 

@@ -5,7 +5,7 @@ import type {
   NoteService,
   CommentService,
   FollowingService,
-  NewNoteService
+  NoteBuilderFactory
 } from '@substack-api/internal/services'
 
 /**
@@ -19,6 +19,6 @@ export interface EntityDeps {
   noteService: NoteService
   commentService: CommentService
   followingService: FollowingService
-  newNoteService: NewNoteService
+  newNoteService: NoteBuilderFactory
   perPage: number
 }

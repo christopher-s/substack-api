@@ -16,7 +16,7 @@ Source directory for the Substack API TypeScript client library. Contains the pu
 | Directory | Purpose |
 |-----------|---------|
 | `domain/` | Domain entities and builders: Profile, OwnProfile, PreviewPost, FullPost, Note, Comment, NoteBuilder, NoteWithLinkBuilder, ParagraphBuilder, ListBuilder, ListItemBuilder. Entities wrap raw API types and expose methods for related data traversal via async iterators. |
-| `internal/` | Internal implementation not exported from the public API. Contains services (PostService, NoteService, ProfileService, CommentService, FollowingService, ConnectivityService, NewNoteService), HttpClient with rate limiting, validation logic (fp-ts/io-ts codecs), and raw API response type definitions. |
+| `internal/` | Internal implementation not exported from the public API. Contains services (PostService, NoteService, ProfileService, CommentService, FollowingService, ConnectivityService, NoteBuilderFactory), HttpClient with rate limiting, validation logic (fp-ts/io-ts codecs), and raw API response type definitions. |
 | `types/` | Public type definitions: SubstackConfig (client configuration), PaginationParams, SearchParams, PostsIteratorOptions, CommentsIteratorOptions, NotesIteratorOptions. These are exported as TypeScript types (not runtime values). |
 
 ## For AI Agents

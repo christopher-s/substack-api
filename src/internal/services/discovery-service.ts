@@ -1,3 +1,4 @@
+import * as t from 'io-ts'
 import type { HttpClient } from '@substack-api/internal/http-client'
 import type {
   FeedItem,
@@ -11,8 +12,7 @@ import {
   SubstackCategoryCodec,
   SubstackCategoryPublicationCodec,
   SubstackInboxItemCodec,
-  SubstackProfileSearchResponseCodec,
-  SubstackTrendingResponseCodec
+  SubstackProfileSearchResponseCodec
 } from '@substack-api/internal/types'
 import { decodeOrThrow } from '@substack-api/internal/validation'
 
@@ -49,7 +49,12 @@ export class DiscoveryService {
 
   /**
    * Get trending posts with associated publications
-   * GET /api/v1/trending (anonymous)
+   *
+   * NOTE: The original /api/v1/trending endpoint has been deprecated by Substack
+   * and now returns an HTML page. This method falls back to /api/v1/inbox/top
+   * and maps inbox items to the SubstackTrendingResponse shape for backward
+   * compatibility. Publications and trendingPosts arrays will be empty since
+   * the replacement endpoint does not provide them.
    */
   async getTrending(options?: {
     limit?: number
@@ -63,10 +68,80 @@ export class DiscoveryService {
       params.set('offset', String(options.offset))
     }
     const query = params.toString() ? `?${params.toString()}` : ''
-    const response = await this.substackClient.get<unknown>(`/trending${query}`)
-    const decoded = decodeOrThrow(SubstackTrendingResponseCodec, response, 'Trending response')
-    // trendingPosts decoded as unknown[] — cast to typed interface
-    return decoded as SubstackTrendingResponse
+
+    // Fetch from /inbox/top since /trending is deprecated
+    const response = await this.substackClient.get<{ inboxItems?: unknown[] }>(`/inbox/top${query}`)
+    const inboxItems = (response.inboxItems || []) as SubstackInboxItem[]
+
+    // Map inbox items to trending post shape for backward compatibility
+    const posts = inboxItems.map((item) => this.mapInboxItemToTrendingPost(item))
+
+    return {
+      posts,
+      publications: [],
+      trendingPosts: []
+    }
+  }
+
+  /**
+   * Map an inbox item to the SubstackTrendingPost shape.
+   * Derives missing fields where possible.
+   */
+  private mapInboxItemToTrendingPost(item: SubstackInboxItem): {
+    id: number
+    title: string
+    slug: string
+    post_date: string
+    type: string
+    audience?: string
+    subtitle?: string
+    canonical_url?: string
+    reactions?: Record<string, number>
+    restacks?: number
+    wordcount?: number
+    comment_count?: number
+    cover_image?: string
+    publishedBylines?: Array<{
+      id: number
+      name: string
+      handle: string
+      photo_url: string
+    }>
+  } {
+    // Derive slug from web_url if available
+    let slug = ''
+    if (item.web_url) {
+      const parts = item.web_url.split('/')
+      const last = parts.pop() || ''
+      slug = last.split('?')[0]
+    }
+
+    return {
+      id: item.post_id,
+      title: item.title,
+      slug,
+      post_date: item.content_date || '',
+      type: item.postType || item.type || 'newsletter',
+      audience: item.audience || undefined,
+      subtitle: item.subtitle || undefined,
+      canonical_url: item.web_url || undefined,
+      reactions:
+        item.like_count != null ? ({ '❤': item.like_count } as Record<string, number>) : undefined,
+      restacks: undefined,
+      wordcount: item.duration_metadata?.word_count || undefined,
+      comment_count: item.comment_count || undefined,
+      cover_image: item.cover_photo_url || undefined,
+      publishedBylines: item.published_bylines
+        ? item.published_bylines
+            .filter((b) => b.handle != null)
+            .map((b) => ({
+              id: b.id,
+              name: b.name,
+              handle: b.handle as string,
+              photo_url: b.photo_url
+            }))
+        : undefined
+    }
   }
 
   /**
@@ -222,14 +297,29 @@ export class DiscoveryService {
   private async fetchCursorFeed(
     url: string
   ): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
-    const response = await this.substackClient.get<{
-      items?: FeedItem[]
-      nextCursor?: string | null
-    }>(url)
+    const response = await this.substackClient.get<unknown>(url)
+
+    const decoded = decodeOrThrow(
+      t.type({
+        items: t.union([t.array(t.unknown), t.null, t.undefined]),
+        nextCursor: t.union([t.string, t.null, t.undefined])
+      }),
+      response,
+      'cursor feed response'
+    )
+
+    const items = (decoded.items || []).map((item, i) => {
+      // Validate items if they have the inbox item shape; otherwise pass through
+      // since feed endpoints return heterogeneous items (posts, notes, comments)
+      if (item && typeof item === 'object' && 'post_id' in item) {
+        return decodeOrThrow(SubstackInboxItemCodec, item, `Feed item ${i}`) as unknown as FeedItem
+      }
+      return item as FeedItem
+    })
 
     return {
-      items: response.items || [],
-      nextCursor: response.nextCursor || null
+      items,
+      nextCursor: decoded.nextCursor || null
     }
   }
 }

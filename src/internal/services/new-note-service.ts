@@ -5,7 +5,7 @@ import type { HttpClient } from '@substack-api/internal/http-client'
  * Service responsible for creating new notes
  * Provides methods to instantiate note builders
  */
-export class NewNoteService {
+export class NoteBuilderFactory {
   constructor(private readonly substackClient: HttpClient) {}
 
   /**

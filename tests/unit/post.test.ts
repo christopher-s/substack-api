@@ -5,7 +5,7 @@ import { PostService } from '@substack-api/internal/services/post-service'
 import { ProfileService } from '@substack-api/internal/services/profile-service'
 import { NoteService } from '@substack-api/internal/services/note-service'
 import { FollowingService } from '@substack-api/internal/services/following-service'
-import { NewNoteService } from '@substack-api/internal/services/new-note-service'
+import { NoteBuilderFactory } from '@substack-api/internal/services/new-note-service'
 import type { HttpClient } from '@substack-api/internal/http-client'
 
 describe('PreviewPost Entity', () => {
@@ -15,7 +15,7 @@ describe('PreviewPost Entity', () => {
   let mockProfileService: jest.Mocked<ProfileService>
   let mockNoteService: jest.Mocked<NoteService>
   let mockFollowingService: jest.Mocked<FollowingService>
-  let mockNewNoteService: jest.Mocked<NewNoteService>
+  let mockNoteBuilderFactory: jest.Mocked<NoteBuilderFactory>
   let post: PreviewPost
 
   beforeEach(() => {
@@ -52,10 +52,10 @@ describe('PreviewPost Entity', () => {
       getOwnId: jest.fn()
     } as unknown as jest.Mocked<FollowingService>
 
-    mockNewNoteService = {
+    mockNoteBuilderFactory = {
       newNote: jest.fn(),
       newNoteWithLink: jest.fn()
-    } as unknown as jest.Mocked<NewNoteService>
+    } as unknown as jest.Mocked<NoteBuilderFactory>
 
     const mockPostData = {
       id: 456,
@@ -101,7 +101,7 @@ describe('PreviewPost Entity', () => {
       profileService: mockProfileService,
       noteService: mockNoteService,
       followingService: mockFollowingService,
-      newNoteService: mockNewNoteService,
+      newNoteService: mockNoteBuilderFactory,
       perPage: 25
     })
   })
@@ -280,7 +280,7 @@ describe('PreviewPost Entity', () => {
         profileService: mockProfileService,
         noteService: mockNoteService,
         followingService: mockFollowingService,
-        newNoteService: mockNewNoteService,
+        newNoteService: mockNoteBuilderFactory,
         perPage: 25
       })
 
@@ -335,7 +335,7 @@ describe('PreviewPost Entity', () => {
         profileService: mockProfileService,
         noteService: mockNoteService,
         followingService: mockFollowingService,
-        newNoteService: mockNewNoteService,
+        newNoteService: mockNoteBuilderFactory,
         perPage: 25
       })
 
@@ -391,7 +391,7 @@ describe('FullPost Entity', () => {
   let _mockProfileService: jest.Mocked<ProfileService>
   let _mockNoteService: jest.Mocked<NoteService>
   let _mockFollowingService: jest.Mocked<FollowingService>
-  let _mockNewNoteService: jest.Mocked<NewNoteService>
+  let _mockNoteBuilderFactory: jest.Mocked<NoteBuilderFactory>
   let fullPost: FullPost
 
   beforeEach(() => {
@@ -428,10 +428,10 @@ describe('FullPost Entity', () => {
       getOwnId: jest.fn()
     } as unknown as jest.Mocked<FollowingService>
 
-    _mockNewNoteService = {
+    _mockNoteBuilderFactory = {
       newNote: jest.fn(),
       newNoteWithLink: jest.fn()
-    } as unknown as jest.Mocked<NewNoteService>
+    } as unknown as jest.Mocked<NoteBuilderFactory>
 
     const mockFullPostData = {
       id: 789,
@@ -454,7 +454,7 @@ describe('FullPost Entity', () => {
       profileService: _mockProfileService,
       noteService: _mockNoteService,
       followingService: _mockFollowingService,
-      newNoteService: _mockNewNoteService,
+      newNoteService: _mockNoteBuilderFactory,
       perPage: 25
     })
   })
@@ -491,7 +491,7 @@ describe('FullPost Entity', () => {
         profileService: _mockProfileService,
         noteService: _mockNoteService,
         followingService: _mockFollowingService,
-        newNoteService: _mockNewNoteService,
+        newNoteService: _mockNoteBuilderFactory,
         perPage: 25
       })
 
@@ -529,7 +529,7 @@ describe('FullPost Entity', () => {
         profileService: _mockProfileService,
         noteService: _mockNoteService,
         followingService: _mockFollowingService,
-        newNoteService: _mockNewNoteService,
+        newNoteService: _mockNoteBuilderFactory,
         perPage: 25
       })
 
@@ -563,7 +563,7 @@ describe('FullPost Entity', () => {
         profileService: _mockProfileService,
         noteService: _mockNoteService,
         followingService: _mockFollowingService,
-        newNoteService: _mockNewNoteService,
+        newNoteService: _mockNoteBuilderFactory,
         perPage: 25
       })
 

@@ -32,7 +32,7 @@ The `internal/` directory houses the HTTP transport layer, runtime type validati
 | `CommentService` | `comment-service.ts` | Retrieve comments on posts |
 | `FollowingService` | `following-service.ts` | Manage following relationships |
 | `ConnectivityService` | `connectivity-service.ts` | Check API connectivity |
-| `NewNoteService` | `new-note-service.ts` | Publish new notes |
+| `NoteBuilderFactory` | `new-note-service.ts` | Publish new notes |
 
 Services are instantiated by `SubstackClient` (`src/substack-client.ts`) and injected into domain model constructors. Services return internal types from the `types/` subdirectory.
 

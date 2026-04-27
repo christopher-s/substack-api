@@ -17,6 +17,6 @@ export class Comment {
     this.id = rawData.id
     this.body = rawData.body
     this.isAdmin = rawData.author_is_admin
-    this.likesCount = undefined // TODO: Extract from rawData when available
+    this.likesCount = (rawData as unknown as { reaction_count?: number; reactions?: Record<string, number> }).reaction_count ?? (rawData as unknown as { reaction_count?: number; reactions?: Record<string, number> }).reactions?.['❤'] ?? 0
   }
 }
