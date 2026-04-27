@@ -19,18 +19,10 @@ describe('SubstackClient Anonymous E2E', () => {
 
   describe('discovery endpoints', () => {
     test('should get trending posts', async () => {
-      try {
-        const trending = await client.trending({ limit: 5 })
-        expect(trending).toBeDefined()
-        expect(Array.isArray(trending.posts)).toBe(true)
-        console.log(`Trending: ${trending.posts.length} posts returned`)
-      } catch (error) {
-        // Codec may reject null fields — still proves anonymous access works
-        const msg = (error as Error).message
-        expect(msg).not.toContain('401')
-        expect(msg).not.toContain('403')
-        console.log(`Trending: accessible but codec rejected response (${msg.substring(0, 80)})`)
-      }
+      const trending = await client.trending({ limit: 5 })
+      expect(trending).toBeDefined()
+      expect(Array.isArray(trending.posts)).toBe(true)
+      console.log(`Trending: ${trending.posts.length} posts returned`)
     })
 
     test('should get top posts', async () => {
@@ -194,32 +186,18 @@ describe('SubstackClient Anonymous E2E', () => {
 
   describe('entity lookup endpoints', () => {
     test('should get comment by id', async () => {
-      try {
-        const comment = await client.commentForId(233934688)
-        expect(comment).toBeInstanceOf(Comment)
-        expect(comment.id).toBeGreaterThan(0)
-        console.log(`Comment: ${comment.id} fetched`)
-      } catch (error) {
-        const msg = (error as Error).message
-        expect(msg).not.toContain('401')
-        expect(msg).not.toContain('403')
-        console.log(`Comment lookup: accessible but error (${msg.substring(0, 80)})`)
-      }
+      const comment = await client.commentForId(233934688)
+      expect(comment).toBeInstanceOf(Comment)
+      expect(comment.id).toBeGreaterThan(0)
+      console.log(`Comment: ${comment.id} fetched`)
     })
 
     test('should get comment replies', async () => {
-      try {
-        const replies = await client.commentReplies(233934688)
-        expect(Array.isArray(replies.commentBranches) || replies.commentBranches === null).toBe(
-          true
-        )
-        console.log(`Comment replies: ${replies.commentBranches?.length ?? 0} branches`)
-      } catch (error) {
-        const msg = (error as Error).message
-        expect(msg).not.toContain('401')
-        expect(msg).not.toMatch(/\b403\b/)
-        console.log(`Comment replies: accessible but codec error`)
-      }
+      const replies = await client.commentReplies(233934688)
+      expect(Array.isArray(replies.commentBranches) || replies.commentBranches === null).toBe(
+        true
+      )
+      console.log(`Comment replies: ${replies.commentBranches?.length ?? 0} branches`)
     })
 
     test('should get note by id', async () => {
@@ -242,7 +220,7 @@ describe('SubstackClient Anonymous E2E', () => {
       try {
         const reactors = await client.postReactors(176729823)
         expect(reactors).toBeDefined()
-        console.log(`Post reactors: ${reactors.users?.length ?? 0} users`)
+        console.log(`Post reactors: ${reactors.reactors?.length ?? 0} users`)
       } catch (error) {
         const msg = (error as Error).message
         expect(msg).not.toContain('401')
@@ -255,7 +233,7 @@ describe('SubstackClient Anonymous E2E', () => {
       try {
         const stream = await client.activeLiveStream(176729823)
         expect(stream).toBeDefined()
-        console.log(`Live stream: ${stream.liveStream ? 'active' : 'none'}`)
+        console.log(`Live stream: ${stream.activeLiveStream ? 'active' : 'none'}`)
       } catch (error) {
         const msg = (error as Error).message
         expect(msg).not.toContain('401')
