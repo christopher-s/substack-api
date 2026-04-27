@@ -20,6 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `substackUrl` config option for custom Substack domain
 - `urlPrefix` config option for API URL prefix
 - `perPage` config option for pagination page size
+- Expanded io-ts codecs to match live Substack API responses:
+  - `SubstackPreviewPostCodec` — 60+ fields including slug, canonical_url, cover_image, comment_count, restacks, type, audience, wordcount, publishedBylines, postTags, reactions
+  - `SubstackNoteCodec` — full nested structures for comments, users, context, attachments, reactions, restacks
+  - `SubstackCommentCodec` — name, photo_url, user_id, date, reaction_count, reactions, restacks, children_count, post_id, publication_id
+  - `SubstackCommentResponseCodec` — full wrapper structure with context, parentComments, siblingComments
+  - `SubstackPublicationFullPostCodec` — all fields from publication /posts endpoint
+- `maybe()` helper for permissive null/undefined/omitted field handling in codecs
+- Live API endpoint validation tests (`tests/unit/live-api-validation.test.ts`) probing 7 real Substack endpoints
 
 ### Changed
 - `publicationUrl` is now required in `SubstackConfig`
@@ -28,6 +36,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `token` is now optional in `SubstackConfig` for anonymous access
 - Removed `decodeEither` helper (only `decodeOrThrow` remains)
 - Comment `getCommentById` no longer fabricates `author_is_admin: false`
+- Domain models expanded with complete API data:
+  - `PreviewPost` / `FullPost` — url, slug, coverImage, reactions, restacks, postTags, commentCount, wordcount, type, audience, description, podcastUrl, author, likesCount
+  - `Comment` — name, photoUrl, userId, date, reactionCount, reactions, restacks, childrenCount, isAdmin, likesCount
+  - `Profile` — subscriberCount, primaryPublication, isFollowing, isSubscribed
+  - `Note` — restacks, reactions, childrenCount, type, likesCount
+- Service return types now return complete responses:
+  - `PostService.getPostsForProfile` returns `{ posts, nextCursor }` for cursor-based pagination
+  - `CommentService.getCommentsForPost` returns `{ comments, more }` for reliable pagination
+- `body_json` fields changed from `string` to `unknown` (ProseMirror doc objects)
+- E2E anonymous tests updated with reduced try/catch wrappers for validated endpoints
 
 ### Removed
 - `SearchService` class (merged into `DiscoveryService`)
