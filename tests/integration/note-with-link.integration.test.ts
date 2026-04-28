@@ -108,7 +108,10 @@ describe('note with link attachment integration tests', () => {
     })
 
     const noteRequest = global.INTEGRATION_SERVER.capturedRequests[1]
-    const noteBody = noteRequest.body as unknown as Record<string, unknown>
+    const noteBody = noteRequest.body as unknown as {
+      bodyJson: { content: Array<{ type: string; content?: unknown[] }> }
+      attachmentIds: string[]
+    }
 
     // Verify the complex structure was built correctly
     expect(noteBody.bodyJson.content).toHaveLength(2) // Two paragraphs
@@ -191,7 +194,10 @@ describe('note with link attachment integration tests', () => {
     expect(global.INTEGRATION_SERVER.capturedRequests).toHaveLength(2)
 
     const noteRequest = global.INTEGRATION_SERVER.capturedRequests[1]
-    const noteBody = noteRequest.body as unknown as Record<string, unknown>
+    const noteBody = noteRequest.body as unknown as {
+      bodyJson: { content: Array<{ type: string; content?: unknown[] }> }
+      attachmentIds: string[]
+    }
 
     // Should have paragraph + bullet list
     expect(noteBody.bodyJson.content).toHaveLength(2)
