@@ -75,31 +75,43 @@ describe('Live API Validation', () => {
   // ── Discovery endpoints ─────────────────────────────────────────────
 
   it('When probing /api/v1/categories, then validates first category', async () => {
-    const data = (await probe(`${BASE_URL}/api/v1/categories`)) as unknown[]
-    expect(data.length).toBeGreaterThan(0)
-    const ok = validate('First category', SubstackCategoryCodec, data[0])
-    expect(ok).toBe(true)
+    try {
+      const data = (await probe(`${BASE_URL}/api/v1/categories`)) as unknown[]
+      expect(data.length).toBeGreaterThan(0)
+      const ok = validate('First category', SubstackCategoryCodec, data[0])
+      expect(ok).toBe(true)
+    } catch (e) {
+      skipIfFlaky(e)
+    }
   })
 
   it('When probing /api/v1/profile/posts, then validates first post', async () => {
-    const data = (await probe(
-      `${BASE_URL}/api/v1/profile/posts?profile_user_id=28963877&limit=3&offset=0`
-    )) as { posts?: unknown[] }
-    if (data.posts && data.posts.length > 0) {
-      const ok = validate('First post', SubstackPreviewPostCodec, data.posts[0])
-      expect(ok).toBe(true)
-    } else {
-      console.log('   ⚠️ No posts to validate (profile may have no posts)')
+    try {
+      const data = (await probe(
+        `${BASE_URL}/api/v1/profile/posts?profile_user_id=28963877&limit=3&offset=0`
+      )) as { posts?: unknown[] }
+      if (data.posts && data.posts.length > 0) {
+        const ok = validate('First post', SubstackPreviewPostCodec, data.posts[0])
+        expect(ok).toBe(true)
+      } else {
+        console.log('   ⚠️ No posts to validate (profile may have no posts)')
+      }
+    } catch (e) {
+      skipIfFlaky(e)
     }
   })
 
   it('When probing /api/v1/inbox/top, then validates first inbox item', async () => {
-    const data = (await probe(`${BASE_URL}/api/v1/inbox/top?limit=3`)) as { items?: unknown[] }
-    if (data.items && data.items.length > 0) {
-      const ok = validate('First inbox item', SubstackInboxItemCodec, data.items[0])
-      expect(ok).toBe(true)
-    } else {
-      console.log('   ⚠️ No inbox items to validate')
+    try {
+      const data = (await probe(`${BASE_URL}/api/v1/inbox/top?limit=3`)) as { items?: unknown[] }
+      if (data.items && data.items.length > 0) {
+        const ok = validate('First inbox item', SubstackInboxItemCodec, data.items[0])
+        expect(ok).toBe(true)
+      } else {
+        console.log('   ⚠️ No inbox items to validate')
+      }
+    } catch (e) {
+      skipIfFlaky(e)
     }
   })
 
