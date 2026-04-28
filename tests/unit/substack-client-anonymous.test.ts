@@ -57,7 +57,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
   })
 
   describe('topPosts', () => {
-    it('should return top posts from discovery service', async () => {
+    it('When requesting top posts from discovery service', async () => {
       const mockItems = [
         { post_id: 1, type: 'post', title: 'Test 1', web_url: 'https://test.com/1' },
         { post_id: 2, type: 'post', title: 'Test 2', web_url: 'https://test.com/2' }
@@ -69,7 +69,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
   })
 
   describe('categories', () => {
-    it('should return Category instances', async () => {
+    it('When requesting Category instances', async () => {
       mockDiscoveryService.getCategories.mockResolvedValue([
         {
           id: 1,
@@ -214,7 +214,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
   })
 
   describe('publicationHomepage', () => {
-    it('should return PublicationPost instances', async () => {
+    it('When requesting PublicationPost instances', async () => {
       mockPublicationService.getHomepageData.mockResolvedValue({
         newPosts: [
           {
@@ -412,7 +412,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
   })
 
   describe('profileSearchAll', () => {
-    it('should iterate all pages', async () => {
+    it('When iterating all pages', async () => {
       mockDiscoveryService.searchProfiles.mockResolvedValueOnce({
         results: [
           { id: 1, name: 'A', handle: 'a' },
@@ -436,12 +436,12 @@ describe('SubstackClient anonymous and discovery methods', () => {
   })
 
   describe('optional publicationUrl', () => {
-    it('should create client without publicationUrl', () => {
+    it('When client without publicationUrl', () => {
       const noPubClient = new SubstackClient({})
       expect(noPubClient).toBeDefined()
     })
 
-    it('should create client with only substackUrl', () => {
+    it('When client with only substackUrl', () => {
       const client = new SubstackClient({ substackUrl: 'substack.com' })
       expect(client).toBeDefined()
     })

@@ -24,14 +24,14 @@ describe('NoteBuilder (Legacy Test Suite)', () => {
   })
 
   describe('Constructor', () => {
-    it('should create empty post builder', () => {
+    it('When empty post builder', () => {
       const builder = new NoteBuilder(mockPublicationClient)
       expect(builder).toBeInstanceOf(NoteBuilder)
     })
   })
 
   describe('Simple use case', () => {
-    it('should create note with simple text and publish', async () => {
+    it('When note with simple text and publish', async () => {
       const builder = new NoteBuilder(mockPublicationClient)
       const result = await builder.paragraph().text('my test text').publish()
 
@@ -60,7 +60,7 @@ describe('NoteBuilder (Legacy Test Suite)', () => {
   })
 
   describe('Two paragraphs', () => {
-    it('should create note with two simple paragraphs', async () => {
+    it('When note with two simple paragraphs', async () => {
       const builder = new NoteBuilder(mockPublicationClient)
       const result = await builder
         .paragraph()
@@ -103,7 +103,7 @@ describe('NoteBuilder (Legacy Test Suite)', () => {
   })
 
   describe('Rich formatting within a paragraph', () => {
-    it('should create note with rich formatting', async () => {
+    it('When note with rich formatting', async () => {
       const builder = new NoteBuilder(mockPublicationClient)
       const result = await builder
         .paragraph()
@@ -157,7 +157,7 @@ describe('NoteBuilder (Legacy Test Suite)', () => {
   })
 
   describe('Multiple paragraphs with different formatting', () => {
-    it('should create note with multiple rich paragraphs', async () => {
+    it('When note with multiple rich paragraphs', async () => {
       const builder = new NoteBuilder(mockPublicationClient)
       const result = await builder
         .paragraph()
@@ -315,7 +315,7 @@ describe('NoteBuilder (Legacy Test Suite)', () => {
   })
 
   describe('ParagraphBuilder', () => {
-    it('should return ParagraphBuilder instance for rich formatting', () => {
+    it('When requesting ParagraphBuilder instance for rich formatting', () => {
       const builder = new NoteBuilder(mockPublicationClient)
       const paragraphBuilder = builder.paragraph()
       expect(paragraphBuilder).toBeInstanceOf(ParagraphBuilder)
@@ -391,7 +391,7 @@ describe('NoteBuilder (Legacy Test Suite)', () => {
   })
 
   describe('Empty content handling', () => {
-    it('should throw error when trying to publish empty note', () => {
+    it('When when trying to publish empty note', () => {
       const builder = new NoteBuilder(mockPublicationClient)
       expect(() => builder.build()).toThrow('Note must contain at least one paragraph')
     })

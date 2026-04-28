@@ -11,6 +11,7 @@ const sharedGlobals = {
   Blob: 'readonly',
   global: 'readonly',
   console: 'readonly',
+  setTimeout: 'readonly',
   jest: 'readonly',
   describe: 'readonly',
   it: 'readonly',
@@ -42,7 +43,7 @@ const sharedRules = {
 
 export default [
   eslint.configs.recommended,
-  { ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'samples/**', 'scripts/**'] },
+  { ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'samples/**', 'scripts/**', '.stryker-tmp/**'] },
   {
     files: ['jest.config.js', 'jest.e2e.config.js'],
     languageOptions: {

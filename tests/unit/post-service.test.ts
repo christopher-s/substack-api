@@ -1,32 +1,30 @@
+import nock from 'nock'
 import { PostService } from '@substack-api/internal/services/post-service'
 import { HttpClient } from '@substack-api/internal/http-client'
 import type { SubstackFullPost, SubstackPreviewPost } from '@substack-api/internal'
 
-// Mock the http client
-jest.mock('@substack-api/internal/http-client')
-
 describe('PostService', () => {
   let postService: PostService
-  let mockSubstackClient: jest.Mocked<HttpClient>
-  let mockPublicationClient: jest.Mocked<HttpClient>
+  let httpClient: HttpClient
+  const baseUrl = 'https://substack.com'
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    nock.cleanAll()
+    httpClient = new HttpClient(baseUrl)
+    postService = new PostService(httpClient)
+  })
 
-    mockSubstackClient = new HttpClient('https://substack.com', 'test') as jest.Mocked<HttpClient>
-    mockSubstackClient.get = jest.fn()
+  afterEach(() => {
+    expect(nock.isDone()).toBe(true)
+    nock.cleanAll()
+  })
 
-    mockPublicationClient = new HttpClient(
-      'https://test.substack.com',
-      'test'
-    ) as jest.Mocked<HttpClient>
-    mockPublicationClient.get = jest.fn()
-
-    postService = new PostService(mockSubstackClient)
+  afterAll(() => {
+    nock.restore()
   })
 
   describe('getPostById', () => {
-    it('should return post data from the global HTTP client', async () => {
+    it('When requesting a post by ID, then returns the post data', async () => {
       const mockPost: SubstackFullPost = {
         id: 123,
         title: 'Test Post',
@@ -36,23 +34,22 @@ describe('PostService', () => {
         body_html: '<p>Test post body content</p>'
       }
 
-      mockSubstackClient.get.mockResolvedValueOnce({ post: mockPost })
+      nock(baseUrl).get('/posts/by-id/123').reply(200, { post: mockPost })
 
       const result = await postService.getPostById(123)
 
       expect(result).toEqual(mockPost)
-      expect(mockSubstackClient.get).toHaveBeenCalledWith('/posts/by-id/123')
     })
 
-    it('should throw error when global HTTP client fails', async () => {
+    it('When the global HTTP client returns an error, then throws the error', async () => {
       const errorMessage = 'HTTP 404: Not found'
-      mockSubstackClient.get.mockRejectedValueOnce(new Error(errorMessage))
+
+      nock(baseUrl).get('/posts/by-id/999').replyWithError(errorMessage)
 
       await expect(postService.getPostById(999)).rejects.toThrow(errorMessage)
-      expect(mockSubstackClient.get).toHaveBeenCalledWith('/posts/by-id/999')
     })
 
-    it('should use global HTTP client instead of publication-specific client', async () => {
+    it('When requesting a post by ID, then uses the global HTTP client', async () => {
       const mockPost: SubstackFullPost = {
         id: 456,
         title: 'Another Test Post',
@@ -62,25 +59,23 @@ describe('PostService', () => {
         body_html: '<p>Another test post body content</p>'
       }
 
-      mockSubstackClient.get.mockResolvedValueOnce({ post: mockPost })
+      nock(baseUrl).get('/posts/by-id/456').reply(200, { post: mockPost })
 
       await postService.getPostById(456)
 
-      // Verify that only the global HTTP client is used
-      expect(mockSubstackClient.get).toHaveBeenCalledWith('/posts/by-id/456')
+      // nock verifies the request was made via done() in afterEach if using persist,
+      // but here we rely on the test completing without unmocked errors
     })
 
-    it('should throw error when response is missing post data', async () => {
-      // Mock response without post data
-      mockSubstackClient.get.mockResolvedValueOnce({})
+    it('When response is missing post data, then throws invalid response error', async () => {
+      nock(baseUrl).get('/posts/by-id/123').reply(200, {})
 
       await expect(postService.getPostById(123)).rejects.toThrow(
         'Invalid response format: missing post data'
       )
-      expect(mockSubstackClient.get).toHaveBeenCalledWith('/posts/by-id/123')
     })
 
-    it('should transform postTags from objects to strings', async () => {
+    it('When postTags contain objects and strings, then transforms them to strings', async () => {
       const mockPost = {
         id: 123,
         title: 'Test Post',
@@ -92,7 +87,7 @@ describe('PostService', () => {
         postTags: [{ name: 'tech', id: 1 }, { name: 'newsletter', id: 2 }, 'simple-string-tag']
       }
 
-      mockSubstackClient.get.mockResolvedValueOnce({ post: mockPost })
+      nock(baseUrl).get('/posts/by-id/123').reply(200, { post: mockPost })
 
       const result = await postService.getPostById(123)
 
@@ -101,7 +96,7 @@ describe('PostService', () => {
   })
 
   describe('getPostsForProfile', () => {
-    it('should return posts for a profile', async () => {
+    it('When requesting posts for a profile, then returns the posts', async () => {
       const mockPosts: SubstackPreviewPost[] = [
         {
           id: 1,
@@ -115,51 +110,55 @@ describe('PostService', () => {
         }
       ]
 
-      mockSubstackClient.get.mockResolvedValueOnce({ posts: mockPosts })
+      nock(baseUrl)
+        .get('/profile/posts')
+        .query({ profile_user_id: '123', limit: '10', offset: '0' })
+        .reply(200, { posts: mockPosts })
 
       const result = await postService.getPostsForProfile(123, { limit: 10, offset: 0 })
 
       expect(result.posts).toEqual(mockPosts)
       expect(result.nextCursor).toBeUndefined()
-      expect(mockSubstackClient.get).toHaveBeenCalledWith(
-        '/profile/posts?profile_user_id=123&limit=10&offset=0'
-      )
     })
 
-    it('should handle empty posts array', async () => {
-      mockSubstackClient.get.mockResolvedValueOnce({ posts: [] })
+    it('When posts array is empty, then returns empty array', async () => {
+      nock(baseUrl)
+        .get('/profile/posts')
+        .query({ profile_user_id: '456', limit: '5', offset: '10' })
+        .reply(200, { posts: [] })
 
       const result = await postService.getPostsForProfile(456, { limit: 5, offset: 10 })
 
       expect(result.posts).toEqual([])
       expect(result.nextCursor).toBeUndefined()
-      expect(mockSubstackClient.get).toHaveBeenCalledWith(
-        '/profile/posts?profile_user_id=456&limit=5&offset=10'
-      )
     })
 
-    it('should handle missing posts property in response', async () => {
-      mockSubstackClient.get.mockResolvedValueOnce({})
+    it('When response is missing posts property, then returns empty array', async () => {
+      nock(baseUrl)
+        .get('/profile/posts')
+        .query({ profile_user_id: '789', limit: '20', offset: '5' })
+        .reply(200, {})
 
       const result = await postService.getPostsForProfile(789, { limit: 20, offset: 5 })
 
       expect(result.posts).toEqual([])
       expect(result.nextCursor).toBeUndefined()
-      expect(mockSubstackClient.get).toHaveBeenCalledWith(
-        '/profile/posts?profile_user_id=789&limit=20&offset=5'
-      )
     })
 
-    it('should throw error when HTTP client fails', async () => {
+    it('When HTTP client returns an error, then throws the error', async () => {
       const errorMessage = 'HTTP 500: Internal server error'
-      mockSubstackClient.get.mockRejectedValueOnce(new Error(errorMessage))
+
+      nock(baseUrl)
+        .get('/profile/posts')
+        .query({ profile_user_id: '123', limit: '10', offset: '0' })
+        .replyWithError(errorMessage)
 
       await expect(postService.getPostsForProfile(123, { limit: 10, offset: 0 })).rejects.toThrow(
         errorMessage
       )
     })
 
-    it('should validate each post in the response', async () => {
+    it('When response contains an invalid post, then throws validation error', async () => {
       const validPost: SubstackPreviewPost = {
         id: 1,
         title: 'Valid Post',
@@ -172,14 +171,17 @@ describe('PostService', () => {
         // Missing required fields
       }
 
-      mockSubstackClient.get.mockResolvedValueOnce({ posts: [validPost, invalidPost] })
+      nock(baseUrl)
+        .get('/profile/posts')
+        .query({ profile_user_id: '123', limit: '10', offset: '0' })
+        .reply(200, { posts: [validPost, invalidPost] })
 
       await expect(postService.getPostsForProfile(123, { limit: 10, offset: 0 })).rejects.toThrow(
         /Post 1 in profile response/
       )
     })
 
-    it('should return nextCursor when present in response', async () => {
+    it('When response contains nextCursor, then returns it', async () => {
       const mockPosts: SubstackPreviewPost[] = [
         {
           id: 1,
@@ -188,7 +190,10 @@ describe('PostService', () => {
         }
       ]
 
-      mockSubstackClient.get.mockResolvedValueOnce({ posts: mockPosts, nextCursor: 'cursor123' })
+      nock(baseUrl)
+        .get('/profile/posts')
+        .query({ profile_user_id: '123', limit: '10', offset: '0' })
+        .reply(200, { posts: mockPosts, nextCursor: 'cursor123' })
 
       const result = await postService.getPostsForProfile(123, { limit: 10, offset: 0 })
 

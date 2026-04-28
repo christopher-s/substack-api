@@ -97,12 +97,12 @@ describe('OwnProfile Entity', () => {
     expect(typeof ownProfile.notes).toBe('function')
   })
 
-  it('should create a note builder without initial text', () => {
+  it('When a note builder without initial text', () => {
     const builder = ownProfile.newNote()
     expect(builder).toBeInstanceOf(NoteBuilder)
   })
 
-  it('should iterate through following users using correct endpoint chain', async () => {
+  it('When iterating through following users using correct endpoint chain', async () => {
     // Mock the response from /feed/following (returns array of FollowingUser objects)
     const mockFollowingIds = [
       { id: 1, handle: 'user1' },
@@ -149,7 +149,7 @@ describe('OwnProfile Entity', () => {
     expect(mockProfileService.getProfileBySlug).toHaveBeenCalledTimes(2)
   })
 
-  it('should handle empty following response', async () => {
+  it('When empty following response', async () => {
     mockFollowingService.getFollowing.mockResolvedValue([]) // Empty array of user IDs
 
     const followingList = []
@@ -162,7 +162,7 @@ describe('OwnProfile Entity', () => {
     expect(mockProfileService.getProfileBySlug).not.toHaveBeenCalled() // No profile calls should be made
   })
 
-  it('should handle profile fetch errors gracefully', async () => {
+  it('When profile fetch errors gracefully', async () => {
     // Mock the FollowingService to return FollowingUser objects
     const mockFollowingIds = [
       { id: 1, handle: 'user1' },
@@ -270,7 +270,7 @@ describe('OwnProfile Entity', () => {
     expect(mockProfileService.getProfileBySlug).toHaveBeenCalledTimes(3)
   })
 
-  it('should use handles as slugs for following users', async () => {
+  it('When handles as slugs for following users', async () => {
     // Create fresh service mocks for this test
     const localFollowingService = {
       getFollowing: jest.fn()
@@ -345,7 +345,7 @@ describe('OwnProfile Entity', () => {
   })
 
   describe('notes()', () => {
-    it('should iterate through own profile notes', async () => {
+    it('When iterating through own profile notes', async () => {
       const mockNotes = [
         {
           entity_key: '1',
@@ -492,7 +492,7 @@ describe('OwnProfile Entity', () => {
       expect(mockNoteService.getNotesForLoggedUser).toHaveBeenCalledTimes(1)
     })
 
-    it('should handle limit parameter for notes', async () => {
+    it('When limit parameter for notes', async () => {
       const mockResponse = {
         items: [
           {
@@ -639,7 +639,7 @@ describe('OwnProfile Entity', () => {
       expect(notes[0].body).toBe('Note 1')
     })
 
-    it('should handle empty notes response', async () => {
+    it('When empty notes response', async () => {
       mockNoteService.getNotesForLoggedUser.mockResolvedValue({
         notes: [],
         nextCursor: undefined
@@ -653,7 +653,7 @@ describe('OwnProfile Entity', () => {
       expect(notes).toHaveLength(0)
     })
 
-    it('should handle missing notes property', async () => {
+    it('When missing notes property', async () => {
       mockNoteService.getNotesForLoggedUser.mockResolvedValue({} as any)
 
       const notes = []
@@ -664,7 +664,7 @@ describe('OwnProfile Entity', () => {
       expect(notes).toHaveLength(0)
     })
 
-    it('should propagate API errors from notes()', async () => {
+    it('When API errors from notes()', async () => {
       mockNoteService.getNotesForLoggedUser.mockRejectedValue(new Error('API error'))
 
       const collectNotes = async () => {

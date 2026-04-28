@@ -10,13 +10,15 @@ export default {
   },
   roots: ['<rootDir>/tests'],
   testMatch: ['**/unit/**/*.test.ts'],
+  setupFilesAfterEnv: ['<rootDir>/tests/unit/property/setup.ts'],
   moduleNameMapper: {
     '^@substack-api/(.*)$': '<rootDir>/src/$1',
     '^@test/(.*)$': '<rootDir>/tests/$1'
   },
   collectCoverageFrom: [
     'src/**/*.ts',
-    '!src/**/*.test.ts'
+    '!src/**/*.test.ts',
+    '!src/internal/types/*.ts'
   ],
   coveragePathIgnorePatterns: [
     '/node_modules/',

@@ -65,8 +65,10 @@ export const SubstackFullProfileCodec = t.intersection([
   t.type({
     id: t.number,
     name: t.string,
-    handle: t.string,
-    photo_url: t.string
+    handle: t.string
+  }),
+  t.partial({
+    photo_url: maybe(t.string)
   }),
   t.partial({
     bio: maybe(t.string),

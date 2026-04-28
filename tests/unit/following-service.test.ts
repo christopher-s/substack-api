@@ -64,7 +64,7 @@ describe('FollowingService', () => {
       ])
     })
 
-    it('should return empty array when no following users', async () => {
+    it('When requesting empty array when no following users', async () => {
       const mockUserId = 12345
       const mockSubscriberLists = {
         subscriberLists: [
@@ -88,7 +88,7 @@ describe('FollowingService', () => {
       expect(result).toEqual([])
     })
 
-    it('should throw error when request fails', async () => {
+    it('When when request fails', async () => {
       const mockUserId = 12345
       const error = new Error('Network error')
 
@@ -98,7 +98,7 @@ describe('FollowingService', () => {
       await expect(followingService.getFollowing()).rejects.toThrow('Network error')
     })
 
-    it('should handle authentication errors gracefully', async () => {
+    it('When authentication errors gracefully', async () => {
       const error = new Error('Unauthorized')
       mockSubstackClient.put.mockRejectedValue(error)
 

@@ -124,7 +124,7 @@ describe('SubstackClient publicationPosts', () => {
     expect(results[0].title).toBe('A')
   })
 
-  it('should handle empty response', async () => {
+  it('When empty response', async () => {
     mockPublicationService.getPosts.mockResolvedValueOnce([])
 
     const results = []

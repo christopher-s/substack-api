@@ -16,7 +16,8 @@ import { isLeft, isRight } from 'fp-ts/Either'
 
 describe('io-ts validation codecs', () => {
   describe('SubstackPostCodec', () => {
-    it('should validate valid post data', () => {
+    it('When valid post data is provided, then decodes successfully', () => {
+      // Arrange
       const validPost = {
         id: 123,
         title: 'Test Post',
@@ -25,7 +26,10 @@ describe('io-ts validation codecs', () => {
         truncated_body_text: 'This is a test...'
       }
 
+      // Act
       const result = SubstackPreviewPostCodec.decode(validPost)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackPreviewPostCodec, validPost, 'test post')
@@ -34,14 +38,18 @@ describe('io-ts validation codecs', () => {
       expect(decoded.subtitle).toBe('A test post')
     })
 
-    it('should reject invalid post data', () => {
+    it('When invalid post data is provided, then rejects with error', () => {
+      // Arrange
       const invalidPost = {
         id: 'not-a-number', // Invalid - should be number
         title: 'Test Post',
         post_date: '2023-01-01T00:00:00Z'
       }
 
+      // Act
       const result = SubstackPreviewPostCodec.decode(invalidPost)
+
+      // Assert
       expect(isLeft(result)).toBe(true)
 
       expect(() => {
@@ -49,14 +57,18 @@ describe('io-ts validation codecs', () => {
       }).toThrow('Invalid test post')
     })
 
-    it('should handle minimal valid post data', () => {
+    it('When minimal valid post data is provided, then decodes successfully', () => {
+      // Arrange
       const minimalPost = {
         id: 456,
         title: 'Minimal Post',
         post_date: '2023-01-01T00:00:00Z'
       }
 
+      // Act
       const result = SubstackPreviewPostCodec.decode(minimalPost)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackPreviewPostCodec, minimalPost, 'minimal post')
@@ -67,7 +79,8 @@ describe('io-ts validation codecs', () => {
   })
 
   describe('SubstackFullPostCodec', () => {
-    it('should validate valid full post data', () => {
+    it('When valid full post data is provided, then decodes successfully', () => {
+      // Arrange
       const validFullPost = {
         id: 123,
         title: 'Test Full Post',
@@ -84,7 +97,10 @@ describe('io-ts validation codecs', () => {
         restacks: 3
       }
 
+      // Act
       const result = SubstackFullPostCodec.decode(validFullPost)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackFullPostCodec, validFullPost, 'test full post')
@@ -97,7 +113,8 @@ describe('io-ts validation codecs', () => {
       expect(decoded.restacks).toBe(3)
     })
 
-    it('should validate minimal full post data with only required fields', () => {
+    it('When minimal full post data is provided, then decodes successfully', () => {
+      // Arrange
       const minimalFullPost = {
         id: 456,
         title: 'Minimal Full Post',
@@ -106,7 +123,10 @@ describe('io-ts validation codecs', () => {
         canonical_url: 'https://example.com/minimal-full-post'
       }
 
+      // Act
       const result = SubstackFullPostCodec.decode(minimalFullPost)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackFullPostCodec, minimalFullPost, 'minimal full post')
@@ -117,7 +137,8 @@ describe('io-ts validation codecs', () => {
       expect(decoded.reactions).toBeUndefined()
     })
 
-    it('should reject full post with invalid postTags type', () => {
+    it('When invalid postTags type is provided, then rejects with error', () => {
+      // Arrange
       const invalidFullPost = {
         id: 123,
         title: 'Test Post',
@@ -126,11 +147,15 @@ describe('io-ts validation codecs', () => {
         postTags: 'invalid-tags' // Should be array of strings
       }
 
+      // Act
       const result = SubstackFullPostCodec.decode(invalidFullPost)
+
+      // Assert
       expect(isLeft(result)).toBe(true)
     })
 
-    it('should reject full post with invalid reactions type', () => {
+    it('When invalid reactions type is provided, then rejects with error', () => {
+      // Arrange
       const invalidFullPost = {
         id: 123,
         title: 'Test Post',
@@ -139,20 +164,27 @@ describe('io-ts validation codecs', () => {
         reactions: ['invalid'] // Should be record of string to number
       }
 
+      // Act
       const result = SubstackFullPostCodec.decode(invalidFullPost)
+
+      // Assert
       expect(isLeft(result)).toBe(true)
     })
   })
 
   describe('SubstackCommentCodec', () => {
-    it('should validate valid comment data', () => {
+    it('When valid comment data is provided, then decodes successfully', () => {
+      // Arrange
       const validComment = {
         id: 789,
         body: 'This is a comment',
         author_is_admin: false
       }
 
+      // Act
       const result = SubstackCommentCodec.decode(validComment)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackCommentCodec, validComment, 'test comment')
@@ -161,32 +193,41 @@ describe('io-ts validation codecs', () => {
       expect(decoded.author_is_admin).toBe(false)
     })
 
-    it('should handle optional author_is_admin field', () => {
+    it('When optional author_is_admin is omitted, then decodes successfully', () => {
+      // Arrange
       const commentWithoutAdmin = {
         id: 789,
         body: 'This is a comment'
       }
 
+      // Act
       const result = SubstackCommentCodec.decode(commentWithoutAdmin)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackCommentCodec, commentWithoutAdmin, 'test comment')
       expect(decoded.author_is_admin).toBeUndefined()
     })
 
-    it('should reject invalid comment data', () => {
+    it('When invalid comment data is provided, then rejects with error', () => {
+      // Arrange
       const invalidComment = {
         id: 'not-a-number',
         body: 'This is a comment'
       }
 
+      // Act
       const result = SubstackCommentCodec.decode(invalidComment)
+
+      // Assert
       expect(isLeft(result)).toBe(true)
     })
   })
 
   describe('SubstackCommentResponseCodec', () => {
-    it('should validate valid comment response data', () => {
+    it('When valid comment response is provided, then decodes successfully', () => {
+      // Arrange
       const validResponse = {
         item: {
           comment: {
@@ -200,7 +241,10 @@ describe('io-ts validation codecs', () => {
         }
       }
 
+      // Act
       const result = SubstackCommentResponseCodec.decode(validResponse)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackCommentResponseCodec, validResponse, 'test response')
@@ -209,7 +253,8 @@ describe('io-ts validation codecs', () => {
       expect(decoded.item.comment.post_id).toBe(789)
     })
 
-    it('should handle null post_id', () => {
+    it('When post_id is null, then decodes successfully', () => {
+      // Arrange
       const responseWithNullPostId = {
         item: {
           comment: {
@@ -223,11 +268,15 @@ describe('io-ts validation codecs', () => {
         }
       }
 
+      // Act
       const result = SubstackCommentResponseCodec.decode(responseWithNullPostId)
+
+      // Assert
       expect(isRight(result)).toBe(true)
     })
 
-    it('should reject invalid comment response structure', () => {
+    it('When invalid comment response structure is provided, then rejects with error', () => {
+      // Arrange
       const invalidResponse = {
         item: {
           comment: {
@@ -240,13 +289,17 @@ describe('io-ts validation codecs', () => {
         }
       }
 
+      // Act
       const result = SubstackCommentResponseCodec.decode(invalidResponse)
+
+      // Assert
       expect(isLeft(result)).toBe(true)
     })
   })
 
   describe('SubstackNoteCodec', () => {
-    it('should validate full note data with nested structures', () => {
+    it('When full note data with nested structures is provided, then decodes successfully', () => {
+      // Arrange
       const validNote = {
         entity_key: 'note-123',
         type: 'note',
@@ -283,7 +336,10 @@ describe('io-ts validation codecs', () => {
         canReply: true
       }
 
+      // Act
       const result = SubstackNoteCodec.decode(validNote)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackNoteCodec, validNote, 'test note')
@@ -293,13 +349,17 @@ describe('io-ts validation codecs', () => {
       expect(decoded.context?.users[0].name).toBe('Test User')
     })
 
-    it('should handle minimal note with only required fields', () => {
+    it('When minimal note with only required fields is provided, then decodes successfully', () => {
+      // Arrange
       const minimalNote = {
         entity_key: 'note-456',
         type: 'note'
       }
 
+      // Act
       const result = SubstackNoteCodec.decode(minimalNote)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackNoteCodec, minimalNote, 'minimal note')
@@ -308,7 +368,8 @@ describe('io-ts validation codecs', () => {
       expect(decoded.context).toBeUndefined()
     })
 
-    it('should handle note with null optional fields', () => {
+    it('When note with null optional fields is provided, then decodes successfully', () => {
+      // Arrange
       const noteWithNulls = {
         entity_key: 'note-789',
         type: 'note',
@@ -318,23 +379,31 @@ describe('io-ts validation codecs', () => {
         publication: null
       }
 
+      // Act
       const result = SubstackNoteCodec.decode(noteWithNulls)
+
+      // Assert
       expect(isRight(result)).toBe(true)
     })
 
-    it('should reject note missing required fields', () => {
+    it('When note missing required fields is provided, then rejects with error', () => {
+      // Arrange
       const invalidNote = {
         type: 'note'
         // Missing entity_key
       }
 
+      // Act
       const result = SubstackNoteCodec.decode(invalidNote)
+
+      // Assert
       expect(isLeft(result)).toBe(true)
     })
   })
 
   describe('SubstackCommentRepliesResponseCodec', () => {
-    it('should validate comment replies with wrapped descendant comments', () => {
+    it('When valid comment replies with wrapped descendants are provided, then decodes successfully', () => {
+      // Arrange
       const validResponse = {
         commentBranches: [
           {
@@ -363,7 +432,10 @@ describe('io-ts validation codecs', () => {
         nextCursor: 'cursor123'
       }
 
+      // Act
       const result = SubstackCommentRepliesResponseCodec.decode(validResponse)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(
@@ -379,14 +451,18 @@ describe('io-ts validation codecs', () => {
       expect(decoded.nextCursor).toBe('cursor123')
     })
 
-    it('should handle empty comment branches', () => {
+    it('When empty comment branches are provided, then decodes successfully', () => {
+      // Arrange
       const emptyResponse = {
         commentBranches: [],
         moreBranches: 0,
         nextCursor: null
       }
 
+      // Act
       const result = SubstackCommentRepliesResponseCodec.decode(emptyResponse)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(
@@ -398,7 +474,8 @@ describe('io-ts validation codecs', () => {
       expect(decoded.nextCursor).toBeNull()
     })
 
-    it('should reject invalid wrapped descendant comment', () => {
+    it('When invalid wrapped descendant comment is provided, then rejects with error', () => {
+      // Arrange
       const invalidResponse = {
         commentBranches: [
           {
@@ -415,13 +492,17 @@ describe('io-ts validation codecs', () => {
         nextCursor: null
       }
 
+      // Act
       const result = SubstackCommentRepliesResponseCodec.decode(invalidResponse)
+
+      // Assert
       expect(isLeft(result)).toBe(true)
     })
   })
 
   describe('SubstackPublicationFullPostCodec', () => {
-    it('should validate publication full post with expanded fields', () => {
+    it('When valid publication full post with expanded fields is provided, then decodes successfully', () => {
+      // Arrange
       const validPost = {
         id: 123,
         title: 'Publication Post',
@@ -440,7 +521,10 @@ describe('io-ts validation codecs', () => {
         audience: 'everyone'
       }
 
+      // Act
       const result = SubstackPublicationFullPostCodec.decode(validPost)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackPublicationFullPostCodec, validPost, 'test pub post')
@@ -450,7 +534,8 @@ describe('io-ts validation codecs', () => {
       expect(decoded.postTags?.[0].name).toBe('tech')
     })
 
-    it('should handle minimal publication full post', () => {
+    it('When minimal publication full post is provided, then decodes successfully', () => {
+      // Arrange
       const minimalPost = {
         id: 456,
         title: 'Minimal Pub Post',
@@ -459,7 +544,10 @@ describe('io-ts validation codecs', () => {
         canonical_url: 'https://test.substack.com/p/minimal-pub-post'
       }
 
+      // Act
       const result = SubstackPublicationFullPostCodec.decode(minimalPost)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(
@@ -472,7 +560,8 @@ describe('io-ts validation codecs', () => {
       expect(decoded.postTags).toBeUndefined()
     })
 
-    it('should handle null optional fields', () => {
+    it('When null optional fields are provided, then decodes successfully', () => {
+      // Arrange
       const postWithNulls = {
         id: 789,
         title: 'Post with nulls',
@@ -485,13 +574,17 @@ describe('io-ts validation codecs', () => {
         postTags: null
       }
 
+      // Act
       const result = SubstackPublicationFullPostCodec.decode(postWithNulls)
+
+      // Assert
       expect(isRight(result)).toBe(true)
     })
   })
 
   describe('SubstackPreviewPostCodec expanded fields', () => {
-    it('should validate post with all expanded fields and nulls', () => {
+    it('When post with all expanded fields and nulls is provided, then decodes successfully', () => {
+      // Arrange
       const expandedPost = {
         id: 123,
         title: 'Expanded Post',
@@ -517,7 +610,10 @@ describe('io-ts validation codecs', () => {
         reactions: { '❤️': 10, '👍': 5 }
       }
 
+      // Act
       const result = SubstackPreviewPostCodec.decode(expandedPost)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackPreviewPostCodec, expandedPost, 'expanded post')
@@ -529,7 +625,8 @@ describe('io-ts validation codecs', () => {
   })
 
   describe('SubstackCommentCodec expanded fields', () => {
-    it('should validate comment with all expanded fields', () => {
+    it('When comment with all expanded fields is provided, then decodes successfully', () => {
+      // Arrange
       const expandedComment = {
         id: 123,
         body: 'Test comment body',
@@ -546,7 +643,10 @@ describe('io-ts validation codecs', () => {
         author_is_admin: false
       }
 
+      // Act
       const result = SubstackCommentCodec.decode(expandedComment)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackCommentCodec, expandedComment, 'expanded comment')
@@ -558,7 +658,8 @@ describe('io-ts validation codecs', () => {
       expect(decoded.photo_url).toBe('https://example.com/photo.jpg')
     })
 
-    it('should handle comment with null optional fields', () => {
+    it('When comment with null optional fields is provided, then decodes successfully', () => {
+      // Arrange
       const commentWithNulls = {
         id: 789,
         body: 'Minimal comment',
@@ -570,7 +671,10 @@ describe('io-ts validation codecs', () => {
         children_count: null
       }
 
+      // Act
       const result = SubstackCommentCodec.decode(commentWithNulls)
+
+      // Assert
       expect(isRight(result)).toBe(true)
 
       const decoded = decodeOrThrow(SubstackCommentCodec, commentWithNulls, 'null comment')

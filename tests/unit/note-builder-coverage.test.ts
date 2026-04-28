@@ -134,7 +134,7 @@ describe('NoteBuilder - Coverage Tests', () => {
       expect(bulletList.content[2].content[0].content[0].text).toBe('Third item')
     })
 
-    it('should handle complex formatting in chained list items', () => {
+    it('When complex formatting in chained list items', () => {
       const request = builder
         .paragraph()
         .numberedList()
@@ -216,11 +216,11 @@ describe('NoteBuilder - Coverage Tests', () => {
   })
 
   describe('Error handling and validation', () => {
-    it('should throw error for empty notes', () => {
+    it('When for empty notes', () => {
       expect(() => builder.build()).toThrow('Note must contain at least one paragraph')
     })
 
-    it('should throw error for paragraphs with no content', () => {
+    it('When for paragraphs with no content', () => {
       // Create a note with an empty paragraph by directly manipulating state
       const builderWithEmptyParagraph = new NoteBuilder(mockClient, {
         paragraphs: [{ segments: [], lists: [] }]
@@ -231,7 +231,7 @@ describe('NoteBuilder - Coverage Tests', () => {
       )
     })
 
-    it('should throw error for links without URL', () => {
+    it('When for links without URL', () => {
       // Test the segmentToContent method directly for link validation
       const testBuilder = new NoteBuilder(mockClient, {
         paragraphs: [
@@ -245,7 +245,7 @@ describe('NoteBuilder - Coverage Tests', () => {
       expect(() => testBuilder.build()).toThrow('Link segments must have a URL')
     })
 
-    it('should handle notes with attachment IDs', () => {
+    it('When notes with attachment IDs', () => {
       // Test the attachment IDs branch in toNoteRequest
       const builderWithAttachment = new NoteBuilder(mockClient, {
         paragraphs: [{ segments: [{ text: 'test', type: 'simple' }], lists: [] }],
@@ -318,7 +318,7 @@ describe('NoteBuilder - Coverage Tests', () => {
       expect((request.bodyJson.content[0] as any).content[0].text).toBe('Test paragraph')
     })
 
-    it('should handle copyState method correctly', async () => {
+    it('When copyState method correctly', async () => {
       // Test that state is properly copied when adding paragraphs
       await noteWithLinkBuilder
         .paragraph()
@@ -335,7 +335,7 @@ describe('NoteBuilder - Coverage Tests', () => {
       expect(noteRequest.bodyJson.content[1].content[0].text).toBe('Second paragraph')
     })
 
-    it('should handle toNoteRequestWithState method with custom state', async () => {
+    it('When toNoteRequestWithState method with custom state', async () => {
       // Test complex note with attachment
       await noteWithLinkBuilder
         .paragraph()
@@ -362,7 +362,7 @@ describe('NoteBuilder - Coverage Tests', () => {
   })
 
   describe('Mixed content scenarios', () => {
-    it('should handle paragraphs with both text and lists', () => {
+    it('When paragraphs with both text and lists', () => {
       const request = builder
         .paragraph()
         .text('Introduction paragraph')
@@ -382,7 +382,7 @@ describe('NoteBuilder - Coverage Tests', () => {
       expect(request.bodyJson.content[2].type).toBe('paragraph')
     })
 
-    it('should handle numbered lists correctly', () => {
+    it('When numbered lists correctly', () => {
       const request = builder
         .paragraph()
         .numberedList()
@@ -399,7 +399,7 @@ describe('NoteBuilder - Coverage Tests', () => {
       expect(request.bodyJson.content[0].content).toHaveLength(3)
     })
 
-    it('should handle empty list gracefully', () => {
+    it('When empty list gracefully', () => {
       // This tests the edge case of starting a list but finishing without items
       const request = builder.paragraph().text('Text before list').bulletList().finish().build()
 
@@ -411,7 +411,7 @@ describe('NoteBuilder - Coverage Tests', () => {
   })
 
   describe('Segment to content conversion', () => {
-    it('should handle simple text segments', () => {
+    it('When simple text segments', () => {
       const request = builder.paragraph().text('Simple text').build()
 
       expect(request.bodyJson.content[0].content[0]).toEqual({
@@ -420,7 +420,7 @@ describe('NoteBuilder - Coverage Tests', () => {
       })
     })
 
-    it('should handle all formatting types', () => {
+    it('When all formatting types', () => {
       const request = builder
         .paragraph()
         .bold('bold')

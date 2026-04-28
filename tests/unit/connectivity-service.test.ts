@@ -17,7 +17,7 @@ describe('ConnectivityService', () => {
   })
 
   describe('isConnected', () => {
-    it('should return true when API is accessible', async () => {
+    it('When requesting true when API is accessible', async () => {
       // Arrange
       mockSubstackClient.put.mockResolvedValue({})
 
@@ -33,7 +33,7 @@ describe('ConnectivityService', () => {
       expect(mockSubstackClient.put).toHaveBeenCalledTimes(1)
     })
 
-    it('should return false when API request fails with network error', async () => {
+    it('When requesting false when API request fails with network error', async () => {
       // Arrange
       mockSubstackClient.put.mockRejectedValue(new Error('Network error'))
 
@@ -49,7 +49,7 @@ describe('ConnectivityService', () => {
       expect(mockSubstackClient.put).toHaveBeenCalledTimes(1)
     })
 
-    it('should return false when API request fails with HTTP error', async () => {
+    it('When requesting false when API request fails with HTTP error', async () => {
       // Arrange
       mockSubstackClient.put.mockRejectedValue(new Error('HTTP 401: Unauthorized'))
 
@@ -65,7 +65,7 @@ describe('ConnectivityService', () => {
       expect(mockSubstackClient.put).toHaveBeenCalledTimes(1)
     })
 
-    it('should return false when API request fails with timeout', async () => {
+    it('When requesting false when API request fails with timeout', async () => {
       // Arrange
       mockSubstackClient.put.mockRejectedValue(new Error('Request timeout'))
 
@@ -81,7 +81,7 @@ describe('ConnectivityService', () => {
       expect(mockSubstackClient.put).toHaveBeenCalledTimes(1)
     })
 
-    it('should handle successful API response with data', async () => {
+    it('When successful API response with data', async () => {
       // Arrange
       const mockResponse = { success: true }
       mockSubstackClient.put.mockResolvedValue(mockResponse)

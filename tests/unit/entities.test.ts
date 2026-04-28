@@ -1,13 +1,6 @@
 import { SubstackClient } from '@substack-api/substack-client'
 import { Profile, PreviewPost, Comment } from '@substack-api/domain'
-import {
-  PostService,
-  ProfileService,
-  NoteService,
-  CommentService,
-  FollowingService,
-  NoteBuilderFactory
-} from '@substack-api/internal/services'
+import { createMockEntityDeps } from '@test/unit/helpers/mock-services'
 import type { HttpClient } from '@substack-api/internal/http-client'
 
 describe('SubstackClient Entity Model', () => {
@@ -21,17 +14,17 @@ describe('SubstackClient Entity Model', () => {
   })
 
   describe('SubstackClient', () => {
-    it('should create client instance', () => {
+    it('When client instance', () => {
       expect(client).toBeInstanceOf(SubstackClient)
     })
 
-    it('should throw error when getting own profile without proper authentication', async () => {
+    it('When when getting own profile without proper authentication', async () => {
       await expect(client.ownProfile()).rejects.toThrow('Failed to get own profile:')
     })
   })
 
   describe('Entity Creation', () => {
-    it('should create Profile entity', () => {
+    it('When Profile entity', () => {
       const mockData = {
         id: 123,
         handle: 'testuser',
@@ -68,39 +61,7 @@ describe('SubstackClient Entity Model', () => {
       const publicationClient = (client as unknown as { publicationClient: HttpClient })
         .publicationClient
 
-      // Create mock services
-      const mockProfileService = {
-        getOwnProfile: jest.fn(),
-        getProfileById: jest.fn(),
-        getProfileBySlug: jest.fn()
-      } as unknown as ProfileService
-
-      const mockPostService = {
-        getPostById: jest.fn(),
-        getPostsForProfile: jest.fn()
-      } as unknown as PostService
-
-      const mockNoteService = {
-        getNoteById: jest.fn(),
-        getNotesForLoggedUser: jest.fn(),
-        getNotesForProfile: jest.fn()
-      } as unknown as NoteService
-
-      const mockCommentService = {
-        getCommentsForPost: jest.fn(),
-        getCommentById: jest.fn()
-      } as unknown as CommentService
-
-      const profile = new Profile(mockData, {
-        publicationClient,
-        profileService: mockProfileService,
-        postService: mockPostService,
-        noteService: mockNoteService,
-        commentService: mockCommentService,
-        followingService: {} as unknown as FollowingService,
-        newNoteService: {} as unknown as NoteBuilderFactory,
-        perPage: 25
-      })
+      const profile = new Profile(mockData, createMockEntityDeps({ publicationClient }))
 
       expect(profile).toBeInstanceOf(Profile)
       expect(profile.id).toBe(123)
@@ -108,7 +69,7 @@ describe('SubstackClient Entity Model', () => {
       expect(profile.slug).toBe('testuser')
     })
 
-    it('should create PreviewPost entity', () => {
+    it('When PreviewPost entity', () => {
       const mockData = {
         id: 456,
         title: 'Test Post',
@@ -119,34 +80,14 @@ describe('SubstackClient Entity Model', () => {
       const publicationClient = (client as unknown as { publicationClient: HttpClient })
         .publicationClient
 
-      // Create mock services
-      const mockCommentService = {
-        getCommentsForPost: jest.fn(),
-        getCommentById: jest.fn()
-      } as unknown as CommentService
-
-      const mockPostService = {
-        getPostById: jest.fn(),
-        getPostsForProfile: jest.fn()
-      } as unknown as PostService
-
-      const post = new PreviewPost(mockData, {
-        publicationClient,
-        commentService: mockCommentService,
-        postService: mockPostService,
-        profileService: {} as unknown as ProfileService,
-        noteService: {} as unknown as NoteService,
-        followingService: {} as unknown as FollowingService,
-        newNoteService: {} as unknown as NoteBuilderFactory,
-        perPage: 25
-      })
+      const post = new PreviewPost(mockData, createMockEntityDeps({ publicationClient }))
 
       expect(post).toBeInstanceOf(PreviewPost)
       expect(post.id).toBe(456)
       expect(post.title).toBe('Test Post')
     })
 
-    it('should create Comment entity', () => {
+    it('When Comment entity', () => {
       const mockData = {
         id: 789,
         body: 'Test comment',

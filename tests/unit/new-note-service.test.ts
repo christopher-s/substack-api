@@ -16,7 +16,7 @@ describe('NoteBuilderFactory', () => {
   })
 
   describe('newNote', () => {
-    it('should return a NoteBuilder instance', () => {
+    it('When requesting a NoteBuilder instance', () => {
       const mockBuilder = {} as NoteBuilder
       jest.mocked(NoteBuilder).mockImplementation(() => mockBuilder)
 
@@ -28,7 +28,7 @@ describe('NoteBuilderFactory', () => {
   })
 
   describe('newNoteWithLink', () => {
-    it('should return a NoteWithLinkBuilder instance', () => {
+    it('When requesting a NoteWithLinkBuilder instance', () => {
       const mockBuilder = {} as NoteWithLinkBuilder
       jest.mocked(NoteWithLinkBuilder).mockImplementation(() => mockBuilder)
 

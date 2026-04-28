@@ -29,14 +29,14 @@ describe('NoteBuilder', () => {
   })
 
   describe('Constructor', () => {
-    it('should create empty post builder without parameters', () => {
+    it('When empty post builder without parameters', () => {
       const builder = new NoteBuilder(mockPublicationClient)
       expect(builder).toBeInstanceOf(NoteBuilder)
     })
   })
 
   describe('paragraph() method', () => {
-    it('should return ParagraphBuilder instance', () => {
+    it('When requesting ParagraphBuilder instance', () => {
       const builder = new NoteBuilder(mockPublicationClient)
       const paragraphBuilder = builder.paragraph()
       expect(paragraphBuilder).toBeInstanceOf(ParagraphBuilder)
@@ -44,7 +44,7 @@ describe('NoteBuilder', () => {
   })
 
   describe('Basic paragraph creation', () => {
-    it('should create note with simple text content', async () => {
+    it('When note with simple text content', async () => {
       const builder = new NoteBuilder(mockPublicationClient)
       const result = await builder.paragraph().text('Hello world').build()
 
@@ -70,7 +70,7 @@ describe('NoteBuilder', () => {
       })
     })
 
-    it('should create note with mixed formatting', async () => {
+    it('When note with mixed formatting', async () => {
       const builder = new NoteBuilder(mockPublicationClient)
       const result = await builder
         .paragraph()
@@ -122,7 +122,7 @@ describe('NoteBuilder', () => {
   })
 
   describe('Multiple paragraphs', () => {
-    it('should create note with multiple paragraphs', async () => {
+    it('When note with multiple paragraphs', async () => {
       const builder = new NoteBuilder(mockPublicationClient)
       const result = await builder
         .paragraph()
@@ -144,7 +144,7 @@ describe('NoteBuilder', () => {
   })
 
   describe('Lists', () => {
-    it('should create bullet list', async () => {
+    it('When bullet list', async () => {
       const builder = new NoteBuilder(mockPublicationClient)
       const result = await builder
         .paragraph()
@@ -187,7 +187,7 @@ describe('NoteBuilder', () => {
       })
     })
 
-    it('should create numbered list', async () => {
+    it('When numbered list', async () => {
       const builder = new NoteBuilder(mockPublicationClient)
       const result = await builder
         .paragraph()
@@ -257,12 +257,12 @@ describe('NoteBuilder', () => {
   })
 
   describe('Validation', () => {
-    it('should throw error when building note with no paragraphs', () => {
+    it('When when building note with no paragraphs', () => {
       const builder = new NoteBuilder(mockPublicationClient)
       expect(() => builder.build()).toThrow('Note must contain at least one paragraph')
     })
 
-    it('should throw error when paragraph has no content', () => {
+    it('When when paragraph has no content', () => {
       const builder = new NoteBuilder(mockPublicationClient)
 
       // This should be impossible with our API design, but let's test the validation
@@ -276,7 +276,7 @@ describe('NoteBuilder', () => {
   })
 
   describe('Builder types and scoping', () => {
-    it('should return correct builder types', () => {
+    it('When requesting correct builder types', () => {
       const builder = new NoteBuilder(mockPublicationClient)
       const paragraphBuilder = builder.paragraph()
       const listBuilder = paragraphBuilder.bulletList()

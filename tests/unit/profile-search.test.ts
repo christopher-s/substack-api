@@ -44,7 +44,7 @@ describe('SearchService - searchProfiles', () => {
     expect(mockClient.get).toHaveBeenCalledWith('/profile/search?query=python&page=2')
   })
 
-  it('should handle empty results', async () => {
+  it('When empty results', async () => {
     mockClient.get.mockResolvedValue({ results: [], more: false })
 
     const result = await service.searchProfiles('nonexistent')

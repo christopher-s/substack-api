@@ -24,7 +24,7 @@ export const SubstackPublicationPostCodec = t.intersection([
     section_name: t.union([t.string, t.null]),
     section_slug: t.union([t.string, t.null]),
     podcast_url: t.union([t.string, t.null]),
-    videoUpload: t.unknown
+    videoUpload: t.union([t.unknown, t.null])
   })
 ])
 

@@ -1,7 +1,7 @@
 import { Category } from '@substack-api/domain/category'
 
 describe('Category', () => {
-  it('should create from raw API data', () => {
+  it('When from raw API data', () => {
     const category = new Category({
       id: 1,
       name: 'Technology',

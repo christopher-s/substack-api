@@ -50,7 +50,7 @@ describe('DiscoveryService - getTrending', () => {
     expect(mockClient.get).toHaveBeenCalledWith('/inbox/top?limit=25')
   })
 
-  it('should handle empty results', async () => {
+  it('When empty results', async () => {
     mockClient.get.mockResolvedValue({ inboxItems: [] })
 
     const result = await service.getTrending()

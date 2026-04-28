@@ -125,7 +125,7 @@ describe('Note Entity', () => {
   })
 
   describe('comments()', () => {
-    it('should iterate through note parent comments', async () => {
+    it('When iterating through note parent comments', async () => {
       const comments = []
       for await (const comment of note.comments()) {
         comments.push(comment)
@@ -137,7 +137,7 @@ describe('Note Entity', () => {
       expect(comments[1].body).toBe('Parent comment 2')
     })
 
-    it('should handle empty parent comments', async () => {
+    it('When empty parent comments', async () => {
       const mockNoteDataEmpty = {
         entity_key: '790',
         type: 'note',
@@ -211,7 +211,7 @@ describe('Note Entity', () => {
       expect(comments).toHaveLength(0)
     })
 
-    it('should handle undefined parent comments', async () => {
+    it('When undefined parent comments', async () => {
       const mockNoteDataUndefined = {
         entity_key: '791',
         type: 'note',
@@ -285,7 +285,7 @@ describe('Note Entity', () => {
       expect(comments).toHaveLength(0)
     })
 
-    it('should handle null parent comments', async () => {
+    it('When null parent comments', async () => {
       const mockNoteDataWithNull = {
         entity_key: '792',
         type: 'note',
@@ -382,7 +382,7 @@ describe('Note Entity', () => {
   })
 
   describe('like()', () => {
-    it('should throw error for unimplemented like functionality', async () => {
+    it('When for unimplemented like functionality', async () => {
       await expect(note.like()).rejects.toThrow(
         'Note liking is not supported by this version of the API'
       )
@@ -390,7 +390,7 @@ describe('Note Entity', () => {
   })
 
   describe('addComment()', () => {
-    it('should throw error for unimplemented comment functionality', async () => {
+    it('When for unimplemented comment functionality', async () => {
       await expect(note.addComment('Test comment')).rejects.toThrow(
         'Note commenting is not supported by this version of the API'
       )
@@ -408,7 +408,7 @@ describe('Note Entity', () => {
   })
 
   describe('edge cases', () => {
-    it('should handle note with missing comment data', () => {
+    it('When note with missing comment data', () => {
       const noteWithoutComment = new Note(
         {
           entity_key: 'note-001',
@@ -437,7 +437,7 @@ describe('Note Entity', () => {
       expect(noteWithoutComment.type).toBe('note')
     })
 
-    it('should handle note with missing context data', () => {
+    it('When note with missing context data', () => {
       const noteWithoutContext = new Note(
         {
           entity_key: 'note-002',
@@ -458,7 +458,7 @@ describe('Note Entity', () => {
       expect(noteWithoutContext.publishedAt).toBeInstanceOf(Date)
     })
 
-    it('should handle note with null comment fields', () => {
+    it('When note with null comment fields', () => {
       const noteWithNullComment = new Note(
         {
           entity_key: 'note-003',

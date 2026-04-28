@@ -1,7 +1,7 @@
 import { PublicationPost } from '@substack-api/domain/publication-post'
 
 describe('PublicationPost', () => {
-  it('should create from raw API data with all fields', () => {
+  it('When from raw API data with all fields', () => {
     const post = new PublicationPost({
       id: 1,
       title: 'Test Post',
@@ -29,7 +29,7 @@ describe('PublicationPost', () => {
     expect(post.sectionName).toBe('Essays')
   })
 
-  it('should handle minimal data', () => {
+  it('When minimal data', () => {
     const post = new PublicationPost({
       id: 2,
       title: 'Minimal',

@@ -14,19 +14,19 @@ describe('SearchService branches', () => {
     service = new DiscoveryService(mockClient)
   })
 
-  it('should handle null nextCursor', async () => {
+  it('When null nextCursor', async () => {
     mockClient.get.mockResolvedValue({ items: [] })
     const result = await service.search('test')
     expect(result.nextCursor).toBeNull()
   })
 
-  it('should handle explicit null nextCursor', async () => {
+  it('When explicit null nextCursor', async () => {
     mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
     const result = await service.search('test')
     expect(result.nextCursor).toBeNull()
   })
 
-  it('should handle empty items', async () => {
+  it('When empty items', async () => {
     mockClient.get.mockResolvedValue({ items: undefined })
     const result = await service.search('test')
     expect(result.items).toHaveLength(0)

@@ -30,7 +30,7 @@ export class Profile {
     this.handle = rawData.handle
     this.name = rawData.name
     this.url = `https://substack.com/@${this.handle}`
-    this.avatarUrl = rawData.photo_url
+    this.avatarUrl = rawData.photo_url || ''
     this.bio = rawData.bio
 
     // Expose fields available on full profile responses

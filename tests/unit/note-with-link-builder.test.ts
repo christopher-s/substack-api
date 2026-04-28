@@ -22,7 +22,7 @@ describe('NoteWithLinkBuilder', () => {
   })
 
   describe('publish', () => {
-    it('should create attachment and publish note with attachment ID', async () => {
+    it('When attachment and publish note with attachment ID', async () => {
       // Mock attachment creation response
       const mockAttachmentResponse = {
         id: '19b5d6f9-46db-47d6-b381-17cb5f443c00',
@@ -109,7 +109,7 @@ describe('NoteWithLinkBuilder', () => {
       expect(result).toEqual(mockPublishResponse)
     })
 
-    it('should handle complex note content with attachments', async () => {
+    it('When complex note content with attachments', async () => {
       // Mock attachment creation response
       const mockAttachmentResponse = {
         id: 'attachment-id-123',
@@ -217,7 +217,7 @@ describe('NoteWithLinkBuilder', () => {
       expect(result).toEqual(mockPublishResponse)
     })
 
-    it('should handle attachment creation failure', async () => {
+    it('When attachment creation failure', async () => {
       // Mock attachment creation to fail
       mockClient.post.mockRejectedValueOnce(new Error('Attachment creation failed'))
 

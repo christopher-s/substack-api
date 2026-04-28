@@ -24,7 +24,7 @@ describe('NoteBuilder Immutability', () => {
   })
 
   describe('Builder Immutability', () => {
-    it('should return new instances instead of mutating existing ones', () => {
+    it('When requesting new instances instead of mutating existing ones', () => {
       const builder1 = new NoteBuilder(mockPublicationClient)
       const builder2 = builder1.paragraph()
       const builder3 = builder2.text('Hello')

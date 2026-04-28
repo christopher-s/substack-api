@@ -1,28 +1,22 @@
 import { CommentService } from '@substack-api/internal/services/comment-service'
-import { HttpClient } from '@substack-api/internal/http-client'
+import { createMockHttpClient } from '@test/unit/helpers/mock-http-client'
 import type { SubstackComment, SubstackCommentResponse } from '@substack-api/internal'
-
-// Mock the http client
-jest.mock('@substack-api/internal/http-client')
 
 describe('CommentService', () => {
   let commentService: CommentService
-  let mockPublicationClient: jest.Mocked<HttpClient>
+  let mockPublicationClient: ReturnType<typeof createMockHttpClient>
 
   beforeEach(() => {
     jest.clearAllMocks()
 
-    mockPublicationClient = new HttpClient(
-      'https://test.substack.com',
-      'test'
-    ) as jest.Mocked<HttpClient>
-    mockPublicationClient.get = jest.fn()
+    mockPublicationClient = createMockHttpClient('https://test.substack.com')
 
     commentService = new CommentService(mockPublicationClient, mockPublicationClient)
   })
 
   describe('getCommentsForPost', () => {
-    it('should fetch comments for a post successfully', async () => {
+    it('When fetching comments for a post, then returns comments array', async () => {
+      // Arrange
       const mockComments: SubstackComment[] = [
         {
           id: 1,
@@ -39,43 +33,54 @@ describe('CommentService', () => {
       const mockResponse = { comments: mockComments }
       mockPublicationClient.get.mockResolvedValue(mockResponse)
 
+      // Act
       const result = await commentService.getCommentsForPost(123)
 
+      // Assert
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/post/123/comments')
       expect(result).toEqual({ comments: mockComments, more: false })
     })
 
-    it('should return empty array when no comments exist', async () => {
+    it('When no comments exist, then returns empty array', async () => {
+      // Arrange
       const mockResponse = { comments: undefined }
       mockPublicationClient.get.mockResolvedValue(mockResponse)
 
+      // Act
       const result = await commentService.getCommentsForPost(123)
 
+      // Assert
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/post/123/comments')
       expect(result).toEqual({ comments: [], more: false })
     })
 
-    it('should return empty array when comments field is null', async () => {
+    it('When comments field is null, then returns empty array', async () => {
+      // Arrange
       const mockResponse = { comments: null }
       mockPublicationClient.get.mockResolvedValue(mockResponse)
 
+      // Act
       const result = await commentService.getCommentsForPost(123)
 
+      // Assert
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/post/123/comments')
       expect(result).toEqual({ comments: [], more: false })
     })
 
-    it('should throw error when request fails', async () => {
+    it('When request fails, then throws error', async () => {
+      // Arrange
       const error = new Error('Network error')
       mockPublicationClient.get.mockRejectedValue(error)
 
+      // Act & Assert
       await expect(commentService.getCommentsForPost(123)).rejects.toThrow('Network error')
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/post/123/comments')
     })
   })
 
   describe('getCommentById', () => {
-    it('should fetch a comment by ID successfully', async () => {
+    it('When fetching a comment by ID, then returns comment data', async () => {
+      // Arrange
       const mockCommentResponse: SubstackCommentResponse = {
         item: {
           comment: {
@@ -91,8 +96,10 @@ describe('CommentService', () => {
 
       mockPublicationClient.get.mockResolvedValue(mockCommentResponse)
 
+      // Act
       const result = await commentService.getCommentById(123)
 
+      // Assert
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/reader/comment/123')
       expect(result).toMatchObject({
         id: 123,
@@ -100,7 +107,8 @@ describe('CommentService', () => {
       })
     })
 
-    it('should handle comment with null post_id', async () => {
+    it('When comment has null post_id, then still returns comment', async () => {
+      // Arrange
       const mockCommentResponse: SubstackCommentResponse = {
         item: {
           comment: {
@@ -116,25 +124,30 @@ describe('CommentService', () => {
 
       mockPublicationClient.get.mockResolvedValue(mockCommentResponse)
 
+      // Act
       const result = await commentService.getCommentById(123)
 
+      // Assert
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/reader/comment/123')
       expect(result.id).toBe(123)
       expect(result.body).toBe('Test comment body')
       expect(result.author_is_admin).toBeUndefined()
     })
 
-    it('should throw error when comment is not found', async () => {
+    it('When comment is not found, then throws error', async () => {
+      // Arrange
       const error = new Error('Comment not found')
       mockPublicationClient.get.mockRejectedValue(error)
 
+      // Act & Assert
       await expect(commentService.getCommentById(123)).rejects.toThrow('Comment not found')
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/reader/comment/123')
     })
   })
 
   describe('getCommentsForPost pagination', () => {
-    it('should return more: true when API indicates more comments exist', async () => {
+    it('When more comments exist, then returns more flag as true', async () => {
+      // Arrange
       const mockComments = [
         {
           id: 1,
@@ -148,8 +161,10 @@ describe('CommentService', () => {
 
       mockPublicationClient.get.mockResolvedValue({ comments: mockComments, more: true })
 
+      // Act
       const result = await commentService.getCommentsForPost(123)
 
+      // Assert
       expect(result.comments).toEqual(mockComments)
       expect(result.more).toBe(true)
     })

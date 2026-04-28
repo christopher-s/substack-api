@@ -84,7 +84,7 @@ describe('SubstackClient - Global Post Endpoint', () => {
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/posts/by-id/456')
     })
 
-    it('should handle errors from endpoint properly', async () => {
+    it('When errors from endpoint properly', async () => {
       mockAxiosInstance.get.mockRejectedValueOnce({
         response: {
           status: 404,

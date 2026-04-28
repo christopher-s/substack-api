@@ -24,7 +24,7 @@ describe('SearchService - exploreSearch', () => {
     expect(result.nextCursor).toBeNull()
   })
 
-  it('should use different tab values', async () => {
+  it('When different tab values', async () => {
     mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
 
     await service.exploreSearch({ tab: 'notes' })
@@ -50,7 +50,7 @@ describe('SearchService - exploreSearch', () => {
     expect(result.nextCursor).toBe('next-page-cursor')
   })
 
-  it('should handle empty response', async () => {
+  it('When empty response', async () => {
     mockClient.get.mockResolvedValue({})
     const result = await service.exploreSearch({ tab: 'explore' })
     expect(result.items).toHaveLength(0)
@@ -64,7 +64,7 @@ describe('SearchService - exploreSearch', () => {
     expect(calledUrl).not.toContain('query=')
   })
 
-  it('should return items with correct shape', async () => {
+  it('When requesting items with correct shape', async () => {
     const items = [
       { type: 'post', entity_key: 'post-1', title: 'Test Post' },
       { type: 'note', entity_key: 'note-1', body: 'Test note' }

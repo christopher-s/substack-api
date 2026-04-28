@@ -33,7 +33,7 @@ describe('DiscoveryService', () => {
       expect(mockClient.get).toHaveBeenCalledWith('/inbox/top')
     })
 
-    it('should handle empty inbox', async () => {
+    it('When empty inbox', async () => {
       mockClient.get.mockResolvedValue({})
       const result = await service.getTopPosts()
       expect(result.items).toHaveLength(0)
@@ -53,7 +53,7 @@ describe('DiscoveryService', () => {
       expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining('cursor=abc123'))
     })
 
-    it('should return items and nextCursor', async () => {
+    it('When requesting items and nextCursor', async () => {
       mockClient.get.mockResolvedValue({
         items: [{ type: 'post' }],
         nextCursor: 'next-page'

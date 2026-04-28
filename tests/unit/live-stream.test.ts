@@ -29,7 +29,7 @@ describe('PublicationService - getActiveLiveStream', () => {
     expect(result.activeLiveStream!.title).toBe('Live Q&A Session')
   })
 
-  it('should handle null response when no stream is active', async () => {
+  it('When null response when no stream is active', async () => {
     mockClient.get.mockResolvedValue({
       activeLiveStream: null
     })

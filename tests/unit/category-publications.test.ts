@@ -82,7 +82,7 @@ describe('DiscoveryService - getCategoryPublications', () => {
     )
   })
 
-  it('should handle empty results', async () => {
+  it('When empty results', async () => {
     mockClient.get.mockResolvedValue({})
 
     const result = await service.getCategoryPublications('podcast')

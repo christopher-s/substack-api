@@ -19,7 +19,7 @@ describe('ProfileService', () => {
   })
 
   describe('getOwnProfile', () => {
-    it('should return own profile data from the HTTP client', async () => {
+    it('When requesting own profile data from the HTTP client', async () => {
       const mockHandles = {
         potentialHandles: [{ id: '1', handle: 'testuser', type: 'existing' as const }]
       }
@@ -42,7 +42,7 @@ describe('ProfileService', () => {
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/user/testuser/public_profile')
     })
 
-    it('should throw error when handle options request fails', async () => {
+    it('When when handle options request fails', async () => {
       const error = new Error('Handle Options API Error')
       mockPublicationClient.get.mockRejectedValueOnce(error)
 
@@ -50,7 +50,7 @@ describe('ProfileService', () => {
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/handle/options')
     })
 
-    it('should throw error when profile request fails', async () => {
+    it('When when profile request fails', async () => {
       const mockHandles = {
         potentialHandles: [{ id: '1', handle: 'testuser', type: 'existing' as const }]
       }
@@ -65,7 +65,7 @@ describe('ProfileService', () => {
   })
 
   describe('getProfileById', () => {
-    it('should return profile data by ID from the HTTP client', async () => {
+    it('When requesting profile data by ID from the HTTP client', async () => {
       const mockProfile: SubstackFullProfile = {
         id: 456,
         name: 'Other User',
@@ -137,7 +137,7 @@ describe('ProfileService', () => {
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/user/otheruser/public_profile')
     })
 
-    it('should throw error when HTTP request fails', async () => {
+    it('When when HTTP request fails', async () => {
       const error = new Error('API Error')
       mockPublicationClient.get.mockRejectedValueOnce(error)
 
@@ -147,7 +147,7 @@ describe('ProfileService', () => {
   })
 
   describe('getProfileBySlug', () => {
-    it('should return profile data by slug from the HTTP client', async () => {
+    it('When requesting profile data by slug from the HTTP client', async () => {
       const mockProfile: SubstackFullProfile = {
         id: 789,
         name: 'Slug User',
@@ -164,7 +164,7 @@ describe('ProfileService', () => {
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/user/sluguser/public_profile')
     })
 
-    it('should throw error when HTTP request fails', async () => {
+    it('When when HTTP request fails', async () => {
       const error = new Error('API Error')
       mockPublicationClient.get.mockRejectedValueOnce(error)
 
@@ -172,7 +172,7 @@ describe('ProfileService', () => {
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/user/sluguser/public_profile')
     })
 
-    it('should reject invalid slug format', async () => {
+    it('When invalid slug format', async () => {
       await expect(profileService.getProfileBySlug('../admin')).rejects.toThrow(
         'Invalid slug format'
       )

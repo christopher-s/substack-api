@@ -67,7 +67,7 @@ describe('CommentService - getReplies', () => {
     )
   })
 
-  it('should handle empty replies', async () => {
+  it('When empty replies', async () => {
     mockSubstackClient.get.mockResolvedValue({
       commentBranches: [],
       moreBranches: 0,

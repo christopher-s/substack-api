@@ -33,7 +33,7 @@ describe('PublicationService', () => {
       expect(mockClient.get).toHaveBeenCalledWith('/homepage_data')
     })
 
-    it('should handle empty homepage', async () => {
+    it('When empty homepage', async () => {
       mockClient.get.mockResolvedValue({})
       const result = await service.getHomepageData()
       expect(result.newPosts).toHaveLength(0)

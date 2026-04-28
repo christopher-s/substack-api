@@ -23,19 +23,19 @@ describe('HttpClient', () => {
   })
 
   describe('constructor', () => {
-    it('should create client without token (anonymous mode)', () => {
+    it('When client without token (anonymous mode)', () => {
       expect(() => new HttpClient('https://test.com')).not.toThrow()
     })
 
-    it('should create client with empty string token (anonymous mode)', () => {
+    it('When client with empty string token (anonymous mode)', () => {
       expect(() => new HttpClient('https://test.com', '')).not.toThrow()
     })
 
-    it('should create client with whitespace-only token (anonymous mode)', () => {
+    it('When client with whitespace-only token (anonymous mode)', () => {
       expect(() => new HttpClient('https://test.substack.com', '   ')).not.toThrow()
     })
 
-    it('should create axios instance with correct base URL and headers', () => {
+    it('When axios instance with correct base URL and headers', () => {
       const client = new HttpClient('https://test.substack.com', 'test-api-key')
 
       expect(mockedAxios.create).toHaveBeenCalledWith({
@@ -77,7 +77,7 @@ describe('HttpClient', () => {
       expect(result).toEqual(mockResponse)
     })
 
-    it('should propagate axios errors', async () => {
+    it('When axios errors', async () => {
       mockAxiosInstance.get.mockRejectedValue(new Error('Network Error'))
 
       const client = new HttpClient('https://test.substack.com', 'test-api-key')
@@ -120,7 +120,7 @@ describe('HttpClient', () => {
       expect(result).toEqual(mockResponse)
     })
 
-    it('should propagate axios errors', async () => {
+    it('When axios errors', async () => {
       mockAxiosInstance.post.mockRejectedValue(new Error('Server Error'))
 
       const client = new HttpClient('https://test.substack.com', 'test-api-key')
@@ -163,7 +163,7 @@ describe('HttpClient', () => {
       expect(result).toEqual(mockResponse)
     })
 
-    it('should propagate axios errors', async () => {
+    it('When axios errors', async () => {
       mockAxiosInstance.put.mockRejectedValue(new Error('Forbidden'))
 
       const client = new HttpClient('https://test.substack.com', 'test-api-key')

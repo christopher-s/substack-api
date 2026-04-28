@@ -1,25 +1,21 @@
 import { NoteService } from '@substack-api/internal/services/note-service'
-import { HttpClient } from '@substack-api/internal/http-client'
+import { createMockHttpClient } from '@test/unit/helpers/mock-http-client'
 import type { SubstackCommentResponse } from '@substack-api/internal'
-
-// Mock the http client
-jest.mock('@substack-api/internal/http-client')
 
 describe('NoteService', () => {
   let noteService: NoteService
-  let mockPublicationClient: jest.Mocked<HttpClient>
+  let mockPublicationClient: ReturnType<typeof createMockHttpClient>
 
   beforeEach(() => {
     jest.clearAllMocks()
 
-    mockPublicationClient = new HttpClient('https://test.com', 'test') as jest.Mocked<HttpClient>
-    mockPublicationClient.get = jest.fn()
+    mockPublicationClient = createMockHttpClient('https://test.com')
 
     noteService = new NoteService(mockPublicationClient)
   })
 
   describe('getNoteById', () => {
-    it('should return transformed note data from the HTTP client', async () => {
+    it('When requesting transformed note data from the HTTP client', async () => {
       const mockCommentResponse: SubstackCommentResponse = {
         item: {
           comment: {
@@ -92,7 +88,7 @@ describe('NoteService', () => {
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/reader/comment/123')
     })
 
-    it('should throw error when HTTP request fails', async () => {
+    it('When when HTTP request fails', async () => {
       const error = new Error('API Error')
       mockPublicationClient.get.mockRejectedValueOnce(error)
 
@@ -102,7 +98,7 @@ describe('NoteService', () => {
   })
 
   describe('getNotesForLoggedUser', () => {
-    it('should return paginated notes without cursor', async () => {
+    it('When requesting paginated notes without cursor', async () => {
       const mockResponse = {
         items: [
           {
@@ -131,7 +127,7 @@ describe('NoteService', () => {
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/notes')
     })
 
-    it('should return paginated notes with cursor', async () => {
+    it('When requesting paginated notes with cursor', async () => {
       const mockResponse = {
         items: [],
         next_cursor: undefined
@@ -148,7 +144,7 @@ describe('NoteService', () => {
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/notes?cursor=test-cursor')
     })
 
-    it('should handle missing items in response', async () => {
+    it('When missing items in response', async () => {
       const mockResponse = {
         nextCursor: 'next-cursor'
       }
@@ -165,7 +161,7 @@ describe('NoteService', () => {
   })
 
   describe('getNotesForProfile', () => {
-    it('should return paginated notes for profile without cursor', async () => {
+    it('When requesting paginated notes for profile without cursor', async () => {
       const mockResponse = {
         items: [
           {
@@ -194,7 +190,7 @@ describe('NoteService', () => {
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/reader/feed/profile/123?types=note')
     })
 
-    it('should return paginated notes for profile with cursor', async () => {
+    it('When requesting paginated notes for profile with cursor', async () => {
       const mockResponse = {
         items: [],
         next_cursor: undefined
@@ -213,7 +209,7 @@ describe('NoteService', () => {
       )
     })
 
-    it('should handle URL encoding of cursor', async () => {
+    it('When URL encoding of cursor', async () => {
       const mockResponse = {
         items: [],
         next_cursor: undefined

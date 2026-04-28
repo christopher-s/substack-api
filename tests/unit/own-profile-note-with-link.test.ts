@@ -143,25 +143,30 @@ describe('OwnProfile - newNoteWithLink', () => {
   })
 
   describe('newNoteWithLink', () => {
-    it('should return a NoteWithLinkBuilder instance', () => {
+    it('When calling newNoteWithLink, then returns a NoteWithLinkBuilder instance', () => {
+      // Arrange
       const linkUrl = 'https://example.com/article'
+
+      // Act
       const noteBuilder = ownProfile.newNoteWithLink(linkUrl)
 
+      // Assert
       expect(noteBuilder).toBeInstanceOf(NoteWithLinkBuilder)
     })
 
-    it('should create NoteWithLinkBuilder with correct client and link', () => {
+    it('When creating NoteWithLinkBuilder, then uses correct client and link', () => {
+      // Arrange
       const linkUrl = 'https://iam.slys.dev/p/understanding-locking-contention'
+
+      // Act
       const noteBuilder = ownProfile.newNoteWithLink(linkUrl)
 
-      // We can't directly test the private properties, but we can test the functionality
+      // Assert
       expect(noteBuilder).toBeInstanceOf(NoteWithLinkBuilder)
-
-      // The NoteWithLinkBuilder should have the same client as the profile
-      // This is implicitly tested by ensuring the builder works with the same HTTP client
     })
 
-    it('should work with different types of URLs', () => {
+    it('When passing different URL types, then creates builder for each', () => {
+      // Arrange
       const urls = [
         'https://example.com/test',
         'http://blog.example.com/post/123',
@@ -169,38 +174,39 @@ describe('OwnProfile - newNoteWithLink', () => {
         'https://iam.slys.dev/p/understanding-locking-contention'
       ]
 
+      // Act & Assert
       urls.forEach((url) => {
         const noteBuilder = ownProfile.newNoteWithLink(url)
         expect(noteBuilder).toBeInstanceOf(NoteWithLinkBuilder)
       })
     })
 
-    it('should allow chaining builder methods', () => {
+    it('When chaining builder methods, then returns defined result', () => {
+      // Arrange
       const linkUrl = 'https://example.com/article'
       const noteBuilder = ownProfile.newNoteWithLink(linkUrl)
 
-      // Test that we can chain methods (this tests the interface, not the implementation)
+      // Act
       const chained = noteBuilder
         .paragraph()
         .text('Check out this article!')
         .paragraph()
         .text('It contains great information.')
 
+      // Assert
       expect(chained).toBeDefined()
     })
   })
 
   describe('integration with regular newNote', () => {
-    it('should provide both newNote and newNoteWithLink methods', () => {
-      // Regular note builder
+    it('When creating both note types, then both are defined and different', () => {
+      // Act
       const regularNote = ownProfile.newNote()
-      expect(regularNote).toBeDefined()
-
-      // Note with link builder
       const noteWithLink = ownProfile.newNoteWithLink('https://example.com')
-      expect(noteWithLink).toBeDefined()
 
-      // They should be different types
+      // Assert
+      expect(regularNote).toBeDefined()
+      expect(noteWithLink).toBeDefined()
       expect(noteWithLink).not.toBe(regularNote)
       expect(noteWithLink).toBeInstanceOf(NoteWithLinkBuilder)
     })
