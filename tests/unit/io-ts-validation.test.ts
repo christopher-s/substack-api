@@ -433,9 +433,7 @@ describe('io-ts validation codecs', () => {
         wordcount: 500,
         comment_count: 10,
         child_comment_count: 3,
-        postTags: [
-          { id: 1, publication_id: 1, name: 'tech', slug: 'tech', hidden: false }
-        ],
+        postTags: [{ id: 1, publication_id: 1, name: 'tech', slug: 'tech', hidden: false }],
         reactions: { '❤️': 5 },
         restacks: 2,
         type: 'newsletter',
@@ -445,11 +443,7 @@ describe('io-ts validation codecs', () => {
       const result = SubstackPublicationFullPostCodec.decode(validPost)
       expect(isRight(result)).toBe(true)
 
-      const decoded = decodeOrThrow(
-        SubstackPublicationFullPostCodec,
-        validPost,
-        'test pub post'
-      )
+      const decoded = decodeOrThrow(SubstackPublicationFullPostCodec, validPost, 'test pub post')
       expect(decoded.id).toBe(123)
       expect(decoded.wordcount).toBe(500)
       expect(decoded.comment_count).toBe(10)
@@ -511,7 +505,14 @@ describe('io-ts validation codecs', () => {
         audience: 'everyone',
         wordcount: 1200,
         description: 'A detailed description',
-        publishedBylines: [{ id: 1, name: 'Author Name', handle: 'author', photo_url: 'https://example.com/photo.jpg' }],
+        publishedBylines: [
+          {
+            id: 1,
+            name: 'Author Name',
+            handle: 'author',
+            photo_url: 'https://example.com/photo.jpg'
+          }
+        ],
         postTags: [{ id: '1', publication_id: 1, name: 'tech', slug: 'tech', hidden: false }],
         reactions: { '❤️': 10, '👍': 5 }
       }

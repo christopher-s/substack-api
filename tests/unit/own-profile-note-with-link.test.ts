@@ -108,7 +108,9 @@ describe('OwnProfile - newNoteWithLink', () => {
       mockClient,
       mockClient
     ) as jest.Mocked<FollowingService>
-    mockNoteBuilderFactory = new MockNoteBuilderFactory(mockClient) as jest.Mocked<NoteBuilderFactory>
+    mockNoteBuilderFactory = new MockNoteBuilderFactory(
+      mockClient
+    ) as jest.Mocked<NoteBuilderFactory>
 
     // Setup mock implementations for NoteBuilderFactory methods
     mockNoteBuilderFactory.newNote = jest.fn().mockImplementation(() => {

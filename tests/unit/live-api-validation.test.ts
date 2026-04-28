@@ -38,16 +38,16 @@ function validate(name: string, codec: any, data: unknown): boolean {
 
 describe('Live API Validation', () => {
   it('validates /api/v1/categories', async () => {
-    const data = await probe(`${BASE_URL}/api/v1/categories`) as unknown[]
+    const data = (await probe(`${BASE_URL}/api/v1/categories`)) as unknown[]
     expect(data.length).toBeGreaterThan(0)
     const ok = validate('First category', SubstackCategoryCodec, data[0])
     expect(ok).toBe(true)
   })
 
   it('validates /api/v1/profile/posts', async () => {
-    const data = await probe(
+    const data = (await probe(
       `${BASE_URL}/api/v1/profile/posts?profile_user_id=28963877&limit=3&offset=0`
-    ) as { posts?: unknown[] }
+    )) as { posts?: unknown[] }
     // Even if empty, the response structure should be valid
     if (data.posts && data.posts.length > 0) {
       const ok = validate('First post', SubstackPreviewPostCodec, data.posts[0])
@@ -58,7 +58,7 @@ describe('Live API Validation', () => {
   })
 
   it('validates /api/v1/inbox/top', async () => {
-    const data = await probe(`${BASE_URL}/api/v1/inbox/top?limit=3`) as { items?: unknown[] }
+    const data = (await probe(`${BASE_URL}/api/v1/inbox/top?limit=3`)) as { items?: unknown[] }
     if (data.items && data.items.length > 0) {
       const ok = validate('First inbox item', SubstackInboxItemCodec, data.items[0])
       expect(ok).toBe(true)
@@ -89,7 +89,7 @@ describe('Live API Validation', () => {
 
   it('validates /api/v1/post/{id}/comments', async () => {
     try {
-      const data = await probe(`${BASE_URL}/api/v1/post/176729823/comments`) as {
+      const data = (await probe(`${BASE_URL}/api/v1/post/176729823/comments`)) as {
         comments?: unknown[]
       }
       if (data.comments && data.comments.length > 0) {
@@ -105,9 +105,9 @@ describe('Live API Validation', () => {
 
   it('validates /api/v1/reader/feed/profile/{id}?types=note', async () => {
     try {
-      const data = await probe(
+      const data = (await probe(
         `${BASE_URL}/api/v1/reader/feed/profile/28963877?types=note&limit=3`
-      ) as { items?: unknown[] }
+      )) as { items?: unknown[] }
       if (data.items && data.items.length > 0) {
         const ok = validate('First note', SubstackNoteCodec, data.items[0])
         expect(ok).toBe(true)

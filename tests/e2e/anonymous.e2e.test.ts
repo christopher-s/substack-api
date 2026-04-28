@@ -194,9 +194,7 @@ describe('SubstackClient Anonymous E2E', () => {
 
     test('should get comment replies', async () => {
       const replies = await client.commentReplies(233934688)
-      expect(Array.isArray(replies.commentBranches) || replies.commentBranches === null).toBe(
-        true
-      )
+      expect(Array.isArray(replies.commentBranches) || replies.commentBranches === null).toBe(true)
       console.log(`Comment replies: ${replies.commentBranches?.length ?? 0} branches`)
     })
 

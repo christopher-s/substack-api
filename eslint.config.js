@@ -42,7 +42,7 @@ const sharedRules = {
 
 export default [
   eslint.configs.recommended,
-  { ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'samples/**'] },
+  { ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'samples/**', 'scripts/**'] },
   {
     files: ['jest.config.js', 'jest.e2e.config.js'],
     languageOptions: {

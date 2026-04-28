@@ -126,7 +126,10 @@ describe('PreviewPost Entity', () => {
           name: 'User 2'
         }
       ]
-      mockCommentService.getCommentsForPost.mockResolvedValue({ comments: mockComments, more: false })
+      mockCommentService.getCommentsForPost.mockResolvedValue({
+        comments: mockComments,
+        more: false
+      })
 
       const comments = []
       for await (const comment of post.comments({ limit: 2 })) {
@@ -159,7 +162,10 @@ describe('PreviewPost Entity', () => {
           name: 'User 2'
         }
       ]
-      mockCommentService.getCommentsForPost.mockResolvedValue({ comments: mockComments, more: false })
+      mockCommentService.getCommentsForPost.mockResolvedValue({
+        comments: mockComments,
+        more: false
+      })
 
       const comments = []
       for await (const comment of post.comments({ limit: 1 })) {
@@ -597,7 +603,10 @@ describe('FullPost Entity', () => {
           name: 'Commenter 2'
         }
       ]
-      mockCommentService.getCommentsForPost.mockResolvedValue({ comments: mockComments, more: false })
+      mockCommentService.getCommentsForPost.mockResolvedValue({
+        comments: mockComments,
+        more: false
+      })
 
       const comments = []
       for await (const comment of fullPost.comments({ limit: 2 })) {
