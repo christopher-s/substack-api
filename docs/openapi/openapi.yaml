@@ -177,7 +177,7 @@ paths:
                 $ref: '#/components/schemas/FullProfile'
         '404':
           $ref: '#/components/responses/NotFound'
-  /api/v1/reader/feed/profile/{id}:
+  /api/v1/reader/feed/profile/{profileId}:
     get:
       tags: [profile, discovery, note]
       summary: Profile reader feed
@@ -198,7 +198,7 @@ paths:
       operationId: getReaderProfileFeed
       parameters:
         - in: path
-          name: id
+          name: profileId
           required: true
           schema: { type: integer, minimum: 1 }
           description: Numeric profile (user) ID.
@@ -887,6 +887,23 @@ components:
       required: [id, title]
       additionalProperties: true
 
+    Post:
+      description: |
+        Generic post record. Substack returns post payloads in three concrete
+        shapes depending on the endpoint family:
+
+        - `PreviewPost` for profile feeds (`/api/v1/profile/posts`).
+        - `FullPost` for the by-id lookup (`/api/v1/posts/by-id/{id}`).
+        - `PublicationPost` for publication-scoped endpoints (`/archive`,
+          `/posts`, homepage).
+
+        Use this alias when a consumer wants to type a value that may carry
+        any of the three shapes (e.g. when normalizing across feeds).
+      oneOf:
+        - $ref: '#/components/schemas/PreviewPost'
+        - $ref: '#/components/schemas/FullPost'
+        - $ref: '#/components/schemas/PublicationPost'
+
     PaginatedPosts:
       type: array
       description: |
@@ -1069,7 +1086,7 @@ components:
       type: object
       description: |
         Lightweight profile record returned when calling
-        `/api/v1/reader/feed/profile/{id}` with no parameters.
+        `/api/v1/reader/feed/profile/{profileId}` with no parameters.
       properties:
         id: { type: integer }
         name: { type: string }

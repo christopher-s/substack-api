@@ -6,7 +6,10 @@
 # describe a URL the server does not respond to. We turn off
 # `no-ambiguous-paths` for `/api/v1/posts/by-id/{id}` vs
 # `/api/v1/posts/{postId}/seen` because the Substack server distinguishes
-# them at runtime via the literal `by-id` segment.
+# them at runtime via the literal `by-id` segment. We turn off
+# `no-unused-components` because the spec exports a few public alias
+# schemas (e.g. `Post`, the generic post union) that are intended for
+# consumer use even when no operation in this spec references them.
 #
 # All other recommended rules remain enabled.
 extends:
@@ -15,3 +18,4 @@ extends:
 rules:
   no-path-trailing-slash: off
   no-ambiguous-paths: off
+  no-unused-components: off

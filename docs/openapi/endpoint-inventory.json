@@ -1,5 +1,5 @@
 {
-  "$comment": "Inventory of every HTTP endpoint called by src/internal/services/*.ts and src/domain/note-builder.ts. URL templates include the /api/v1 prefix that HttpClient prepends. The 'host' field indicates which Substack hostname class is used: 'substack.com' for global endpoints, 'publication' for per-publication subdomains. NOTE: src/internal/services/new-note-service.ts is a builder factory (NoteBuilderFactory) that returns NoteBuilder/NoteWithLinkBuilder instances — the HTTP calls those builders make are inventoried under serviceFile 'src/domain/note-builder.ts'. The cookie name used by HttpClient (src/internal/http-client.ts:19) is 'substack.sid' (NOT 'connect.sid').",
+  "$comment": "Inventory of every HTTP endpoint called by src/internal/services/*.ts (including the new-note-service.ts builder factory). URL templates include the /api/v1 prefix that HttpClient prepends. The 'host' field indicates which Substack hostname class is used: 'substack.com' for global endpoints, 'publication' for per-publication subdomains. NOTE: src/internal/services/new-note-service.ts is a NoteBuilderFactory that returns NoteBuilder/NoteWithLinkBuilder instances; the actual fetch() lives in src/domain/note-builder.ts and is recorded under the optional 'implementationFile' field on those entries. The 'requestBodySchema' field references OpenAPI components.schemas names defined in docs/openapi/openapi.yaml (NOT io-ts codecs — outgoing request bodies are typed as TypeScript interfaces in src/internal/types/, while io-ts codecs are reserved for response validation). The cookie name used by HttpClient (src/internal/http-client.ts:19) is 'substack.sid' (NOT 'connect.sid').",
   "endpoints": [
     {
       "serviceFile": "src/internal/services/post-service.ts",
@@ -60,9 +60,9 @@
       "serviceMethod": "getProfileById",
       "httpMethod": "GET",
       "host": "substack.com",
-      "urlTemplate": "/api/v1/reader/feed/profile/{id}",
+      "urlTemplate": "/api/v1/reader/feed/profile/{profileId}",
       "queryParams": [],
-      "pathParams": [{"name": "id", "type": "number", "required": true}],
+      "pathParams": [{"name": "profileId", "type": "number", "required": true}],
       "requestBodySchema": null,
       "responseCodec": "SubstackUserProfileCodec",
       "summary": "Resolve a numeric user ID to a profile feed (used to find a slug)."
@@ -436,7 +436,8 @@
       "auth": true
     },
     {
-      "serviceFile": "src/domain/note-builder.ts",
+      "serviceFile": "src/internal/services/new-note-service.ts",
+      "implementationFile": "src/domain/note-builder.ts",
       "serviceMethod": "NoteBuilder.publish",
       "httpMethod": "POST",
       "host": "publication",
@@ -445,11 +446,12 @@
       "pathParams": [],
       "requestBodySchema": "PublishNoteRequest",
       "responseCodec": "PublishNoteResponseCodec",
-      "summary": "Publish a new note (ProseMirror doc body).",
+      "summary": "Publish a new note (ProseMirror doc body). Entry point: NoteBuilderFactory.newNote() in new-note-service.ts; HTTP call lives in note-builder.ts.",
       "auth": true
     },
     {
-      "serviceFile": "src/domain/note-builder.ts",
+      "serviceFile": "src/internal/services/new-note-service.ts",
+      "implementationFile": "src/domain/note-builder.ts",
       "serviceMethod": "NoteWithLinkBuilder.publish",
       "httpMethod": "POST",
       "host": "publication",
@@ -458,7 +460,7 @@
       "pathParams": [],
       "requestBodySchema": "CreateAttachmentRequest",
       "responseCodec": "CreateAttachmentResponseCodec",
-      "summary": "Create a link attachment for a note (precedes publish).",
+      "summary": "Create a link attachment for a note (precedes publish). Entry point: NoteBuilderFactory.newNoteWithLink() in new-note-service.ts; HTTP call lives in note-builder.ts.",
       "auth": true
     }
   ]
