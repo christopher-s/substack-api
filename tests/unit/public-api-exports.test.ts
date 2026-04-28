@@ -39,7 +39,9 @@ describe('Public API Exports', () => {
       request: jest.fn()
     }
 
-    const builder = new NoteBuilder(mockPublicationClient as unknown as import('@substack-api/internal/http-client').HttpClient)
+    const builder = new NoteBuilder(
+      mockPublicationClient as unknown as import('@substack-api/internal/http-client').HttpClient
+    )
     expect(builder).toBeInstanceOf(NoteBuilder)
     expect(typeof builder.paragraph).toBe('function')
   })

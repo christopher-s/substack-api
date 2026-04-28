@@ -71,7 +71,9 @@ export class NoteService {
         bio: comment.bio,
         handle: comment.handle,
         user_bestseller_tier: comment.user_bestseller_tier,
-        attachments: comment.attachments as unknown as NonNullable<NonNullable<SubstackNote['comment']>['attachments']>,
+        attachments: comment.attachments as unknown as NonNullable<
+          NonNullable<SubstackNote['comment']>['attachments']
+        >,
         userStatus: comment.userStatus,
         user_primary_publication: comment.user_primary_publication,
         autotranslate_to: comment.autotranslate_to,

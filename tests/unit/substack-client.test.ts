@@ -134,7 +134,9 @@ describe('SubstackClient', () => {
         name: 'Test User',
         photo_url: 'https://example.com/photo.jpg'
       }
-      mockProfileService.getProfileById.mockResolvedValue(mockProfile as unknown as SubstackFullProfile)
+      mockProfileService.getProfileById.mockResolvedValue(
+        mockProfile as unknown as SubstackFullProfile
+      )
 
       const profile = await client.profileForId(123)
       expect(profile).toBeInstanceOf(Profile)
@@ -156,7 +158,9 @@ describe('SubstackClient', () => {
         name: 'Test User',
         photo_url: 'https://example.com/photo.jpg'
       }
-      mockProfileService.getProfileById.mockResolvedValue(mockProfile as unknown as SubstackFullProfile)
+      mockProfileService.getProfileById.mockResolvedValue(
+        mockProfile as unknown as SubstackFullProfile
+      )
 
       const profile = await client.profileForId(9876543210)
       expect(profile).toBeInstanceOf(Profile)
@@ -172,7 +176,9 @@ describe('SubstackClient', () => {
         name: 'Test User',
         photo_url: 'https://example.com/photo.jpg'
       }
-      mockProfileService.getProfileBySlug.mockResolvedValue(mockProfile as unknown as SubstackFullProfile)
+      mockProfileService.getProfileBySlug.mockResolvedValue(
+        mockProfile as unknown as SubstackFullProfile
+      )
 
       const profile = await client.profileForSlug('testuser')
       expect(profile).toBeInstanceOf(Profile)

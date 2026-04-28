@@ -46,7 +46,10 @@ describe('Profile Entity - Notes', () => {
       dm_upgrade_options: []
     }
 
-    profile = new Profile(mockProfileData as unknown as import('@substack-api/internal').SubstackFullProfile, deps)
+    profile = new Profile(
+      mockProfileData as unknown as import('@substack-api/internal').SubstackFullProfile,
+      deps
+    )
   })
 
   describe('notes()', () => {
@@ -431,7 +434,9 @@ describe('Profile Entity - Notes', () => {
     })
 
     it('When notes property is missing, then returns empty array', async () => {
-      deps.noteService.getNotesForProfile.mockResolvedValue({} as unknown as import('@substack-api/internal/types').PaginatedSubstackNotes)
+      deps.noteService.getNotesForProfile.mockResolvedValue(
+        {} as unknown as import('@substack-api/internal/types').PaginatedSubstackNotes
+      )
 
       const notes = []
       for await (const note of profile.notes()) {

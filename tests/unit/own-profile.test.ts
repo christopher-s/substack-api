@@ -654,7 +654,9 @@ describe('OwnProfile Entity', () => {
     })
 
     it('When missing notes property', async () => {
-      mockNoteService.getNotesForLoggedUser.mockResolvedValue({} as unknown as import('@substack-api/internal/types').PaginatedSubstackNotes)
+      mockNoteService.getNotesForLoggedUser.mockResolvedValue(
+        {} as unknown as import('@substack-api/internal/types').PaginatedSubstackNotes
+      )
 
       const notes = []
       for await (const note of ownProfile.notes()) {

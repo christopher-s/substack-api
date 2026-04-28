@@ -46,7 +46,10 @@ describe('Profile Entity - Posts', () => {
       dm_upgrade_options: []
     }
 
-    profile = new Profile(mockProfileData as unknown as import('@substack-api/internal').SubstackFullProfile, deps)
+    profile = new Profile(
+      mockProfileData as unknown as import('@substack-api/internal').SubstackFullProfile,
+      deps
+    )
   })
 
   describe('posts()', () => {
