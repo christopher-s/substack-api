@@ -1,0 +1,17 @@
+# Redocly configuration for the substack-api OpenAPI spec.
+#
+# We turn off `no-path-trailing-slash` because the upstream Substack API
+# actually requires the trailing slash on the comment-feed and
+# comment-attachment endpoints — removing the slash would make the spec
+# describe a URL the server does not respond to. We turn off
+# `no-ambiguous-paths` for `/api/v1/posts/by-id/{id}` vs
+# `/api/v1/posts/{postId}/seen` because the Substack server distinguishes
+# them at runtime via the literal `by-id` segment.
+#
+# All other recommended rules remain enabled.
+extends:
+  - recommended
+
+rules:
+  no-path-trailing-slash: off
+  no-ambiguous-paths: off
