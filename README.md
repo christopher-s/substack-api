@@ -37,10 +37,12 @@ const isConnected = await client.testConnectivity();
 📚 **Complete documentation available in the [`docs/`](docs/) directory.**
 
 - [Installation Guide](docs/installation.md) - Setup and requirements
-- [QuickStart Tutorial](docs/quickstart.md) - Get started in minutes  
+- [QuickStart Tutorial](docs/quickstart.md) - Get started in minutes
 - [API Reference](docs/api-reference.md) - Complete method documentation
 - [Entity Model](docs/entity-model.md) - Modern object-oriented API
 - [Examples](docs/examples.md) - Real-world usage patterns
+
+🌐 **Interactive API Reference**: [https://christopher-s.github.io/substack-api/](https://christopher-s.github.io/substack-api/)
 
 ## License
 
