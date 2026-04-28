@@ -134,7 +134,7 @@ describe('SubstackClient', () => {
         name: 'Test User',
         photo_url: 'https://example.com/photo.jpg'
       }
-      mockProfileService.getProfileById.mockResolvedValue(mockProfile as any)
+      mockProfileService.getProfileById.mockResolvedValue(mockProfile as unknown as SubstackFullProfile)
 
       const profile = await client.profileForId(123)
       expect(profile).toBeInstanceOf(Profile)
@@ -156,7 +156,7 @@ describe('SubstackClient', () => {
         name: 'Test User',
         photo_url: 'https://example.com/photo.jpg'
       }
-      mockProfileService.getProfileById.mockResolvedValue(mockProfile as any)
+      mockProfileService.getProfileById.mockResolvedValue(mockProfile as unknown as SubstackFullProfile)
 
       const profile = await client.profileForId(9876543210)
       expect(profile).toBeInstanceOf(Profile)
@@ -172,7 +172,7 @@ describe('SubstackClient', () => {
         name: 'Test User',
         photo_url: 'https://example.com/photo.jpg'
       }
-      mockProfileService.getProfileBySlug.mockResolvedValue(mockProfile as any)
+      mockProfileService.getProfileBySlug.mockResolvedValue(mockProfile as unknown as SubstackFullProfile)
 
       const profile = await client.profileForSlug('testuser')
       expect(profile).toBeInstanceOf(Profile)
@@ -188,7 +188,6 @@ describe('SubstackClient', () => {
       mockProfileService.getProfileBySlug.mockRejectedValue(new Error('Not found'))
 
       await expect(client.profileForSlug('nonexistent')).rejects.toThrow(
-        // eslint-disable-next-line quotes
         "Profile with slug 'nonexistent' not found: Not found"
       )
     })

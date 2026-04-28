@@ -2,13 +2,13 @@ import { OwnProfile } from '@substack-api/domain/own-profile'
 import { Note } from '@substack-api/domain/note'
 import { Profile } from '@substack-api/domain/profile'
 import { NoteBuilder, NoteWithLinkBuilder } from '@substack-api/domain/note-builder'
+import type { NoteBuilderFactory } from '@substack-api/domain/note-builder-factory'
 import {
   ProfileService,
   PostService,
   NoteService,
   CommentService,
-  FollowingService,
-  NoteBuilderFactory
+  FollowingService
 } from '@substack-api/internal/services'
 import type { SubstackFullProfile } from '@substack-api/internal'
 import type { HttpClient } from '@substack-api/internal/http-client'
@@ -654,7 +654,7 @@ describe('OwnProfile Entity', () => {
     })
 
     it('When missing notes property', async () => {
-      mockNoteService.getNotesForLoggedUser.mockResolvedValue({} as any)
+      mockNoteService.getNotesForLoggedUser.mockResolvedValue({} as unknown as import('@substack-api/internal/types').PaginatedSubstackNotes)
 
       const notes = []
       for await (const note of ownProfile.notes()) {

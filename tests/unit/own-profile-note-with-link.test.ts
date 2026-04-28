@@ -1,13 +1,13 @@
 import { OwnProfile } from '@substack-api/domain/own-profile'
 import { NoteWithLinkBuilder } from '@substack-api/domain/note-builder'
 import { HttpClient } from '@substack-api/internal/http-client'
+import { NoteBuilderFactory } from '@substack-api/domain/note-builder-factory'
 import {
   ProfileService,
   PostService,
   NoteService,
   FollowingService,
-  CommentService,
-  NoteBuilderFactory
+  CommentService
 } from '@substack-api/internal/services'
 
 // Mock dependencies
@@ -90,7 +90,7 @@ describe('OwnProfile - newNoteWithLink', () => {
     notes_feed_enabled: true,
     primary_handle: 'testuser',
     is_following: false
-  } as any
+  }
 
   beforeEach(() => {
     mockClient = new MockHttpClient(

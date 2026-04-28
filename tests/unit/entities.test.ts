@@ -14,7 +14,7 @@ describe('SubstackClient Entity Model', () => {
   })
 
   describe('SubstackClient', () => {
-    it('When client instance', () => {
+    it('[smoke] When client instance', () => {
       expect(client).toBeInstanceOf(SubstackClient)
     })
 

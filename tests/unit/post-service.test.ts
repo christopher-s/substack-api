@@ -24,7 +24,7 @@ describe('PostService', () => {
   })
 
   describe('getPostById', () => {
-    it('When requesting a post by ID, then returns the post data', async () => {
+    it('[smoke] When requesting a post by ID, then returns the post data', async () => {
       const mockPost: SubstackFullPost = {
         id: 123,
         title: 'Test Post',

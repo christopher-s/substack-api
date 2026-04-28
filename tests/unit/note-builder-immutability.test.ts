@@ -157,8 +157,8 @@ describe('NoteBuilder Immutability', () => {
       const resultB = branchB.finish().build()
 
       // Verify both results have the same base but different list item content
-      const listContentA = resultA.bodyJson.content[1] as any
-      const listContentB = resultB.bodyJson.content[1] as any
+      const listContentA = resultA.bodyJson.content[1] as unknown as { content: { content: { content: unknown[] }[] }[] }
+      const listContentB = resultB.bodyJson.content[1] as unknown as { content: { content: { content: unknown[] }[] }[] }
 
       expect(listContentA.content[0].content[0].content).toEqual([
         { type: 'text', text: 'Shared item: ' },
@@ -237,8 +237,8 @@ describe('NoteBuilder Immutability', () => {
       const result2 = list2.finish().build()
 
       // Both should have different list content
-      const listContent1 = result1.bodyJson.content[1] as any
-      const listContent2 = result2.bodyJson.content[1] as any
+      const listContent1 = result1.bodyJson.content[1] as unknown as { content: { content: { content: { text: string }[] }[] }[] }
+      const listContent2 = result2.bodyJson.content[1] as unknown as { content: { content: { content: { text: string }[] }[] }[] }
 
       expect(listContent1.content[0].content[0].content[0].text).toBe('Item 1')
       expect(listContent2.content[0].content[0].content[0].text).toBe('Item 2')

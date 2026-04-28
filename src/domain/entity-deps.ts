@@ -4,9 +4,9 @@ import type {
   PostService,
   NoteService,
   CommentService,
-  FollowingService,
-  NoteBuilderFactory
+  FollowingService
 } from '@substack-api/internal/services'
+import type { NoteBuilderFactory } from '@substack-api/domain/note-builder-factory'
 
 /**
  * Shared dependency container for all domain entities.

@@ -14,12 +14,12 @@ import {
   ConnectivityService,
   DiscoveryService,
   FollowingService,
-  NoteBuilderFactory,
   NoteService,
   PostService,
   ProfileService,
   PublicationService
 } from '@substack-api/internal/services'
+import { NoteBuilderFactory } from '@substack-api/domain'
 import type { FeedTab, ProfileFeedTab } from '@substack-api/internal/services/discovery-service'
 import type {
   FeedItem,

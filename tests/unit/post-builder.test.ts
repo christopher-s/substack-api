@@ -240,7 +240,7 @@ describe('NoteBuilder', () => {
         .finish()
         .build()
 
-      const listContent = result.bodyJson.content[1] as any
+      const listContent = result.bodyJson.content[1] as unknown as { content: { content: { content: unknown[] }[] }[] }
       expect(listContent.content[0].content[0].content).toEqual([
         { type: 'text', text: 'Bold', marks: [{ type: 'bold' }] },
         { type: 'text', text: ' and ' },
@@ -267,7 +267,7 @@ describe('NoteBuilder', () => {
 
       // This should be impossible with our API design, but let's test the validation
       // We'll need to call addParagraph directly to simulate this edge case
-      const builderWithEmptyParagraph = (builder as any).addParagraph({ segments: [], lists: [] })
+      const builderWithEmptyParagraph = (builder as unknown as NoteBuilder).addParagraph({ segments: [], lists: [] })
 
       expect(() => builderWithEmptyParagraph.build()).toThrow(
         'Each paragraph must contain at least one content block'

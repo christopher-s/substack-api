@@ -58,7 +58,7 @@ describe('NoteBuilder - Coverage Tests', () => {
         .finish()
         .build()
 
-      const bulletList = request.bodyJson.content[0] as any
+      const bulletList = request.bodyJson.content[0] as unknown as { content: { content: { content: unknown[] }[] }[] }
       const listItem = bulletList.content[0]
       const paragraph = listItem.content[0]
       expect(paragraph.content).toEqual([
@@ -79,7 +79,7 @@ describe('NoteBuilder - Coverage Tests', () => {
         .finish()
         .build()
 
-      const bulletList = request.bodyJson.content[0] as any
+      const bulletList = request.bodyJson.content[0] as unknown as { content: { content: { content: unknown[] }[] }[] }
       const listItem = bulletList.content[0]
       const paragraph = listItem.content[0]
       expect(paragraph.content).toEqual([
@@ -100,7 +100,7 @@ describe('NoteBuilder - Coverage Tests', () => {
         .finish()
         .build()
 
-      const bulletList = request.bodyJson.content[0] as any
+      const bulletList = request.bodyJson.content[0] as unknown as { content: { content: { content: unknown[] }[] }[] }
       const listItem = bulletList.content[0]
       const paragraph = listItem.content[0]
       expect(paragraph.content).toEqual([
@@ -127,11 +127,11 @@ describe('NoteBuilder - Coverage Tests', () => {
         .finish()
         .build()
 
-      const bulletList = request.bodyJson.content[0] as any
-      expect(bulletList.content).toHaveLength(3)
-      expect(bulletList.content[0].content[0].content[0].text).toBe('First item')
-      expect(bulletList.content[1].content[0].content[0].text).toBe('Second item')
-      expect(bulletList.content[2].content[0].content[0].text).toBe('Third item')
+      const bulletList3 = request.bodyJson.content[0] as unknown as { content: { content: { content: { text: string }[] }[] }[] }
+      expect(bulletList3.content).toHaveLength(3)
+      expect(bulletList3.content[0].content[0].content[0].text).toBe('First item')
+      expect(bulletList3.content[1].content[0].content[0].text).toBe('Second item')
+      expect(bulletList3.content[2].content[0].content[0].text).toBe('Third item')
     })
 
     it('When complex formatting in chained list items', () => {
@@ -151,7 +151,7 @@ describe('NoteBuilder - Coverage Tests', () => {
         .finish()
         .build()
 
-      const orderedList = request.bodyJson.content[0] as any
+      const orderedList = request.bodyJson.content[0] as unknown as { content: { content: { content: unknown[] }[] }[] }
       expect(orderedList.content).toHaveLength(3)
 
       // First item: bold and italic
@@ -269,7 +269,7 @@ describe('NoteBuilder - Coverage Tests', () => {
         .finish()
         .build()
 
-      const bulletList = request.bodyJson.content[0] as any
+      const bulletList = request.bodyJson.content[0] as unknown as { content: { content: { content: { text: string }[] }[] }[] }
       expect(bulletList.content).toHaveLength(2)
       expect(bulletList.content[0].content[0].content[0].text).toBe('First item')
       expect(bulletList.content[1].content[0].content[0].text).toBe('Second item')
@@ -280,12 +280,12 @@ describe('NoteBuilder - Coverage Tests', () => {
 
       // Test empty note validation in NoteWithLinkBuilder's toNoteRequest
       expect(() => {
-        ;(noteWithLinkBuilder as any).toNoteRequest({ paragraphs: [] })
+        ;(noteWithLinkBuilder as unknown as { toNoteRequest: (state: unknown) => unknown }).toNoteRequest({ paragraphs: [] })
       }).toThrow('Note must contain at least one paragraph')
 
       // Test empty paragraph validation in NoteWithLinkBuilder's toNoteRequest
       expect(() => {
-        ;(noteWithLinkBuilder as any).toNoteRequest({
+        ;(noteWithLinkBuilder as unknown as { toNoteRequest: (state: unknown) => unknown }).toNoteRequest({
           paragraphs: [{ segments: [], lists: [] }]
         })
       }).toThrow('Each paragraph must contain at least one content block')
@@ -315,7 +315,7 @@ describe('NoteBuilder - Coverage Tests', () => {
 
       const request = result.build()
       expect(request.bodyJson.content).toHaveLength(1)
-      expect((request.bodyJson.content[0] as any).content[0].text).toBe('Test paragraph')
+      expect((request.bodyJson.content[0] as unknown as { content: { text: string }[] }).content[0].text).toBe('Test paragraph')
     })
 
     it('When copyState method correctly', async () => {
@@ -329,7 +329,7 @@ describe('NoteBuilder - Coverage Tests', () => {
 
       // Verify the note was created with both paragraphs
       const publishCall = mockClient.post.mock.calls[1] // Second call is note publishing
-      const noteRequest = publishCall[1] as any
+      const noteRequest = publishCall[1] as unknown as { bodyJson: { content: { content: { text: string }[] }[] } }
       expect(noteRequest.bodyJson.content).toHaveLength(2)
       expect(noteRequest.bodyJson.content[0].content[0].text).toBe('First paragraph')
       expect(noteRequest.bodyJson.content[1].content[0].text).toBe('Second paragraph')
@@ -351,13 +351,13 @@ describe('NoteBuilder - Coverage Tests', () => {
         .publish()
 
       const publishCall = mockClient.post.mock.calls[1]
-      const noteRequest = publishCall[1] as any
+      const noteRequest2 = publishCall[1] as unknown as { bodyJson: { content: { type: string }[] }; attachmentIds: string[] }
 
       // Should have paragraph + list
-      expect(noteRequest.bodyJson.content).toHaveLength(2)
-      expect(noteRequest.bodyJson.content[0].type).toBe('paragraph')
-      expect(noteRequest.bodyJson.content[1].type).toBe('bulletList')
-      expect(noteRequest.attachmentIds).toEqual(['attachment-123'])
+      expect(noteRequest2.bodyJson.content).toHaveLength(2)
+      expect(noteRequest2.bodyJson.content[0].type).toBe('paragraph')
+      expect(noteRequest2.bodyJson.content[1].type).toBe('bulletList')
+      expect(noteRequest2.attachmentIds).toEqual(['attachment-123'])
     })
   })
 

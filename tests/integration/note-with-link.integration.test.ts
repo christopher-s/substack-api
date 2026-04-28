@@ -54,7 +54,7 @@ describe('note with link attachment integration tests', () => {
     expect(noteRequest.method).toBe('POST')
     expect(noteRequest.url).toBe('/comment/feed/')
 
-    const capturedNoteBody = noteRequest.body as any
+    const capturedNoteBody = noteRequest.body as unknown as Record<string, unknown>
 
     // Verify the structure matches our expected format
     expect(capturedNoteBody).toMatchObject({
@@ -108,7 +108,7 @@ describe('note with link attachment integration tests', () => {
     })
 
     const noteRequest = global.INTEGRATION_SERVER.capturedRequests[1]
-    const noteBody = noteRequest.body as any
+    const noteBody = noteRequest.body as unknown as Record<string, unknown>
 
     // Verify the complex structure was built correctly
     expect(noteBody.bodyJson.content).toHaveLength(2) // Two paragraphs
@@ -191,7 +191,7 @@ describe('note with link attachment integration tests', () => {
     expect(global.INTEGRATION_SERVER.capturedRequests).toHaveLength(2)
 
     const noteRequest = global.INTEGRATION_SERVER.capturedRequests[1]
-    const noteBody = noteRequest.body as any
+    const noteBody = noteRequest.body as unknown as Record<string, unknown>
 
     // Should have paragraph + bullet list
     expect(noteBody.bodyJson.content).toHaveLength(2)

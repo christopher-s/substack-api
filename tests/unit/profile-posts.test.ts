@@ -5,7 +5,7 @@ import { createMockEntityDeps } from '@test/unit/helpers/mock-services'
 describe('Profile Entity - Posts', () => {
   let deps: ReturnType<typeof createMockEntityDeps>
   let profile: Profile
-  let mockProfileData: any
+  let mockProfileData: Record<string, unknown>
 
   beforeEach(() => {
     deps = createMockEntityDeps()
@@ -46,7 +46,7 @@ describe('Profile Entity - Posts', () => {
       dm_upgrade_options: []
     }
 
-    profile = new Profile(mockProfileData, deps)
+    profile = new Profile(mockProfileData as unknown as import('@substack-api/internal').SubstackFullProfile, deps)
   })
 
   describe('posts()', () => {

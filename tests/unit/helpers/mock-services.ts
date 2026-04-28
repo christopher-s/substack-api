@@ -1,12 +1,12 @@
 import type { EntityDeps } from '@substack-api/domain/entity-deps'
 import type { HttpClient } from '@substack-api/internal/http-client'
+import type { NoteBuilderFactory } from '@substack-api/domain/note-builder-factory'
 import type {
   ProfileService,
   PostService,
   NoteService,
   CommentService,
-  FollowingService,
-  NoteBuilderFactory
+  FollowingService
 } from '@substack-api/internal/services'
 import { createMockHttpClient } from '@test/unit/helpers/mock-http-client'
 

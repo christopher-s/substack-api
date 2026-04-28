@@ -1,4 +1,4 @@
-import { NoteBuilderFactory } from '@substack-api/internal/services/new-note-service'
+import { NoteBuilderFactory } from '@substack-api/domain/note-builder-factory'
 import { HttpClient } from '@substack-api/internal/http-client'
 import { NoteBuilder, NoteWithLinkBuilder } from '@substack-api/domain/note-builder'
 

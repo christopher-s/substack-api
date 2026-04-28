@@ -4,7 +4,7 @@ import { createMockEntityDeps } from '@test/unit/helpers/mock-services'
 describe('Profile Entity - Core', () => {
   let deps: ReturnType<typeof createMockEntityDeps>
   let profile: Profile
-  let mockProfileData: any
+  let mockProfileData: Record<string, unknown>
 
   beforeEach(() => {
     deps = createMockEntityDeps()
@@ -45,20 +45,20 @@ describe('Profile Entity - Core', () => {
       dm_upgrade_options: []
     }
 
-    profile = new Profile(mockProfileData, deps)
+    profile = new Profile(mockProfileData as unknown as import('@substack-api/internal').SubstackFullProfile, deps)
   })
 
   describe('new profile fields', () => {
-    it('When primaryPublication has string id, then normalizes to number', () => {
+    it('[smoke] When primaryPublication has string id, then normalizes to number', () => {
       const profileWithStringPubId = new Profile(
         {
           ...mockProfileData,
           primaryPublication: {
-            id: '12345' as any,
+            id: '12345' as unknown as number,
             name: 'Test Publication',
             subdomain: 'testpub'
           }
-        },
+        } as unknown as import('@substack-api/internal').SubstackFullProfile,
         createMockEntityDeps()
       )
 

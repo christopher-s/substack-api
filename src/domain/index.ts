@@ -13,3 +13,4 @@ export {
   ListItemBuilder
 } from '@substack-api/domain/note-builder'
 export type { TextSegment, ListItem, List } from '@substack-api/domain/note-builder'
+export { NoteBuilderFactory } from '@substack-api/domain/note-builder-factory'

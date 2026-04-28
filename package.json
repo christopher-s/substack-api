@@ -16,7 +16,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "rollup -c",
+    "build": "rollup -c rollup.config.mjs",
     "test": "pnpm test:unit && pnpm test:integration",
     "test:unit": "jest",
     "test:integration": "jest --config jest.integration.config.js",
@@ -35,7 +35,7 @@
     "sample": "pnpm exec ts-node -r tsconfig-paths/register samples/index.ts",
     "check-test-names": "./scripts/check-test-names.sh",
     "test:mutation": "stryker run",
-    "test:unit:smoke": "jest --testNamePattern='\\[smoke\\]'",
+    "test:unit:smoke": "jest --testNamePattern='\\[smoke\\]' --coverage=false",
     "test:unit:fast": "jest --testPathIgnorePatterns='live-api-validation|property'"
   },
   "repository": {
@@ -57,6 +57,8 @@
   "devDependencies": {
     "@eslint/js": "^9.29.0",
     "@rollup/plugin-typescript": "^12.3.0",
+    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/jest-runner": "^9.6.1",
     "@types/jest": "^30.0.0",
     "@types/nock": "^11.1.0",
     "@types/node": "^25.0.3",

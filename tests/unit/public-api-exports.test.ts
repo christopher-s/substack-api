@@ -39,7 +39,7 @@ describe('Public API Exports', () => {
       request: jest.fn()
     }
 
-    const builder = new NoteBuilder(mockPublicationClient as any)
+    const builder = new NoteBuilder(mockPublicationClient as unknown as import('@substack-api/internal/http-client').HttpClient)
     expect(builder).toBeInstanceOf(NoteBuilder)
     expect(typeof builder.paragraph).toBe('function')
   })
@@ -54,7 +54,7 @@ describe('Public API Exports', () => {
     expect(module).toBeDefined()
 
     // Test that we can use the types in practice
-    const textSegment: any = {
+    const textSegment: Record<string, string> = {
       text: 'Hello',
       type: 'bold'
     }
