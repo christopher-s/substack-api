@@ -121,14 +121,24 @@ jobs:
                   cache: 'pnpm'
             - name: Install
               run: pnpm install
-            - name: Running E2E tests
+            - name: Check E2E credentials
+              id: credentials
+              env:
+                API_KEY: ${{ secrets.SUBSTACK_API_KEY }}
               run: |
-                pnpm test:e2e
+                if [ -n "$API_KEY" ]; then
+                  echo "has_credentials=true" >> $GITHUB_OUTPUT
+                else
+                  echo "has_credentials=false" >> $GITHUB_OUTPUT
+                fi
+            - name: Running E2E tests
+              if: steps.credentials.outputs.has_credentials == 'true'
+              run: pnpm test:e2e
               env:
                 SUBSTACK_API_KEY: ${{ secrets.SUBSTACK_API_KEY }}
                 SUBSTACK_HOSTNAME: ${{ secrets.SUBSTACK_HOSTNAME }}
             - name: Upload E2E test results
-              if: always()
+              if: always() && steps.credentials.outputs.has_credentials == 'true'
               uses: actions/upload-artifact@v4
               with:
                 name: e2e-test-results
