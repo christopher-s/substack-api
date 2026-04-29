@@ -29,9 +29,7 @@ export function markdownToHtml(md: string): string {
       i++ // skip closing ```
       const escaped = escapeHtml(codeLines.join('\n'))
       if (lang) {
-        htmlParts.push(
-          `<pre><code class="language-${lang}">${escaped}</code></pre>`
-        )
+        htmlParts.push(`<pre><code class="language-${lang}">${escaped}</code></pre>`)
       } else {
         htmlParts.push(`<pre><code>${escaped}</code></pre>`)
       }
@@ -74,12 +72,8 @@ export function markdownToHtml(md: string): string {
 
     // Bullet list
     if (/^[-*]\s/.test(line)) {
-      const { html, newIndex } = parseList(
-        lines,
-        i,
-        /^[-*]\s/,
-        'ul',
-        (l) => l.replace(/^[-*]\s/, '')
+      const { html, newIndex } = parseList(lines, i, /^[-*]\s/, 'ul', (l) =>
+        l.replace(/^[-*]\s/, '')
       )
       htmlParts.push(html)
       i = newIndex
@@ -88,12 +82,8 @@ export function markdownToHtml(md: string): string {
 
     // Ordered list
     if (/^\d+\.\s/.test(line)) {
-      const { html, newIndex } = parseList(
-        lines,
-        i,
-        /^\d+\.\s/,
-        'ol',
-        (l) => l.replace(/^\d+\.\s/, '')
+      const { html, newIndex } = parseList(lines, i, /^\d+\.\s/, 'ol', (l) =>
+        l.replace(/^\d+\.\s/, '')
       )
       htmlParts.push(html)
       i = newIndex
@@ -118,14 +108,9 @@ export function markdownToHtml(md: string): string {
     // Handle line breaks (trailing double space) - use placeholder to survive escapeHtml
     const LINE_BREAK_PLACEHOLDER = '\x00BR\x00'
     const joined = paraLines
-      .map((l) =>
-        l.endsWith('  ') ? l.slice(0, -2) + LINE_BREAK_PLACEHOLDER : l
-      )
+      .map((l) => (l.endsWith('  ') ? l.slice(0, -2) + LINE_BREAK_PLACEHOLDER : l))
       .join(' ')
-    const html = inlineToHtml(joined).replace(
-      new RegExp(LINE_BREAK_PLACEHOLDER, 'g'),
-      '<br>'
-    )
+    const html = inlineToHtml(joined).replace(new RegExp(LINE_BREAK_PLACEHOLDER, 'g'), '<br>')
     htmlParts.push(`<p>${html}</p>`)
   }
 
@@ -165,21 +150,11 @@ function parseList(
         // Detect nested list type
         let nestedHtml: string
         if (/^[-*]\s/.test(nestedLines[0])) {
-          const result = parseList(
-            nestedLines,
-            0,
-            /^[-*]\s/,
-            'ul',
-            (l) => l.replace(/^[-*]\s/, '')
-          )
+          const result = parseList(nestedLines, 0, /^[-*]\s/, 'ul', (l) => l.replace(/^[-*]\s/, ''))
           nestedHtml = result.html
         } else if (/^\d+\.\s/.test(nestedLines[0])) {
-          const result = parseList(
-            nestedLines,
-            0,
-            /^\d+\.\s/,
-            'ol',
-            (l) => l.replace(/^\d+\.\s/, '')
+          const result = parseList(nestedLines, 0, /^\d+\.\s/, 'ol', (l) =>
+            l.replace(/^\d+\.\s/, '')
           )
           nestedHtml = result.html
         } else {
@@ -196,7 +171,7 @@ function parseList(
 
   return {
     html: `<${tag}>\n${items.join('\n')}\n</${tag}>`,
-    newIndex: i,
+    newIndex: i
   }
 }
 
@@ -233,13 +208,10 @@ function applyInlineFormatting(text: string): string {
 function inlineToHtml(text: string): string {
   // Extract links before escaping to avoid breaking markdown syntax
   const links: Array<{ full: string; inner: string; url: string }> = []
-  text = text.replace(
-    /\[([^\]]+)\]\(([^)]+)\)/g,
-    (_, inner, url) => {
-      links.push({ full: `__LINK${links.length}__`, inner, url })
-      return `__LINK${links.length - 1}__`
-    }
-  )
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, inner, url) => {
+    links.push({ full: `__LINK${links.length}__`, inner, url })
+    return `__LINK${links.length - 1}__`
+  })
   // Escape HTML in remaining text
   text = escapeHtml(text)
   text = applyInlineFormatting(text)

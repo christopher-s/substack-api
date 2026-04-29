@@ -131,7 +131,17 @@ describe('note with link attachment integration tests', () => {
       {
         type: 'text',
         text: 'internal links',
-        marks: [{ type: 'link', attrs: { href: 'https://internal.example.com', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
+        marks: [
+          {
+            type: 'link',
+            attrs: {
+              href: 'https://internal.example.com',
+              target: '_blank',
+              class: 'note-link',
+              rel: 'nofollow ugc noopener'
+            }
+          }
+        ]
       },
       { type: 'text', text: ' and ' },
       { type: 'text', text: 'code snippets', marks: [{ type: 'code' }] },

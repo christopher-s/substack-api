@@ -463,9 +463,12 @@ describe('NoteBuilder (Legacy Test Suite)', () => {
       const builder = new NoteBuilder(mockPublicationClient)
       const result = await builder.markdown('Hello world').publish()
 
-      expect(mockPublicationClient.post).toHaveBeenCalledWith('/comment/feed/', expect.objectContaining({
-        bodyJson: expect.objectContaining({ type: 'doc' })
-      }))
+      expect(mockPublicationClient.post).toHaveBeenCalledWith(
+        '/comment/feed/',
+        expect.objectContaining({
+          bodyJson: expect.objectContaining({ type: 'doc' })
+        })
+      )
       expect(result).toEqual(mockPublishResponse)
     })
 

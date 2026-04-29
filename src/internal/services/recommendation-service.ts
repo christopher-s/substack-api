@@ -14,9 +14,7 @@ export class RecommendationService {
    * @throws {Error} When API request fails
    */
   async getOutgoingRecommendations(publicationId: number): Promise<unknown> {
-    return await this.publicationClient.get<unknown>(
-      `/recommendations/from/${publicationId}`
-    )
+    return await this.publicationClient.get<unknown>(`/recommendations/from/${publicationId}`)
   }
 
   /**
@@ -120,8 +118,6 @@ export class RecommendationService {
    * @throws {Error} When API request fails
    */
   async getSuggestedRecommendations(publicationId: number): Promise<unknown> {
-    return await this.publicationClient.get<unknown>(
-      `/recommendations/${publicationId}/suggested`
-    )
+    return await this.publicationClient.get<unknown>(`/recommendations/${publicationId}/suggested`)
   }
 }

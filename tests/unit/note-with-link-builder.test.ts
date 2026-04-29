@@ -204,7 +204,17 @@ describe('NoteWithLinkBuilder', () => {
                   {
                     type: 'text',
                     text: 'link',
-                    marks: [{ type: 'link', attrs: { href: 'https://example.com', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
+                    marks: [
+                      {
+                        type: 'link',
+                        attrs: {
+                          href: 'https://example.com',
+                          target: '_blank',
+                          class: 'note-link',
+                          rel: 'nofollow ugc noopener'
+                        }
+                      }
+                    ]
                   },
                   { type: 'text', text: ' in the note.' }
                 ]

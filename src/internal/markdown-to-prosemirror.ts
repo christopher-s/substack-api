@@ -194,7 +194,11 @@ function parseInlineWithMarks(text: string, inheritedMarks: InlineNode['marks'])
       for (const node of innerNodes) {
         nodes.push({
           text: node.text,
-          marks: [...inheritedMarks, ...node.marks, { type: 'link', href: sanitizeUrl(linkMatch[2]) }]
+          marks: [
+            ...inheritedMarks,
+            ...node.marks,
+            { type: 'link', href: sanitizeUrl(linkMatch[2]) }
+          ]
         })
       }
       remaining = remaining.slice(linkMatch[0].length)

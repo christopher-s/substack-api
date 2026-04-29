@@ -526,7 +526,17 @@ export class NoteBuilder {
       }
       return {
         ...base,
-        marks: [{ type: 'link' as const, attrs: { href: segment.url, target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
+        marks: [
+          {
+            type: 'link' as const,
+            attrs: {
+              href: segment.url,
+              target: '_blank',
+              class: 'note-link',
+              rel: 'nofollow ugc noopener'
+            }
+          }
+        ]
       }
     }
 

@@ -113,7 +113,17 @@ describe('NoteBuilder', () => {
           {
             type: 'text',
             text: 'Google',
-            marks: [{ type: 'link', attrs: { href: 'https://google.com', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
+            marks: [
+              {
+                type: 'link',
+                attrs: {
+                  href: 'https://google.com',
+                  target: '_blank',
+                  class: 'note-link',
+                  rel: 'nofollow ugc noopener'
+                }
+              }
+            ]
           },
           { type: 'text', text: ' for search.' }
         ]
@@ -253,7 +263,17 @@ describe('NoteBuilder', () => {
         {
           type: 'text',
           text: 'Link',
-          marks: [{ type: 'link', attrs: { href: 'https://example.com', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
+          marks: [
+            {
+              type: 'link',
+              attrs: {
+                href: 'https://example.com',
+                target: '_blank',
+                class: 'note-link',
+                rel: 'nofollow ugc noopener'
+              }
+            }
+          ]
         }
       ])
     })

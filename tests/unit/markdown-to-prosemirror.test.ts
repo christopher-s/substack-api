@@ -78,7 +78,17 @@ describe('markdownToNoteBody', () => {
           {
             type: 'text',
             text: 'this',
-            marks: [{ type: 'link', attrs: { href: 'https://example.com', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
+            marks: [
+              {
+                type: 'link',
+                attrs: {
+                  href: 'https://example.com',
+                  target: '_blank',
+                  class: 'note-link',
+                  rel: 'nofollow ugc noopener'
+                }
+              }
+            ]
           },
           { type: 'text', text: ' out' }
         ]
@@ -125,7 +135,15 @@ describe('markdownToNoteBody', () => {
             text: 'link',
             marks: [
               { type: 'bold' },
-              { type: 'link', attrs: { href: 'https://example.com', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }
+              {
+                type: 'link',
+                attrs: {
+                  href: 'https://example.com',
+                  target: '_blank',
+                  class: 'note-link',
+                  rel: 'nofollow ugc noopener'
+                }
+              }
             ]
           }
         ]
@@ -210,7 +228,8 @@ describe('markdownToNoteBody', () => {
     })
 
     it('should convert complex note with all formatting', () => {
-      const md = 'Hello **world**!\n\nCheck [this](https://example.com) and *this*\n\n- item1\n- item2'
+      const md =
+        'Hello **world**!\n\nCheck [this](https://example.com) and *this*\n\n- item1\n- item2'
       const result = markdownToNoteBody(md)
       expect(result.content).toHaveLength(3)
       expect(result.type).toBe('doc')
@@ -228,7 +247,17 @@ describe('markdownToNoteBody', () => {
           {
             type: 'text',
             text: 'click',
-            marks: [{ type: 'link', attrs: { href: '#', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
+            marks: [
+              {
+                type: 'link',
+                attrs: {
+                  href: '#',
+                  target: '_blank',
+                  class: 'note-link',
+                  rel: 'nofollow ugc noopener'
+                }
+              }
+            ]
           }
         ]
       })
@@ -243,7 +272,17 @@ describe('markdownToNoteBody', () => {
           {
             type: 'text',
             text: 'x',
-            marks: [{ type: 'link', attrs: { href: '#', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
+            marks: [
+              {
+                type: 'link',
+                attrs: {
+                  href: '#',
+                  target: '_blank',
+                  class: 'note-link',
+                  rel: 'nofollow ugc noopener'
+                }
+              }
+            ]
           }
         ]
       })
@@ -258,7 +297,17 @@ describe('markdownToNoteBody', () => {
           {
             type: 'text',
             text: 'safe',
-            marks: [{ type: 'link', attrs: { href: 'https://example.com', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
+            marks: [
+              {
+                type: 'link',
+                attrs: {
+                  href: 'https://example.com',
+                  target: '_blank',
+                  class: 'note-link',
+                  rel: 'nofollow ugc noopener'
+                }
+              }
+            ]
           }
         ]
       })
