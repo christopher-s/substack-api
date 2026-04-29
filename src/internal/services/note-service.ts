@@ -132,9 +132,7 @@ export class NoteService {
     items: unknown[]
     nextCursor: string | null
   }> {
-    const url = options?.cursor
-      ? `/notes?cursor=${encodeURIComponent(options.cursor)}`
-      : '/notes'
+    const url = options?.cursor ? `/notes?cursor=${encodeURIComponent(options.cursor)}` : '/notes'
     const response = await this.publicationClient.get<{
       items?: unknown[]
       nextCursor?: string | null

@@ -13,6 +13,8 @@ export class SubscriptionService {
   async getAllSubscriptions(options?: { offset?: number; limit?: number }): Promise<unknown> {
     const offset = options?.offset ?? 0
     const limit = options?.limit ?? 25
-    return await this.substackClient.get<unknown>(`/subscriptions/page_v2?offset=${offset}&limit=${limit}`)
+    return await this.substackClient.get<unknown>(
+      `/subscriptions/page_v2?offset=${offset}&limit=${limit}`
+    )
   }
 }

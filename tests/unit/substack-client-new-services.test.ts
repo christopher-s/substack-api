@@ -43,14 +43,10 @@ describe('SubstackClient new service methods', () => {
     mockSubscriptionService.getCurrentSubscription = jest.fn()
     mockSubscriptionService.getAllSubscriptions = jest.fn()
 
-    mockSettingsService = new SettingsService(
-      mockHttpClient
-    ) as jest.Mocked<SettingsService>
+    mockSettingsService = new SettingsService(mockHttpClient) as jest.Mocked<SettingsService>
     mockSettingsService.getPublisherSettings = jest.fn()
 
-    mockNoteService = new NoteService(
-      mockHttpClient
-    ) as jest.Mocked<NoteService>
+    mockNoteService = new NoteService(mockHttpClient) as jest.Mocked<NoteService>
     mockNoteService.getNotes = jest.fn()
 
     mockCommentService = new CommentService(
