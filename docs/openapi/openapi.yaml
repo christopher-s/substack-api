@@ -1060,6 +1060,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DraftPost'
+          description: Returns the full draft object.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -1100,6 +1101,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DraftPost'
+          description: Returns the updated draft.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -1175,6 +1177,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DraftPost'
+          description: Returns the newly created draft.
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1688,6 +1691,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PledgePlans'
+          description: Returns available pledge plans.
         '401':
           $ref: '#/components/responses/Unauthorized'
   /api/v1/pledges/plans/summary:
