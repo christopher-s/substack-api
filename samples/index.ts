@@ -109,6 +109,20 @@ async function runExample(): Promise<void> {
     }
   }
 
+  // Search example
+  console.log('\nSearch — profiles matching "tech":')
+  const searchResults = await anonClient.profileSearch('tech')
+  for (const result of searchResults.slice(0, 3)) {
+    console.log(`  ${result.name} (@${result.handle})`)
+  }
+
+  // Category browsing example
+  console.log('\nCategories:')
+  const categories = await anonClient.categories()
+  for (const category of categories.slice(0, 3)) {
+    console.log(`  ${category.name}`)
+  }
+
   console.log('\nExample completed successfully!')
 }
 

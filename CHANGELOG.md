@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Live API endpoint validation tests (`tests/unit/live-api-validation.test.ts`) probing 7 real Substack endpoints
 
 ### Changed
-- `publicationUrl` is now required in `SubstackConfig`
+- `publicationUrl` is now required for publication-scoped methods (`publicationArchive`, `publicationPosts`, `publicationHomepage`, `postReactors`, `activeLiveStream`, `markPostSeen`); omit for anonymous global access
 - `postForId`, `noteForId`, `commentForId` now accept `number` (not string)
 - SearchService merged into DiscoveryService for simpler architecture
 - `token` is now optional in `SubstackConfig` for anonymous access
@@ -69,7 +69,13 @@ For the latest releases and detailed release notes, please visit our [GitHub Rel
 
 ### From v0.3.x to v0.4.x
 
-No breaking changes in this version. All existing code should continue to work as expected.
+This version includes breaking changes:
+
+- `postForId`, `noteForId`, `commentForId` now accept `number` IDs instead of `string`
+- `publicationUrl` is required when using publication-scoped methods (archive, posts, homepage, reactors, live stream, mark seen)
+- `SearchService` has been removed; search methods now live on `DiscoveryService`
+- `decodeEither` helper has been removed; use `decodeOrThrow` instead
+- `publicationUrl` is now optional for anonymous read-only access — omit both `token` and `publicationUrl` to browse public content
 
 ### Contributing to Changelog
 

@@ -6,7 +6,7 @@ Thank you for considering contributing to this project. This document covers dev
 
 ### Prerequisites
 
-- Node.js 20 or higher
+- Node.js 18 or higher
 - pnpm (recommended), npm, or yarn
 - Git
 
@@ -74,7 +74,7 @@ src/
 │   │   └── connectivity-service.ts
 │   ├── http-client.ts          # HTTP abstraction with auth and rate limiting
 │   ├── types/                  # io-ts codecs and internal type definitions
-│   └── cache/                  # In-memory caching layer
+│   └── validation.ts           # Runtime type validation helpers
 ├── types/                      # Public type definitions (SubstackConfig, etc.)
 tests/
 ├── unit/                       # Unit tests (mocked HTTP, fast)
@@ -135,7 +135,7 @@ E2E tests are designed to be safe (read-only where possible), isolated, and cond
 - **Behavior**: Skips on transient errors (429, 503, 403) rather than failing
 
 ```bash
-pnpm test:unit --testPathPatterns=live-api-validation
+pnpm test:unit --testPathPattern=live-api-validation
 ```
 
 ## Development Workflow
@@ -155,6 +155,14 @@ pnpm lint        # Fix any linting issues
 pnpm format      # Format code with Prettier
 pnpm build       # Ensure clean build
 pnpm test        # All tests must pass
+pnpm check-test-names  # Validate test naming conventions
+```
+
+### Additional commands
+
+```bash
+pnpm sample            # Run the example in samples/
+pnpm test:mutation     # Run Stryker mutation testing
 ```
 
 ## Code Style

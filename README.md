@@ -57,7 +57,7 @@ for await (const post of profile.posts({ limit: 5 })) {
 // Get post details and comments
 const post = await client.postForId(123456);
 for await (const comment of post.comments({ limit: 10 })) {
-  console.log(`💬 ${comment.author.name}: ${comment.body}`);
+  console.log(`💬 ${comment.name}: ${comment.body}`);
 }
 ```
 
@@ -156,7 +156,7 @@ const techPubs = await client.categoryPublications('technology', { limit: 10 });
 const post = await client.postForId(123456);
 
 for await (const comment of post.comments({ limit: 5 })) {
-  console.log(`${comment.author.name}: ${comment.body}`);
+  console.log(`${comment.name}: ${comment.body}`);
 
   // Fetch replies
   const replies = await client.commentReplies(comment.id);
@@ -164,6 +164,18 @@ for await (const comment of post.comments({ limit: 5 })) {
     console.log(`  ↳ ${branch.comments[0]?.name}: ${branch.comments[0]?.body}`);
   }
 }
+```
+
+### Publish a note with a link attachment
+
+```typescript
+const me = await client.ownProfile();
+
+await me
+  .newNoteWithLink('https://example.com/article')
+  .paragraph()
+  .text('Check out this interesting read:')
+  .publish();
 ```
 
 ## Authentication
@@ -188,7 +200,7 @@ Substack uses session cookies for authentication. To obtain your token:
 | `perPage` | `number` | No | `25` | Default items per page for pagination |
 | `maxRequestsPerSecond` | `number` | No | `25` | Client-side rate limit |
 
-\* Required when using publication-scoped methods like `publicationArchive()`, `publicationPosts()`, `ownProfile()`, `postReactors()`, etc.
+\* Required when using publication-scoped methods like `publicationArchive()`, `publicationPosts()`, `publicationHomepage()`, `postReactors()`, `activeLiveStream()`, `markPostSeen()`, etc. `ownProfile()` only requires a `token`.
 
 ## API Reference
 
@@ -218,7 +230,7 @@ The project uses a four-tier testing strategy:
 | Unit | `pnpm test:unit` | Fast tests with mocked HTTP responses |
 | Integration | `pnpm test:integration` | Entity interactions against local test server |
 | E2E | `pnpm test:e2e` | Live API calls (requires credentials) |
-| Live Validation | `pnpm test:unit --testPathPatterns=live-api-validation` | Probes real endpoints for schema drift |
+| Live Validation | `pnpm test:unit --testPathPattern=live-api-validation` | Probes real endpoints for schema drift |
 
 Run all tests:
 

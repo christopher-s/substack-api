@@ -96,7 +96,7 @@ Extends `SubstackPublicationPostCodec` (intersection) with all of these optional
 - child_comment_count?: number | null | undefined
 - publishedBylines?: array of {SubstackBylineCodec} | null | undefined
 
-### SubstackPostTagCodec (nested, used in publishedBylines)
+### SubstackPostTagCodec (nested, used in postTags)
 - id: number (required)
 - publication_id: number (required)
 - name: string (required)
