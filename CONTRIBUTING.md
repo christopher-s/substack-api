@@ -1,235 +1,198 @@
 # Contributing to Substack API
 
-Thank you for considering contributing to the Substack API client library! This document provides guidelines for contributing to this project.
+Thank you for considering contributing to this project. This document covers development setup, testing, and the contribution process.
 
 ## Development Setup
 
-1. Fork the repository
-2. Clone your fork locally
-3. Install dependencies: `npm install`
-4. Run tests to verify setup: `npm test`
+### Prerequisites
 
-## Test Strategy
+- Node.js 20 or higher
+- pnpm (recommended), npm, or yarn
+- Git
 
-This project uses a three-layer testing architecture designed to provide comprehensive coverage while maintaining clear separation of concerns:
+### Getting Started
 
-### 1. 🧪 Unit Tests
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/christopher-s/substack-api.git
+   cd substack-api
+   ```
 
-**Location**: `tests/unit/`
-**Purpose**: Test pure functions, utilities, and individual components in isolation
-**Characteristics**: 
-- Fast execution (< 1 second)
-- No I/O operations
-- No network calls
-- Mock external dependencies
-- High code coverage
+2. Install dependencies:
+   ```bash
+   pnpm install
+   ```
 
-**Running unit tests**:
+3. Build the project:
+   ```bash
+   pnpm build
+   ```
+
+4. Run the test suite:
+   ```bash
+   pnpm test
+   ```
+
+### Environment Setup for E2E Tests
+
+Create a `.env` file for live API testing:
+
 ```bash
-npm run test:unit          # Run once
-npm run test:watch         # Run in watch mode
+SUBSTACK_API_KEY=your-connect-sid-cookie-value
+SUBSTACK_HOSTNAME=example.substack.com
 ```
 
-**Example test structure**:
-```typescript
-describe('SubstackClient', () => {
-  let client: SubstackClient
-  
-  beforeEach(() => {
-    client = new SubstackClient({ apiKey: 'test', hostname: 'test.com' })
-  })
-  
-  test('should handle API responses correctly', () => {
-    // Test implementation
-  })
-})
+To obtain your `substack.sid` cookie:
+1. Log in to Substack in your browser
+2. Open Developer Tools (F12) → Application/Storage → Cookies → `https://substack.com`
+3. Copy the value of the `substack.sid` cookie
+
+**Never commit your `.env` file.** It is already listed in `.gitignore`.
+
+## Project Structure
+
+```
+src/
+├── substack-client.ts          # Main client entry point
+├── index.ts                    # Public API exports
+├── domain/                     # Entity classes (Profile, Post, Note, Comment, builders)
+│   ├── profile.ts
+│   ├── own-profile.ts
+│   ├── post.ts
+│   ├── note.ts
+│   ├── comment.ts
+│   └── note-builder.ts
+├── internal/
+│   ├── services/               # Business logic by domain
+│   │   ├── post-service.ts
+│   │   ├── note-service.ts
+│   │   ├── profile-service.ts
+│   │   ├── comment-service.ts
+│   │   ├── discovery-service.ts
+│   │   ├── publication-service.ts
+│   │   ├── following-service.ts
+│   │   └── connectivity-service.ts
+│   ├── http-client.ts          # HTTP abstraction with auth and rate limiting
+│   ├── types/                  # io-ts codecs and internal type definitions
+│   └── cache/                  # In-memory caching layer
+├── types/                      # Public type definitions (SubstackConfig, etc.)
+tests/
+├── unit/                       # Unit tests (mocked HTTP, fast)
+├── integration/                # Integration tests (local test server)
+└── e2e/                        # End-to-end tests (live API)
+samples/                        # Example applications
+docs/
+├── openapi/                    # OpenAPI 3.1 specification
+└── site/                       # GitHub Pages site (Scalar API reference)
 ```
 
-### 2. 🔗 Integration Tests
+## Testing Strategy
 
-**Location**: `tests/integration/`
-**Purpose**: Test SDK behavior against known Substack API responses using sample data
-**Characteristics**:
-- Medium execution time (< 10 seconds)
-- Uses local HTTP server with sample responses
-- Tests data parsing and entity creation
-- Validates sample data consistency
-- No real network calls
+The project uses a four-tier testing strategy:
 
-**Running integration tests**:
+### 1. Unit Tests
+
+- **Location**: `tests/unit/`
+- **Purpose**: Test individual components in isolation with mocked HTTP responses
+- **Speed**: Very fast (< 1 second)
+- **Mocking**: Heavy use of mocks for external dependencies
+
 ```bash
-npm run test:integration        # Run once
-npm run test:integration:watch  # Run in watch mode
+pnpm test:unit          # Run once
+pnpm test:watch         # Run in watch mode
+pnpm test:unit:fast     # Skip live-api-validation and property tests
 ```
 
-**Sample data**:
-Integration tests use sample API responses stored in `samples/api/v1/`:
-- `subscription` - Single subscription data
-- `subscriptions` - Complete subscriptions list with publications
-- `user/*/profile` - User profile data
-- `user/*/public_profile` - Public profile data
+### 2. Integration Tests
 
-**Example integration test**:
-```typescript
-describe('Sample Data Integration', () => {
-  test('should parse subscription data correctly', () => {
-    const samplePath = join(samplesDir, 'subscription')
-    const sampleData = JSON.parse(readFileSync(samplePath, 'utf8'))
-    
-    expect(sampleData.id).toBeDefined()
-    expect(sampleData.membership_state).toBe('subscribed')
-  })
-})
-```
+- **Location**: `tests/integration/`
+- **Purpose**: Test entity interactions and builder patterns against a local test server
+- **Speed**: Fast (few seconds)
+- **Mocking**: Mock HTTP layer, real entity logic
 
-### 3. 🌐 End-to-End (E2E) Tests — 🔒 Read-only & Mandatory
-
-**Location**: `tests/e2e/`
-**Purpose**: Live testing against the actual Substack API using real credentials
-**Characteristics**:
-- ✅ **Read-only operations only** (e.g., fetching profiles, subscriptions, posts)
-- ❌ **No create/update/delete operations** allowed
-- **Mandatory** - CI fails if credentials are missing
-- **Enforcement** - Tests fail immediately without proper credentials
-
-**Running E2E tests**:
 ```bash
-# Setup credentials first
-cp .env.example .env
-# Edit .env and add your SUBSTACK_TOKEN
-
-npm run test:e2e           # Run once
-npm run test:e2e:watch     # Run in watch mode
-npm run test:all           # Run all test types
+pnpm test:integration
+pnpm test:integration:watch
 ```
 
-**Credential requirements**:
-- `SUBSTACK_TOKEN`: Required - Your Substack token
-- `SUBSTACK_PUBLICATION_URL`: Optional - Your Substack publication URL
+### 3. End-to-End Tests
 
-**Example E2E test**:
-```typescript
-describe('SubstackClient E2E', () => {
-  beforeAll(() => {
-    if (!global.E2E_CONFIG.hasCredentials) {
-      throw new Error('E2E tests require credentials')
-    }
-  })
-  
-  test('should fetch real profile data', async () => {
-    const profile = await client.profileForSlug('platformer')
-    expect(profile.name).toBeTruthy()
-  })
-})
+- **Location**: `tests/e2e/`
+- **Purpose**: Validate against the real Substack API
+- **Speed**: Slower (network dependent)
+- **Mocking**: None — real API calls
+
+```bash
+pnpm test:e2e
 ```
 
-## CI/CD Integration
+E2E tests are designed to be safe (read-only where possible), isolated, and conditional — they skip gracefully when credentials are unavailable.
 
-The GitHub Actions workflow runs all three test layers:
+### 4. Live API Validation
 
-1. **Unit tests** - Always run, provide code coverage
-2. **Integration tests** - Always run, validate sample data
-3. **E2E tests** - Run with repository secrets, fail if credentials missing
+- **Location**: `tests/unit/live-api-validation.test.ts`
+- **Purpose**: Probe real Substack endpoints to detect schema drift
+- **Behavior**: Skips on transient errors (429, 503, 403) rather than failing
 
-## Writing New Tests
-
-### Adding Unit Tests
-
-1. Create test file in `tests/unit/`
-2. Use `.test.ts` suffix
-3. Mock external dependencies
-4. Test individual functions/methods
-5. Aim for high coverage
-
-### Adding Integration Tests
-
-1. Create test file in `tests/integration/`
-2. Use `.integration.test.ts` suffix  
-3. Test against sample data from `samples/api/v1/`
-4. Validate data structures and parsing
-5. Ensure referential integrity
-
-### Adding E2E Tests
-
-1. Create test file in `tests/e2e/`
-2. Use `.e2e.test.ts` suffix
-3. **Only use read-only operations**
-4. Handle API errors gracefully
-5. Add descriptive logging for debugging
-
-### Sample Data Guidelines
-
-When adding new sample data files:
-
-1. Place in appropriate `samples/api/v1/` subdirectory
-2. Ensure valid JSON format
-3. Remove sensitive information
-4. Use realistic, representative data
-5. Maintain consistency with existing samples
+```bash
+pnpm test:unit --testPathPatterns=live-api-validation
+```
 
 ## Development Workflow
 
-### Before Making Changes
+Before making changes:
 
 ```bash
-# Verify current state
-npm run lint                # Check code style
-npm run build               # Ensure compilation works
-npm test                    # Run all tests
+pnpm lint        # Check code style and formatting
+pnpm build       # Ensure TypeScript compiles
+pnpm test        # Run unit + integration tests
 ```
 
-### Making Changes
-
-1. Write tests first (TDD approach recommended)
-2. Make minimal changes to pass tests
-3. Ensure all tests pass
-4. Update documentation if needed
-
-### Before Submitting PR
+Before submitting a pull request:
 
 ```bash
-# Final verification
-npm run lint                # Fix any linting issues
-npm run format              # Format code consistently
-npm run build               # Ensure clean build
-npm test                    # All tests must pass
+pnpm lint        # Fix any linting issues
+pnpm format      # Format code with Prettier
+pnpm build       # Ensure clean build
+pnpm test        # All tests must pass
 ```
 
 ## Code Style
 
-- Use TypeScript strictly - avoid `any` unless necessary
-- Prefer named exports and immutable data
-- Keep functions pure where possible
+- Use explicit types where beneficial
+- Document public APIs with JSDoc comments
+- Follow consistent naming conventions
+- Write unit tests for new functionality
 - Use `async/await` and handle errors gracefully
-- Add JSDoc comments on all public-facing methods
-- Follow existing patterns and conventions
+- Prefer immutable data and pure functions where possible
 
 ## Pull Request Guidelines
 
-- **Keep changes focused and atomic**
-- **Include tests for new functionality**
-- **Update documentation as needed**
-- **Follow conventional commits**: `feat:`, `fix:`, `test:`, `docs:`
-- **Describe your changes in the PR description**
-- **Ensure all CI checks pass**
+- Keep changes focused and atomic
+- Follow existing code style
+- Include tests for new functionality
+- Update documentation as needed
+- Follow [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `test:`, `docs:`
+- Describe your changes in the PR description
+- Ensure all CI checks pass
 
-## Test Debugging
+## Release Process
 
-### Unit Test Issues
-- Check mocks are properly configured
-- Verify TypeScript types match expectations
-- Use `console.log` for debugging (remove before commit)
+Releases are automated via [semantic-release](https://semantic-release.gitbook.io/) in GitHub Actions. The workflow:
 
-### Integration Test Issues
-- Validate sample data JSON is valid
-- Check file paths in `samples/api/v1/`
-- Ensure data structures match expected interfaces
+1. Commits to `main` are analyzed
+2. Version bumps are determined from conventional commit messages
+3. Changelog is generated automatically
+4. Package is published to npm
+5. GitHub release is created
 
-### E2E Test Issues
-- Verify `.env` file has valid credentials
-- Check token permissions
-- Review network connectivity
-- Some operations may not be available for all account types
+No manual version bumps or publish steps are required.
+
+## Security
+
+- **Never commit** your `.env` file or API credentials
+- **Use repository secrets** for CI/CD credentials
+- E2E tests should be read-only operations where possible
 
 ## Getting Help
 
@@ -237,12 +200,3 @@ npm test                    # All tests must pass
 - Review the codebase for similar implementations
 - Open an issue for clarification on requirements
 - Ask questions in pull request discussions
-
-## Security
-
-- **Never commit** your `.env` file or API credentials
-- **Use repository secrets** for CI/CD credentials
-- **Tokens should have minimal required permissions**
-- **All E2E tests must be read-only operations**
-
-Thank you for contributing to make this library better! 🚀

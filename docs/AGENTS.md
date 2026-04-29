@@ -1,40 +1,31 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-04-12 | Updated: 2026-04-12 -->
+<!-- Generated: 2026-04-12 | Updated: 2026-04-28 -->
 
 # docs/
 
 ## Purpose
-Documentation source files for the ReadTheDocs site. The site is built using MkDocs (configured via `mkdocs.yml` in the project root). These Markdown files cover installation, usage, the full API reference, entity model, examples, and contribution guidance for the `substack-api` npm package.
+
+Documentation assets for the GitHub Pages site. The site renders an interactive OpenAPI reference using Scalar.
+
+All narrative documentation (installation, quickstart, examples, contributing) lives in the repository root:
+- `README.md` — Project overview, installation, quickstart, examples
+- `CONTRIBUTING.md` — Development setup and contribution guidelines
+- `CHANGELOG.md` — Version history
 
 ## Key Files
 
 | File | Description |
 |------|-------------|
-| `index.md` | Documentation homepage with feature overview and table of contents |
-| `introduction.md` | Library introduction and high-level description |
-| `installation.md` | Installation instructions |
-| `quickstart.md` | Getting started guide with code samples for authentication, profiles, posts, notes, and comments |
-| `api-reference.md` | Full API reference for `SubstackClient` and all entity classes (`Profile`, `OwnProfile`, `Post`, `Note`, `Comment`) |
-| `entity-model.md` | Entity model documentation covering object relationships and navigation patterns |
-| `examples.md` | Usage examples and common patterns |
-| `development.md` | Contributing and development guide |
-| `changelog.md` | Version changelog |
-| `note-with-link-example.md` | Specific example showing how to create a note containing a link |
-| `conf.py` | Sphinx/Python configuration (may be legacy from a previous docs system) |
-| `requirements.txt` | Python dependencies for the docs build |
+| `openapi/openapi.yaml` | OpenAPI 3.1 specification describing the Substack HTTP API |
+| `openapi/codec-shapes.md` | Reference mapping io-ts codecs to OpenAPI schemas |
+| `openapi/endpoint-inventory.json` | Endpoint inventory for spec maintenance |
+| `site/index.html` | Scalar API reference viewer (GitHub Pages entry point) |
+| `site/.nojekyll` | Disables Jekyll processing on GitHub Pages |
 
 ## For AI Agents
 
 ### Working In This Directory
-- All documentation files are plain Markdown, rendered by MkDocs
-- Internal links use relative paths (e.g., `[API Reference](api-reference.md)`)
-- Code examples are TypeScript and reference the public API exported from `substack-api`
-- Do not add new documentation files unless explicitly requested
+- Only modify `openapi/openapi.yaml` when updating the API specification
+- Only modify `site/index.html` when updating the Scalar viewer configuration
+- Do not add new Markdown files here — narrative docs belong in the repository root
 - When updating API documentation, ensure method signatures match the source in `src/domain/` and `src/substack-client.ts`
-
-### Common Patterns
-- **Cross-referencing pages**: Each page links to related pages via relative Markdown links (e.g., quickstart links to api-reference and entity-model)
-- **Code blocks**: All samples use `typescript` syntax highlighting and import from the `substack-api` package
-- **Async iterator examples**: Pagination examples consistently use `for await (const x of ...)` syntax with optional `{ limit: N }` options
-- **Entity method documentation**: Properties shown as TypeScript interfaces; methods shown with full signatures, parameter descriptions, and practical examples
-- **Error handling patterns**: Documentation includes try-catch examples with specific HTTP status code checks (401, 403, 404, 429)

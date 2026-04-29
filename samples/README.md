@@ -1,94 +1,55 @@
 # Samples
 
-This directory contains example applications that demonstrate how to use the Substack API client library.
+This directory contains runnable examples demonstrating the `substack-api` client.
 
 ## Running the Example
 
-### Option 1: Using environment variables
+### With environment variables
 
-1. Copy `.env.example` to `.env` in the project root:
+1. Copy `.env.example` to `.env` in the project root and add your credentials:
    ```bash
    cp .env.example .env
    ```
 
-2. Edit `.env` and add your Substack API credentials:
+2. Edit `.env`:
    ```
-   SUBSTACK_TOKEN=your-token-here
-   SUBSTACK_PUBLICATION_URL=your-publication.substack.com
+   SUBSTACK_API_KEY=your-connect-sid-cookie-value
+   SUBSTACK_HOSTNAME=your-publication.substack.com
    ```
 
-3. Run the sample:
+3. Run:
    ```bash
-   npm run sample
+   pnpm sample
    ```
 
-### Option 2: Interactive mode
+### Interactive mode
 
-If you don't have a `.env` file, the sample will prompt you for credentials:
+If no `.env` file is present, the sample prompts for credentials at runtime:
 
 ```bash
-npm run sample
+pnpm sample
 ```
 
-## What the Example Demonstrates
+## What It Demonstrates
 
-The `index.ts` example showcases the following features:
+The `index.ts` example showcases:
 
-1. **🔐 Authentication** - Connecting with token and publication URL
-2. **📡 Connectivity Testing** - Verifying the API connection works
-3. **👤 Profile Management** - Fetching your own profile information
-4. **📰 Content Fetching** - Listing recent posts with titles and metadata
-5. **📝 Notes Management** - Retrieving and displaying recent notes
-6. **🤝 Social Features** - Listing users you follow
-
-## Example Output
-
-```
-🚀 Substack API Client Example
-
-✅ Using API key from environment variables
-🌐 Connected to: yourpub.substack.com
-
-📡 Testing API connectivity...
-✅ API connectivity verified
-
-👤 Fetching your profile...
-📋 Profile Information:
-   Name: Your Name
-   Handle: @yourhandle
-   URL: https://substack.com/@yourhandle
-
-📰 Fetching your 3 most recent posts...
-   1. "Your Latest Post Title"
-      Description: This is a preview of your post content...
-      Published: 12/30/2024
-      Author: Your Name (@yourhandle)
-
-📝 Fetching your 3 most recent notes...
-   1. "This is a sample note with some content that might be longer than the preview..."
-      Date: 12/30/2024
-      Author: Your Name (@yourhandle)
-
-🤝 Fetching users you follow...
-   1. Example Author (@exampleauthor)
-      Bio: This is an example author bio...
-      URL: https://substack.com/@exampleauthor
-
-✨ Example completed successfully!
-```
+1. **Authentication** — Connecting with token and publication URL
+2. **Connectivity testing** — Verifying the API connection
+3. **Profile fetching** — Getting your own profile information
+4. **Content listing** — Recent posts and notes
+5. **Social features** — Users you follow
 
 ## Requirements
 
-- Node.js 14+
-- Valid Substack API credentials
-- A Substack publication (for some features)
+- Node.js 18+
+- Valid Substack credentials (for authenticated features)
+- A Substack publication (for publication-scoped features)
 
 ## Troubleshooting
 
 If you encounter authentication errors:
 
-- Verify your token is correct
+- Verify your token is the full `substack.sid` cookie value
 - Ensure your publication URL matches your publication
-- Check that your token has the necessary permissions
-
-For more information, see the main project documentation.
+- Check that your token has not expired
