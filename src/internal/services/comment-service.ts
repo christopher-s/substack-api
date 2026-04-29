@@ -75,4 +75,17 @@ export class CommentService {
     )
     return decodeOrThrow(SubstackCommentRepliesResponseCodec, response, 'Comment replies')
   }
+
+  async createComment(postId: number, body: string): Promise<unknown> {
+    return await this.publicationClient.post<unknown>(
+      `/post/${encodeURIComponent(String(postId))}/comment`,
+      { body, post_id: postId }
+    )
+  }
+
+  async deleteComment(commentId: number): Promise<unknown> {
+    return await this.publicationClient.delete<unknown>(
+      `/comment/${encodeURIComponent(String(commentId))}`
+    )
+  }
 }
