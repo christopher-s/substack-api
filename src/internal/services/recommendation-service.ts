@@ -15,7 +15,7 @@ export class RecommendationService {
    */
   async getOutgoingRecommendations(publicationId: number): Promise<unknown> {
     return await this.publicationClient.get<unknown>(
-      `/recommendations/from/${encodeURIComponent(String(publicationId))}`
+      `/recommendations/from/${publicationId}`
     )
   }
 
@@ -42,7 +42,7 @@ export class RecommendationService {
     }
     const query = params.toString() ? `?${params.toString()}` : ''
     return await this.publicationClient.get<unknown>(
-      `/recommendations/from/${encodeURIComponent(String(publicationId))}${query}`
+      `/recommendations/from/${publicationId}${query}`
     )
   }
 
@@ -121,7 +121,7 @@ export class RecommendationService {
    */
   async getSuggestedRecommendations(publicationId: number): Promise<unknown> {
     return await this.publicationClient.get<unknown>(
-      `/recommendations/${encodeURIComponent(String(publicationId))}/suggested`
+      `/recommendations/${publicationId}/suggested`
     )
   }
 }

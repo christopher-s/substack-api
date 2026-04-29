@@ -94,6 +94,10 @@ tags:
     description: Subscription status (per-publication and global).
   - name: settings
     description: Publisher and publication settings.
+  - name: dashboard
+    description: Publisher dashboard, stats, activity, and growth suggestions.
+  - name: recommendations
+    description: Publication recommendations and recommendation stats.
 security: []
 paths:
   /api/v1/posts/by-id/{id}:
@@ -1258,6 +1262,412 @@ paths:
                 type: array
                 items:
                   type: object
+
+  # ── Dashboard ─────────────────────────────────────────────────────────
+
+  /api/v1/publish-dashboard/summary:
+    get:
+      tags: [dashboard]
+      summary: Publish dashboard summary (v1)
+      description: |
+        Returns aggregate dashboard metrics for the publication: subscriber
+        counts, email stats, views, open rate, and pledge information.
+        Requires authentication and a publication-scoped host.
+      operationId: getDashboardSummary
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Dashboard summary metrics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/publish-dashboard/summary-v2:
+    get:
+      tags: [dashboard]
+      summary: Publish dashboard summary (v2)
+      description: |
+        Returns an extended dashboard summary with additional metrics compared
+        to v1. Requires authentication and a publication-scoped host.
+      operationId: getDashboardSummaryV2
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Extended dashboard summary metrics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/publication/stats/emails/timeseries:
+    get:
+      tags: [dashboard]
+      summary: Email stats time series
+      description: |
+        Returns time-series email statistics (opens, clicks, sends) for the
+        publication. Requires authentication and a publication-scoped host.
+      operationId: getEmailStatsTimeseries
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: start_date
+          schema: { type: string, format: date }
+          description: Start date for the time range.
+        - in: query
+          name: end_date
+          schema: { type: string, format: date }
+          description: End date for the time range.
+      responses:
+        '200':
+          description: Email stats time series data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailStatsTimeseries'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/activity/unread:
+    get:
+      tags: [dashboard]
+      summary: Unread activity count
+      description: |
+        Returns the count of unread activity items for the authenticated user.
+        Requires authentication.
+      operationId: getUnreadActivity
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Unread activity count.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnreadActivity'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/messages/unread-count:
+    get:
+      tags: [dashboard]
+      summary: Unread messages count
+      description: |
+        Returns the count of unread messages for the authenticated user.
+        Requires authentication.
+      operationId: getUnreadMessagesCount
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Unread messages count.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnreadMessagesCount'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/grow/suggestion:
+    get:
+      tags: [dashboard]
+      summary: Growth suggestion
+      description: |
+        Returns a growth suggestion for the publication. Requires authentication
+        and a publication-scoped host.
+      operationId: getGrowSuggestion
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Growth suggestion payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GrowSuggestion'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Settings (extended) ──────────────────────────────────────────────
+
+  /api/v1/publication_user:
+    get:
+      tags: [settings]
+      summary: List publication users
+      description: |
+        Returns the list of users associated with the publication, including
+        their roles and visibility settings. Requires authentication and a
+        publication-scoped host.
+      operationId: getPublicationUsers
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Publication user list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationUsersResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/publication/sections:
+    get:
+      tags: [settings, publication]
+      summary: List publication sections
+      description: |
+        Returns the sections configured for the publication. Requires
+        authentication and a publication-scoped host.
+      operationId: getPublicationSections
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Array of section objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Section'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/boost:
+    get:
+      tags: [settings]
+      summary: Get boost settings
+      description: |
+        Returns the publication's boost configuration, including whether boost
+        is enabled and associated feature flags. Requires authentication and a
+        publication-scoped host.
+      operationId: getBoostSettings
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Boost settings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoostSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/publication_settings:
+    get:
+      tags: [settings, publication]
+      summary: Get publication settings
+      description: |
+        Returns the publication's settings and configuration. Requires
+        authentication and a publication-scoped host.
+      operationId: getPublicationSettings
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Publication settings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Pledges / Publication Stats ──────────────────────────────────────
+
+  /api/v1/pledges/plans:
+    get:
+      tags: [dashboard, subscription]
+      summary: List pledge plans
+      description: |
+        Returns the payment pledge plans configured for the publication,
+        including plan names, amounts, intervals, and currencies. Requires
+        authentication and a publication-scoped host.
+      operationId: getPledgePlans
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Pledge plans.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PledgePlans'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/pledges/plans/summary:
+    get:
+      tags: [dashboard, subscription]
+      summary: Pledge plans summary
+      description: |
+        Returns a summary of pledge plans including plan details, aggregate
+        pledge statistics, and total pledge count. Requires authentication and
+        a publication-scoped host.
+      operationId: getPledgePlansSummary
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Pledge plans summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PledgePlansSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/publication/bestseller_tier:
+    get:
+      tags: [dashboard, publication]
+      summary: Get publication bestseller tier
+      description: |
+        Returns the publication's current bestseller tier, category, and rank.
+        Requires authentication and a publication-scoped host.
+      operationId: getBestsellerTier
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Bestseller tier information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BestsellerTier'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Recommendations ──────────────────────────────────────────────────
+
+  /api/v1/recommendations/{publicationId}:
+    get:
+      tags: [recommendations]
+      summary: Outgoing recommendations for a publication
+      description: |
+        Returns the list of publications that the given publication recommends.
+        Supports paginated mode via `paginate=true` query parameter. Requires
+        authentication.
+      operationId: getRecommendations
+      security:
+        - substackSession: []
+      parameters:
+        - in: path
+          name: publicationId
+          required: true
+          schema: { type: integer, minimum: 1 }
+          description: Publication ID to get recommendations for.
+        - in: query
+          name: paginate
+          schema: { type: boolean, default: false }
+          description: Set to `true` for cursor-paginated results.
+        - $ref: '#/components/parameters/CursorQuery'
+      responses:
+        '200':
+          description: List of recommended publications.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/recommendations/stats/from:
+    get:
+      tags: [recommendations]
+      summary: Outgoing recommendation stats
+      description: |
+        Returns statistics about recommendations made by the authenticated
+        user's publication (outgoing). Requires authentication.
+      operationId: getOutgoingRecommendationStats
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Outgoing recommendation statistics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/recommendations/stats/to:
+    get:
+      tags: [recommendations]
+      summary: Incoming recommendation stats
+      description: |
+        Returns statistics about recommendations pointing to the authenticated
+        user's publication (incoming). Requires authentication.
+      operationId: getIncomingRecommendationStats
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Incoming recommendation statistics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/recommendations/exist:
+    get:
+      tags: [recommendations]
+      summary: Check if recommendations exist
+      description: |
+        Returns whether the authenticated user has any recommendations
+        configured. Requires authentication.
+      operationId: checkRecommendationsExist
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Existence check result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationsExist'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/recommendations/{publicationId}/suggested:
+    get:
+      tags: [recommendations]
+      summary: Suggested recommendations for a publication
+      description: |
+        Returns a list of suggested publications to recommend based on the
+        given publication. Requires authentication.
+      operationId: getSuggestedRecommendations
+      security:
+        - substackSession: []
+      parameters:
+        - in: path
+          name: publicationId
+          required: true
+          schema: { type: integer, minimum: 1 }
+          description: Publication ID to get suggestions for.
+      responses:
+        '200':
+          description: Suggested recommendations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
 components:
   parameters:
@@ -2773,3 +3183,283 @@ components:
             $ref: '#/components/schemas/LiveStream'
         hasMore:
           type: boolean
+
+    # ── Dashboard schemas ────────────────────────────────────────────────
+
+    DashboardSummary:
+      type: object
+      description: Aggregate dashboard metrics for a publication.
+      properties:
+        appSubscribers:
+          type: integer
+          description: Number of app subscribers.
+        subscribers:
+          type: integer
+          description: Total subscriber count.
+        totalEmail:
+          type: integer
+          description: Total emails sent.
+        views:
+          type: integer
+          description: Total views.
+        openRate:
+          type: number
+          description: Email open rate (0-1).
+        pledgesAmount:
+          type: number
+          description: Total pledge amount.
+        numPledges:
+          type: integer
+          description: Number of pledges.
+        pledgeCurrency:
+          type: string
+          description: Pledge currency code (e.g. `USD`).
+        isBestseller:
+          type: boolean
+          description: Whether the publication is a bestseller.
+      additionalProperties: true
+
+    EmailStatsTimeseries:
+      type: object
+      description: Time-series email statistics for a publication.
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              date: { type: string, format: date }
+              sends: { type: integer }
+              opens: { type: integer }
+              clicks: { type: integer }
+            additionalProperties: true
+      additionalProperties: true
+
+    UnreadActivity:
+      type: object
+      description: Unread activity count response.
+      properties:
+        count:
+          type: integer
+          description: Number of unread activity items.
+      additionalProperties: true
+
+    UnreadMessagesCount:
+      type: object
+      description: Unread messages count response.
+      properties:
+        count:
+          type: integer
+          description: Number of unread messages.
+      additionalProperties: true
+
+    GrowSuggestion:
+      type: object
+      description: Growth suggestion for the publication.
+      properties:
+        suggestion:
+          type: string
+          description: Growth suggestion text.
+        type:
+          type: string
+          description: Suggestion type.
+      additionalProperties: true
+
+    # ── Settings schemas (extended) ──────────────────────────────────────
+
+    PublicationUsersResponse:
+      type: object
+      description: Response from GET /publication_user.
+      properties:
+        pub_users:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicationUser'
+      additionalProperties: true
+
+    BoostSettings:
+      type: object
+      description: Boost settings for a publication.
+      properties:
+        boost_enabled:
+          type: boolean
+          description: Whether boost is enabled.
+        features:
+          type: object
+          description: Feature flags for boost.
+          additionalProperties: true
+      additionalProperties: true
+
+    PublicationSettings:
+      type: object
+      description: Publication settings and configuration.
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        subdomain:
+          type: string
+        custom_domain:
+          type: string
+        language:
+          type: string
+        community_enabled:
+          type: boolean
+        podcast_enabled:
+          type: boolean
+        bylines_enabled:
+          type: boolean
+        invite_only:
+          type: boolean
+        founding_plan_enabled:
+          type: boolean
+        boost_enabled:
+          type: boolean
+        tts_enabled:
+          type: boolean
+      additionalProperties: true
+
+    # ── Pledges schemas ──────────────────────────────────────────────────
+
+    PledgePlan:
+      type: object
+      description: A single payment pledge plan.
+      properties:
+        name:
+          type: string
+          description: Plan name.
+        amount:
+          type: integer
+          description: Plan amount in minor currency units (e.g. cents).
+        interval:
+          type: string
+          description: Billing interval (e.g. `month`, `year`).
+        currency:
+          type: string
+          description: Currency code (e.g. `USD`).
+      additionalProperties: true
+
+    PledgePlans:
+      type: object
+      description: Pledge plans for a publication.
+      properties:
+        enabled:
+          type: boolean
+          description: Whether pledges are enabled.
+        payment_pledge_plans:
+          type: array
+          items:
+            $ref: '#/components/schemas/PledgePlan'
+      additionalProperties: true
+
+    PledgePlansSummary:
+      type: object
+      description: Summary of pledge plans with aggregate statistics.
+      properties:
+        plans:
+          type: array
+          items:
+            $ref: '#/components/schemas/PledgePlan'
+        pledgeSummary:
+          type: object
+          description: Aggregate pledge statistics.
+          additionalProperties: true
+        pledgeCount:
+          type: integer
+          description: Total number of pledges.
+      additionalProperties: true
+
+    BestsellerTier:
+      type: object
+      description: Publication bestseller tier information.
+      properties:
+        publication_id:
+          type: integer
+          description: Publication ID.
+        tier:
+          type: string
+          description: Bestseller tier level.
+        category:
+          type: string
+          description: Bestseller category.
+        rank:
+          type: integer
+          description: Current rank within category.
+        updated_at:
+          type: string
+          format: date-time
+          description: When the tier was last updated.
+      additionalProperties: true
+
+    # ── Recommendations schemas ──────────────────────────────────────────
+
+    RecommendationItem:
+      type: object
+      description: A single recommendation entry.
+      properties:
+        id:
+          type: integer
+          description: Recommendation ID.
+        recommender_publication_id:
+          type: integer
+          description: Publication making the recommendation.
+        recommended_publication_id:
+          type: integer
+          description: Publication being recommended.
+        recommended_publication:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            subdomain: { type: string }
+            logo_url: { type: string, format: uri }
+            description: { type: string }
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+      additionalProperties: true
+
+    RecommendationsResponse:
+      type: object
+      description: List of recommendations or suggested recommendations.
+      properties:
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecommendationItem'
+        next_cursor:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        more:
+          type: boolean
+      additionalProperties: true
+
+    RecommendationStats:
+      type: object
+      description: Recommendation statistics (incoming or outgoing).
+      properties:
+        total:
+          type: integer
+          description: Total number of recommendations.
+        publications:
+          type: array
+          items:
+            type: object
+            properties:
+              publication_id: { type: integer }
+              name: { type: string }
+              count: { type: integer }
+            additionalProperties: true
+      additionalProperties: true
+
+    RecommendationsExist:
+      type: object
+      description: Check result for whether recommendations exist.
+      properties:
+        exist:
+          type: boolean
+          description: Whether any recommendations are configured.
+      additionalProperties: true
