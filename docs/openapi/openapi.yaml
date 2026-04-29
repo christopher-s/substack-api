@@ -59,7 +59,7 @@ servers:
     description: Publication-scoped host (archive, homepage, comments on a post, notes feed, …)
     variables:
       publication:
-        default: on
+        default: 'on'
         description: |
           Publication subdomain (the segment before `.substack.com`). For example,
           `stratechery` for `https://stratechery.substack.com`. The default
@@ -334,7 +334,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedFeed'
+                $ref: '#/components/schemas/TopInboxFeed'
   /api/v1/reader/feed:
     get:
       tags: [discovery]
@@ -796,7 +796,7 @@ components:
         photo_url: { type: string, format: uri }
         bio: { type: string }
         is_admin: { type: boolean }
-      required: [id, name]
+      required: [id, name, handle, photo_url]
       additionalProperties: true
 
     User:
@@ -832,14 +832,28 @@ components:
         reactions:
           $ref: '#/components/schemas/Reactions'
         comment_count: { type: integer }
+      examples:
+        - id: 123456
+          title: 'The Future of Remote Work'
+          slug: 'the-future-of-remote-work'
+          post_date: '2024-01-15T09:00:00Z'
+          canonical_url: 'https://example.substack.com/p/the-future-of-remote-work'
+          type: 'newsletter'
+          cover_image: 'https://example.substack.com/p/image.jpg'
+          audience: 'everyone'
+          publication_id: 98765
+          reactions:
+            '❤': 42
+            '🔥': 7
+          comment_count: 12
       required: [id, title]
       additionalProperties: true
 
     FullPost:
+      description: Full post payload as returned by `GET /api/v1/posts/by-id/{id}`.
       allOf:
         - $ref: '#/components/schemas/PreviewPost'
         - type: object
-          description: Full post payload as returned by `GET /api/v1/posts/by-id/{id}`.
           properties:
             body_html:
               type: string
@@ -847,26 +861,16 @@ components:
             htmlBody: { type: string }
             description: { type: string }
             wordcount: { type: integer }
-            audience: { type: string }
             podcast_url: { type: string, format: uri }
             publishedBylines:
               type: array
               items: { $ref: '#/components/schemas/Byline' }
-            reactions:
-              $ref: '#/components/schemas/Reactions'
             reaction_count: { type: integer }
             restacks: { type: integer }
-            comment_count: { type: integer }
             child_comment_count: { type: integer }
             postTags:
               type: array
               items: { type: string }
-            subtitle: { type: string }
-            slug: { type: string }
-            canonical_url: { type: string, format: uri }
-            type: { type: string }
-            truncated_body_text: { type: string }
-            cover_image: { type: string, format: uri }
           additionalProperties: true
 
     PublicationPost:
@@ -895,7 +899,7 @@ components:
         publishedBylines:
           type: array
           items: { $ref: '#/components/schemas/Byline' }
-      required: [id, title]
+      required: [id, title, slug, post_date, canonical_url]
       additionalProperties: true
 
     Post:
@@ -990,8 +994,12 @@ components:
         profile_set_up_at: { type: string, format: date-time }
         reader_installed_at: { type: string, format: date-time }
         bestseller_tier: { type: string }
-        status: {}
-        primary_publication: {}
+        status:
+          type: object
+          additionalProperties: true
+        primary_publication:
+          type: object
+          additionalProperties: true
       required: [id, name, handle, photo_url]
       additionalProperties: true
 
@@ -1017,7 +1025,10 @@ components:
           additionalProperties: true
         publication_id: { type: integer }
         post_id: { type: integer }
-        edited_at: { type: string, format: date-time }
+        edited_at:
+          oneOf:
+            - { type: string, format: date-time }
+            - { type: 'null' }
         ancestor_path: { type: string }
         reply_minimum_role: { type: string }
         media_clip_id: { type: string }
@@ -1028,12 +1039,31 @@ components:
         attachments:
           type: array
           items: { $ref: '#/components/schemas/NoteAttachment' }
-        userStatus: {}
-        user_primary_publication: {}
+        userStatus:
+          type: object
+          additionalProperties: true
+        user_primary_publication:
+          type: object
+          additionalProperties: true
         autotranslate_to: { type: string }
         tracking_parameters:
           type: object
           additionalProperties: true
+      examples:
+        - id: 987654
+          body: 'Great insights on remote work!'
+          user_id: 12345
+          type: 'comment'
+          date: '2024-01-15T10:30:00Z'
+          name: 'Jane Doe'
+          reaction_count: 5
+          reactions:
+            '❤': 3
+            '👏': 2
+          restacks: 1
+          children_count: 2
+          photo_url: 'https://substackcdn.com/image.jpg'
+          handle: 'janedoe'
       required: [id, body]
       additionalProperties: true
 
@@ -1061,8 +1091,12 @@ components:
             page: { type: string }
             page_rank: { type: integer }
           additionalProperties: true
-        publication: {}
-        post: {}
+        publication:
+          type: object
+          additionalProperties: true
+        post:
+          type: object
+          additionalProperties: true
         comment:
           $ref: '#/components/schemas/NoteComment'
         parentComments:
@@ -1073,6 +1107,29 @@ components:
         trackingParameters:
           type: object
           additionalProperties: true
+      examples:
+        - entity_key: 'note-abc123'
+          type: 'note'
+          context:
+            type: 'recent'
+            timestamp: '2024-01-15T12:00:00Z'
+            users:
+              - id: 12345
+                name: 'Jane Doe'
+                handle: 'janedoe'
+                photo_url: 'https://substackcdn.com/image.jpg'
+          comment:
+            id: 987654
+            body: 'Excited to share my latest post!'
+            user_id: 12345
+            type: 'comment'
+            date: '2024-01-15T12:00:00Z'
+            name: 'Jane Doe'
+            reaction_count: 8
+            reactions:
+              '❤': 5
+              '🔥': 3
+            children_count: 2
       required: [entity_key, type]
       additionalProperties: true
 
@@ -1111,8 +1168,12 @@ components:
         attachments:
           type: array
           items: { $ref: '#/components/schemas/NoteAttachment' }
-        userStatus: {}
-        user_primary_publication: {}
+        userStatus:
+          type: object
+          additionalProperties: true
+        user_primary_publication:
+          type: object
+          additionalProperties: true
         language: { type: string }
         autotranslate_to: { type: string }
         tracking_parameters:
@@ -1160,39 +1221,54 @@ components:
             properties:
               comment:
                 $ref: '#/components/schemas/Comment'
-              replies:
+              descendantComments:
                 type: array
-                items: { $ref: '#/components/schemas/Comment' }
+                items:
+                  type: object
+                  properties:
+                    type: { type: string }
+                    comment:
+                      $ref: '#/components/schemas/Comment'
+                  required: [type, comment]
+                  additionalProperties: true
+            required: [comment, descendantComments]
             additionalProperties: true
+        moreBranches: { type: integer }
         nextCursor:
           oneOf:
             - { type: string }
             - { type: 'null' }
+      required: [commentBranches, moreBranches, nextCursor]
       additionalProperties: true
 
     PotentialHandles:
       type: object
       description: Handle options for the authenticated user.
       properties:
-        handles:
+        potentialHandles:
           type: array
           items:
             type: object
             properties:
+              id: { type: string }
+              handle: { type: string }
               type:
                 type: string
                 description: Handle type discriminator (e.g. `user`, `publication`).
-              handle: { type: string }
-              id: { type: integer }
-              name: { type: string }
+            required: [id, handle, type]
             additionalProperties: true
+      required: [potentialHandles]
       additionalProperties: true
 
     UserProfile:
       type: object
       description: |
-        Lightweight profile record returned when calling
-        `/api/v1/reader/feed/profile/{profileId}` with no parameters.
+        Lightweight profile fields extracted from the no-parameters call to
+        `/api/v1/reader/feed/profile/{profileId}`. The raw endpoint returns a
+        feed wrapper; the client extracts `id` and `handle` from the first
+        `context.users` entry and then resolves the full profile via
+        `getProfileBySlug`. This schema documents the conceptual profile
+        record, not the raw wire format.
       properties:
         id: { type: integer }
         name: { type: string }
@@ -1222,148 +1298,136 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PublicationUser'
-      required: [id]
+      required: [id, name, handle]
       additionalProperties: true
 
     FullProfile:
-      type: object
       description: |
         Full profile with extra fields exposed by
         `GET /api/v1/user/{slug}/public_profile`.
-      properties:
-        id: { type: integer }
-        name: { type: string }
-        handle: { type: string }
-        photo_url: { type: string, format: uri }
-        bio: { type: string }
-        slug: { type: string }
-        cover_photo_url: { type: string, format: uri }
-        url: { type: string, format: uri }
-        twitter_screen_name: { type: string }
-        publicationUsers:
-          type: array
-          items:
-            $ref: '#/components/schemas/PublicationUser'
-        tos_accepted_at:
-          oneOf:
-            - { type: string, format: date-time }
-            - { type: 'null' }
-        profile_disabled:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        userLinks:
-          type: array
-          items:
-            type: object
-            properties:
-              id: { type: integer }
-              user_id: { type: integer }
-              url: { type: string, format: uri }
-              title: { type: string }
-            additionalProperties: true
-        subscriptions:
-          type: array
-          items:
-            type: object
-            properties:
-              publication_id: { type: integer }
-              user_id: { type: integer }
-              created_at: { type: string, format: date-time }
-              type: { type: string }
-            additionalProperties: true
-        subscriptionsTruncated:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        hasGuestPost:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        primaryPublication:
-          oneOf:
-            - { $ref: '#/components/schemas/PrimaryPublication' }
-            - { type: 'null' }
-        max_pub_tier:
-          oneOf:
-            - { type: integer }
-            - { type: 'null' }
-        hasActivity:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        hasLikes:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        lists:
-          type: array
-          items: { type: object }
-        rough_num_free_subscribers_int:
-          oneOf:
-            - { type: integer }
-            - { type: 'null' }
-        rough_num_free_subscribers:
-          oneOf:
-            - { type: string }
-            - { type: 'null' }
-        bestseller_badge_disabled:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        subscriberCountString:
-          oneOf:
-            - { type: string }
-            - { type: 'null' }
-        subscriberCount:
-          oneOf:
-            - { type: string }
-            - { type: 'null' }
-        subscriberCountNumber:
-          oneOf:
-            - { type: integer }
-            - { type: 'null' }
-        hasHiddenPublicationUsers:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        visibleSubscriptionsCount:
-          oneOf:
-            - { type: integer }
-            - { type: 'null' }
-        previousSlug:
-          oneOf:
-            - { type: string }
-            - { type: 'null' }
-        primaryPublicationIsPledged:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        primaryPublicationSubscriptionState:
-          oneOf:
-            - { type: string }
-            - { type: 'null' }
-        isSubscribed:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        isFollowing:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        followsViewer:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        can_dm:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        dm_upgrade_options:
-          type: array
-          items: { type: string }
-      required: [id, name, handle, photo_url]
-      additionalProperties: true
+      allOf:
+        - $ref: '#/components/schemas/Profile'
+        - type: object
+          properties:
+            tos_accepted_at:
+              oneOf:
+                - { type: string, format: date-time }
+                - { type: 'null' }
+            profile_disabled:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            userLinks:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: integer }
+                  user_id: { type: integer }
+                  url: { type: string, format: uri }
+                  title: { type: string }
+                additionalProperties: true
+            subscriptions:
+              type: array
+              items:
+                type: object
+                properties:
+                  publication_id: { type: integer }
+                  user_id: { type: integer }
+                  created_at: { type: string, format: date-time }
+                  type: { type: string }
+                additionalProperties: true
+            subscriptionsTruncated:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            hasGuestPost:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            primaryPublication:
+              oneOf:
+                - { $ref: '#/components/schemas/PrimaryPublication' }
+                - { type: 'null' }
+            max_pub_tier:
+              oneOf:
+                - { type: integer }
+                - { type: 'null' }
+            hasActivity:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            hasLikes:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            lists:
+              type: array
+              items: { type: object }
+            rough_num_free_subscribers_int:
+              oneOf:
+                - { type: integer }
+                - { type: 'null' }
+            rough_num_free_subscribers:
+              oneOf:
+                - { type: string }
+                - { type: 'null' }
+            bestseller_badge_disabled:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            subscriberCountString:
+              oneOf:
+                - { type: string }
+                - { type: 'null' }
+            subscriberCount:
+              oneOf:
+                - { type: string }
+                - { type: 'null' }
+            subscriberCountNumber:
+              oneOf:
+                - { type: integer }
+                - { type: 'null' }
+            hasHiddenPublicationUsers:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            visibleSubscriptionsCount:
+              oneOf:
+                - { type: integer }
+                - { type: 'null' }
+            previousSlug:
+              oneOf:
+                - { type: string }
+                - { type: 'null' }
+            primaryPublicationIsPledged:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            primaryPublicationSubscriptionState:
+              oneOf:
+                - { type: string }
+                - { type: 'null' }
+            isSubscribed:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            isFollowing:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            followsViewer:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            can_dm:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            dm_upgrade_options:
+              type: array
+              items: { type: string }
+          additionalProperties: true
 
     ProfileSearchResult:
       type: object
@@ -1374,7 +1438,7 @@ components:
         handle: { type: string }
         photo_url: { type: string, format: uri }
         bio: { type: string }
-      required: [id]
+      required: [id, name, handle]
       additionalProperties: true
 
     ProfileSearchResponse:
@@ -1421,7 +1485,9 @@ components:
         role: { type: string }
         public: { type: boolean }
         is_primary: { type: boolean }
-        publication: {}
+        publication:
+          type: object
+          additionalProperties: true
       additionalProperties: true
 
     PrimaryPublication:
@@ -1447,6 +1513,7 @@ components:
           oneOf:
             - { type: boolean }
             - { type: 'null' }
+      required: [id, name, subdomain]
       additionalProperties: true
 
     Category:
@@ -1458,20 +1525,84 @@ components:
             - { type: integer }
             - { type: string }
         name: { type: string }
+        canonical_name: { type: string }
+        active: { type: boolean }
+        rank: { type: number }
         slug: { type: string }
         subcategories:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                oneOf:
-                  - { type: integer }
-                  - { type: string }
-              name: { type: string }
-              slug: { type: string }
-            additionalProperties: true
-      required: [name]
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/Subcategory'
+            - { type: 'null' }
+          description: |
+            May be `null` when a category has no subcategories.
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        parent_tag_id:
+          oneOf:
+            - { type: integer }
+            - { type: 'null' }
+        emoji:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        leaderboard_description:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        deprecated: { type: boolean }
+      required: [id, name, canonical_name, active, rank, slug, subcategories]
+      additionalProperties: true
+
+    Subcategory:
+      type: object
+      description: A subcategory within a content category.
+      properties:
+        id:
+          oneOf:
+            - { type: integer }
+            - { type: string }
+        name: { type: string }
+        canonical_name: { type: string }
+        active: { type: boolean }
+        rank: { type: number }
+        parent_tag_id:
+          oneOf:
+            - { type: integer }
+            - { type: 'null' }
+        slug: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        emoji:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        leaderboard_description:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        deprecated: { type: boolean }
+      required: [id, name, canonical_name, active, rank, parent_tag_id, slug]
+      additionalProperties: true
+
+    CategoryPublication:
+      type: object
+      description: |
+        A publication listed under a category. Distinct from the general
+        `Publication` schema — category listings expose fewer fields.
+      properties:
+        author_id: { type: integer }
+        name: { type: string }
+        subdomain: { type: string }
+        logo_url: { type: string, format: uri }
+        cover_photo_url: { type: string, format: uri }
+        created_at: { type: string, format: date-time }
+        custom_domain:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+      required: [author_id, name, subdomain]
       additionalProperties: true
 
     CategoryPublications:
@@ -1481,12 +1612,7 @@ components:
         publications:
           type: array
           items:
-            allOf:
-              - $ref: '#/components/schemas/Publication'
-              - type: object
-                properties:
-                  base_url: { type: string, format: uri }
-                additionalProperties: true
+            $ref: '#/components/schemas/CategoryPublication'
         more:
           type: boolean
       additionalProperties: true
@@ -1523,7 +1649,9 @@ components:
           oneOf:
             - { type: integer }
             - { type: 'null' }
-        status: {}
+        status:
+          type: object
+          additionalProperties: true
       required: [id, name, handle, photo_url]
       additionalProperties: true
 
@@ -1627,7 +1755,9 @@ components:
         is_saved: { type: boolean }
         created_at: { type: string, format: date-time }
         uuid: { type: string }
-        coverImagePalette: {}
+        coverImagePalette:
+          type: object
+          additionalProperties: true
         duration_metadata:
           oneOf:
             - type: object
@@ -1647,9 +1777,10 @@ components:
     PaginatedFeed:
       type: object
       description: |
-        Paginated feed envelope returned by inbox/top, reader/feed, and other
-        cursor-paginated discovery endpoints. The TypeScript client normalises
-        this into `{ items: FeedItem[], nextCursor: string | null }`.
+        Paginated feed envelope returned by cursor-paginated discovery
+        endpoints such as `/reader/feed`, `/top/search`, and
+        `/search/explore/web`. The TypeScript client normalises this into
+        `{ items: FeedItem[], nextCursor: string | null }`.
       properties:
         items:
           type: array
@@ -1660,14 +1791,34 @@ components:
             - { type: 'null' }
       additionalProperties: true
 
+    TopInboxFeed:
+      type: object
+      description: |
+        Raw response from `GET /api/v1/inbox/top`. Returns an `inboxItems`
+        array rather than the `items`/`nextCursor` shape used by other
+        feed endpoints.
+      properties:
+        inboxItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/InboxItem'
+      additionalProperties: true
+
     Facepile:
       type: object
       description: Reactor list for a post.
       properties:
-        users:
+        reactors:
           type: array
-          items: { $ref: '#/components/schemas/User' }
-        total_count: { type: integer }
+          items:
+            type: object
+            properties:
+              id: { type: integer }
+              name: { type: string }
+              photo_url: { type: string, format: uri }
+            required: [id, name]
+            additionalProperties: true
+      required: [reactors]
       additionalProperties: true
 
     LiveStream:
@@ -1692,7 +1843,7 @@ components:
         Active live-stream payload. Returns an empty object when no live
         stream is active.
       properties:
-        liveStream:
+        activeLiveStream:
           oneOf:
             - $ref: '#/components/schemas/LiveStream'
             - { type: 'null' }
@@ -1701,19 +1852,35 @@ components:
     SubscriberLists:
       type: object
       description: |
-        Subscriber-list payload. `following` lists the publications/users the
-        authenticated user follows.
+        Subscriber-list payload. `subscriberLists` groups the publications/users
+        the authenticated user follows.
       properties:
-        following:
+        subscriberLists:
           type: array
           items:
             type: object
             properties:
-              id: { type: integer }
+              id: { type: string }
               name: { type: string }
-              handle: { type: string }
-              photo_url: { type: string, format: uri }
+              groups:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    users:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id: { type: integer }
+                          handle: { type: string }
+                        required: [id, handle]
+                        additionalProperties: true
+                  required: [users]
+                  additionalProperties: true
+            required: [id, name, groups]
             additionalProperties: true
+      required: [subscriberLists]
       additionalProperties: true
 
     UserSettingRequest:
@@ -1726,6 +1893,8 @@ components:
         last_home_tab:
           type: string
           description: Last home-tab key (e.g. `home`, `discover`).
+      examples:
+        - last_home_tab: 'home'
       required: [last_home_tab]
       additionalProperties: true
 
@@ -1762,6 +1931,17 @@ components:
           enum: [everyone]
           description: |
             Who can reply to the note. Currently only `everyone` is supported.
+      examples:
+        - bodyJson:
+            type: doc
+            content:
+              - type: paragraph
+                content:
+                  - type: text
+                    text: 'Hello from the Substack API!'
+          tabId: 'tab-abc123'
+          surface: 'feed'
+          replyMinimumRole: 'everyone'
       required: [bodyJson, tabId, surface]
       additionalProperties: true
 
