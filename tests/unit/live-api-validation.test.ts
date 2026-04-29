@@ -64,7 +64,12 @@ function validate(name: string, codec: t.Mixed, data: unknown): boolean {
 
 function skipIfFlaky(e: unknown): void {
   const msg = String(e)
-  if (msg.includes('429') || msg.includes('503') || msg.includes('403') || msg.includes('fetch failed')) {
+  if (
+    msg.includes('429') ||
+    msg.includes('503') ||
+    msg.includes('403') ||
+    msg.includes('fetch failed')
+  ) {
     console.log(`   ⏭️ Skipping due to transient error: ${msg}`)
     return
   }
