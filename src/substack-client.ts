@@ -268,7 +268,6 @@ export class SubstackClient {
 
       if (remaining !== undefined && branches.length > remaining) {
         yield { ...response, commentBranches: branches.slice(0, remaining) }
-        totalYielded += remaining
         return
       }
 
