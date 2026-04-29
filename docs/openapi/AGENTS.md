@@ -5,7 +5,7 @@
 
 ## Purpose
 
-OpenAPI 3.1 specification and supporting files for the Substack API. This directory contains the machine-readable API contract, a codec-to-schema reference, and an endpoint inventory used for spec maintenance and validation.
+OpenAPI 3.1 specification and supporting files for the Substack API. This directory contains the machine-readable API contract and a codec-to-schema reference for maintainers.
 
 ## Key Files
 
@@ -13,7 +13,6 @@ OpenAPI 3.1 specification and supporting files for the Substack API. This direct
 |------|-------------|
 | `openapi.yaml` | The main OpenAPI 3.1 specification describing the Substack HTTP API |
 | `codec-shapes.md` | Reference mapping io-ts codecs to OpenAPI schemas |
-| `endpoint-inventory.json` | Endpoint inventory for spec maintenance and validation |
 
 ## Subdirectories
 
@@ -25,15 +24,13 @@ OpenAPI 3.1 specification and supporting files for the Substack API. This direct
 
 ### Working In This Directory
 - Only modify `openapi.yaml` when updating the API specification
-- Keep `endpoint-inventory.json` in sync with `src/internal/services/*.ts` when adding or changing endpoints
 - Update `codec-shapes.md` when io-ts codecs in `src/internal/types/` change
 - Ensure method signatures in `openapi.yaml` match the source in `src/domain/` and `src/substack-client.ts`
 - Do not add narrative documentation here — narrative docs belong in the repository root (`README.md`, `CONTRIBUTING.md`)
 
 ### Testing Requirements
 - Validate `openapi.yaml` syntax with a YAML linter or OpenAPI validator before committing
-- Cross-check `endpoint-inventory.json` against the service files in `src/internal/services/` to ensure completeness
-- Verify that schema names referenced in `endpoint-inventory.json` exist in `openapi.yaml` components.schemas
+- Cross-check `openapi.yaml` paths against the service files in `src/internal/services/` to ensure completeness
 
 ### Common Patterns
 - `openapi.yaml` uses `allOf` for schema inheritance (e.g., `FullPost` extends `PreviewPost`)

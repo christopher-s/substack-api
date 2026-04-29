@@ -18,7 +18,6 @@ All narrative documentation (installation, quickstart, examples, contributing) l
 |------|-------------|
 | `openapi/openapi.yaml` | OpenAPI 3.1 specification describing the Substack HTTP API |
 | `openapi/codec-shapes.md` | Reference mapping io-ts codecs to OpenAPI schemas |
-| `openapi/endpoint-inventory.json` | Endpoint inventory for spec maintenance |
 | `site/index.html` | Scalar API reference viewer (GitHub Pages entry point) |
 | `site/.nojekyll` | Disables Jekyll processing on GitHub Pages |
 
