@@ -121,3 +121,34 @@ export { SubstackProfileSearchResponseCodec } from '@substack-api/internal/types
 
 // Feed item type
 export type { FeedItem } from '@substack-api/internal/types/feed-item'
+
+// Post management types
+export type { SubstackPostManagementCounts } from '@substack-api/internal/types/substack-post-management'
+export { SubstackPostManagementCountsCodec } from '@substack-api/internal/types/substack-post-management'
+
+export type { SubstackDraftPost } from '@substack-api/internal/types/substack-post-management'
+export { SubstackDraftPostCodec } from '@substack-api/internal/types/substack-post-management'
+
+export type { SubstackPostManagementResponse } from '@substack-api/internal/types/substack-post-management'
+export { SubstackPostManagementResponseCodec } from '@substack-api/internal/types/substack-post-management'
+
+export type { SubstackPublicationDetail } from '@substack-api/internal/types/substack-post-management'
+export { SubstackPublicationDetailCodec } from '@substack-api/internal/types/substack-post-management'
+
+export type { SubstackSubscription } from '@substack-api/internal/types/substack-post-management'
+export { SubstackSubscriptionCodec } from '@substack-api/internal/types/substack-post-management'
+
+export type { SubstackSubscriptionsResponse } from '@substack-api/internal/types/substack-post-management'
+export { SubstackSubscriptionsResponseCodec } from '@substack-api/internal/types/substack-post-management'
+
+export type { SubstackPublisherSettings } from '@substack-api/internal/types/substack-post-management'
+export { SubstackPublisherSettingsCodec } from '@substack-api/internal/types/substack-post-management'
+
+export type { SubstackNotesList } from '@substack-api/internal/types/substack-post-management'
+export { SubstackNotesListCodec } from '@substack-api/internal/types/substack-post-management'
+
+export type { SubstackLiveStreamList } from '@substack-api/internal/types/substack-post-management'
+export { SubstackLiveStreamListCodec } from '@substack-api/internal/types/substack-post-management'
+
+export type { SubstackPostTag } from '@substack-api/internal/types/substack-post-management'
+export { SubstackPostTagCodec } from '@substack-api/internal/types/substack-post-management'

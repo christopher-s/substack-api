@@ -127,4 +127,19 @@ export class NoteService {
       nextCursor: response.nextCursor
     }
   }
+
+  async getNotes(options?: { cursor?: string }): Promise<{
+    items: unknown[]
+    nextCursor: string | null
+  }> {
+    const url = options?.cursor ? `/notes?cursor=${encodeURIComponent(options.cursor)}` : '/notes'
+    const response = await this.publicationClient.get<{
+      items?: unknown[]
+      nextCursor?: string | null
+    }>(url)
+    return {
+      items: response.items || [],
+      nextCursor: response.nextCursor ?? null
+    }
+  }
 }

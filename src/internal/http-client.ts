@@ -39,4 +39,8 @@ export class HttpClient {
   async put<T>(path: string, data?: unknown): Promise<T> {
     return (await this.httpClient.put(path, data)).data
   }
+
+  async delete<T>(path: string): Promise<T> {
+    return (await this.httpClient.delete(path)).data
+  }
 }

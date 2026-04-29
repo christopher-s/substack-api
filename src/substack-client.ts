@@ -15,9 +15,13 @@ import {
   DiscoveryService,
   FollowingService,
   NoteService,
+  PostManagementService,
   PostService,
   ProfileService,
-  PublicationService
+  PublicationDetailService,
+  PublicationService,
+  SettingsService,
+  SubscriptionService
 } from '@substack-api/internal/services'
 import { NoteBuilderFactory } from '@substack-api/domain'
 import type { FeedTab, ProfileFeedTab } from '@substack-api/internal/services/discovery-service'
@@ -56,6 +60,10 @@ export class SubstackClient {
   private readonly newNoteService: NoteBuilderFactory
   private readonly discoveryService: DiscoveryService
   private readonly publicationService: PublicationService
+  private readonly postManagementService: PostManagementService
+  private readonly publicationDetailService: PublicationDetailService
+  private readonly subscriptionService: SubscriptionService
+  private readonly settingsService: SettingsService
   private readonly perPage: number
   private readonly token: string | undefined
   private readonly hasPublication: boolean
@@ -112,6 +120,10 @@ export class SubstackClient {
     this.newNoteService = new NoteBuilderFactory(this.substackClient)
     this.discoveryService = new DiscoveryService(this.substackClient)
     this.publicationService = new PublicationService(this.publicationClient)
+    this.postManagementService = new PostManagementService(this.publicationClient)
+    this.publicationDetailService = new PublicationDetailService(this.publicationClient)
+    this.subscriptionService = new SubscriptionService(this.publicationClient, this.substackClient)
+    this.settingsService = new SettingsService(this.publicationClient)
   }
 
   /** Throw a clear error when an authenticated method is called without a token */
@@ -153,7 +165,7 @@ export class SubstackClient {
       const profile = await this.profileService.getOwnProfile()
       return new OwnProfile(profile, this.buildEntityDeps(), profile.handle)
     } catch (error) {
-      throw new Error(`Failed to get own profile: ${(error as Error).message}`)
+      throw new Error(`Failed to get own profile: ${(error as Error).message}`, { cause: error })
     }
   }
 
@@ -171,7 +183,9 @@ export class SubstackClient {
       const profile = await this.profileService.getProfileBySlug(slug)
       return new Profile(profile, this.buildEntityDeps(), profile.handle)
     } catch (error) {
-      throw new Error(`Profile with slug '${slug}' not found: ${(error as Error).message}`)
+      throw new Error(`Profile with slug '${slug}' not found: ${(error as Error).message}`, {
+        cause: error
+      })
     }
   }
 
@@ -183,7 +197,9 @@ export class SubstackClient {
       const profile = await this.profileService.getProfileById(id)
       return new Profile(profile, this.buildEntityDeps(), profile.handle)
     } catch (error) {
-      throw new Error(`Profile with ID ${id} not found: ${(error as Error).message}`)
+      throw new Error(`Profile with ID ${id} not found: ${(error as Error).message}`, {
+        cause: error
+      })
     }
   }
 
@@ -195,7 +211,7 @@ export class SubstackClient {
       const post = await this.postService.getPostById(id)
       return new FullPost(post, this.buildEntityDeps())
     } catch (error) {
-      throw new Error(`Post with ID ${id} not found: ${(error as Error).message}`)
+      throw new Error(`Post with ID ${id} not found: ${(error as Error).message}`, { cause: error })
     }
   }
 
@@ -207,7 +223,7 @@ export class SubstackClient {
       const noteData = await this.noteService.getNoteById(id)
       return new Note(noteData, this.publicationClient)
     } catch (error) {
-      throw new Error(`Note with ID ${id} not found: ${(error as Error).message}`)
+      throw new Error(`Note with ID ${id} not found: ${(error as Error).message}`, { cause: error })
     }
   }
 
@@ -219,7 +235,9 @@ export class SubstackClient {
       const commentData = await this.commentService.getCommentById(id)
       return new Comment(commentData, this.publicationClient)
     } catch (error) {
-      throw new Error(`Comment with ID ${id} not found: ${(error as Error).message}`)
+      throw new Error(`Comment with ID ${id} not found: ${(error as Error).message}`, {
+        cause: error
+      })
     }
   }
 
@@ -256,7 +274,6 @@ export class SubstackClient {
 
       if (remaining !== undefined && branches.length > remaining) {
         yield { ...response, commentBranches: branches.slice(0, remaining) }
-        totalYielded += remaining
         return
       }
 
@@ -526,6 +543,148 @@ export class SubstackClient {
         this.discoveryService.getPublicationFeed(publicationId, { tab: options.tab, cursor }),
       options.limit
     )
+  }
+
+  // ── Post management methods (require auth + publication) ───────────
+
+  async publishedPosts(options?: { offset?: number; limit?: number }): Promise<unknown> {
+    this.requireAuth('publishedPosts')
+    this.requirePublication('publishedPosts')
+    return await this.postManagementService.getPublishedPosts(options)
+  }
+
+  async drafts(options?: { offset?: number; limit?: number }): Promise<unknown> {
+    this.requireAuth('drafts')
+    this.requirePublication('drafts')
+    return await this.postManagementService.getDrafts(options)
+  }
+
+  async scheduledPosts(options?: { offset?: number; limit?: number }): Promise<unknown> {
+    this.requireAuth('scheduledPosts')
+    this.requirePublication('scheduledPosts')
+    return await this.postManagementService.getScheduledPosts(options)
+  }
+
+  async postCounts(query?: string): Promise<unknown> {
+    this.requireAuth('postCounts')
+    this.requirePublication('postCounts')
+    return await this.postManagementService.getPostCounts(query)
+  }
+
+  async draft(id: number): Promise<unknown> {
+    this.requireAuth('draft')
+    this.requirePublication('draft')
+    return await this.postManagementService.getDraft(id)
+  }
+
+  async createDraft(data: {
+    title: string
+    body?: string
+    type?: string
+    audience?: string
+    bylineUserId?: number
+  }): Promise<unknown> {
+    this.requireAuth('createDraft')
+    this.requirePublication('createDraft')
+    return await this.postManagementService.createDraft(data)
+  }
+
+  async updateDraft(
+    id: number,
+    data: { title?: string; body?: string; [key: string]: unknown }
+  ): Promise<unknown> {
+    this.requireAuth('updateDraft')
+    this.requirePublication('updateDraft')
+    return await this.postManagementService.updateDraft(id, data)
+  }
+
+  async publishDraft(id: number): Promise<unknown> {
+    this.requireAuth('publishDraft')
+    this.requirePublication('publishDraft')
+    return await this.postManagementService.publishDraft(id)
+  }
+
+  async deleteDraft(id: number): Promise<unknown> {
+    this.requireAuth('deleteDraft')
+    this.requirePublication('deleteDraft')
+    return await this.postManagementService.deleteDraft(id)
+  }
+
+  // ── Comment write methods (require auth) ────────────────────────────
+
+  async createComment(postId: number, body: string): Promise<unknown> {
+    this.requireAuth('createComment')
+    this.requirePublication('createComment')
+    return await this.commentService.createComment(postId, body)
+  }
+
+  async deleteComment(commentId: number): Promise<unknown> {
+    this.requireAuth('deleteComment')
+    this.requirePublication('deleteComment')
+    return await this.commentService.deleteComment(commentId)
+  }
+
+  // ── Publication detail methods ──────────────────────────────────────
+
+  async publicationDetails(): Promise<unknown> {
+    this.requirePublication('publicationDetails')
+    return await this.publicationDetailService.getPublicationDetails()
+  }
+
+  async publicationTags(): Promise<unknown> {
+    this.requirePublication('publicationTags')
+    return await this.publicationDetailService.getPostTags()
+  }
+
+  async liveStreams(status?: string): Promise<unknown> {
+    this.requirePublication('liveStreams')
+    return await this.publicationService.getLiveStreams(status)
+  }
+
+  async eligibleHosts(publicationId: number): Promise<unknown> {
+    this.requirePublication('eligibleHosts')
+    return await this.publicationService.getEligibleHosts(publicationId)
+  }
+
+  // ── Subscription methods (require auth) ─────────────────────────────
+
+  async subscription(): Promise<unknown> {
+    this.requireAuth('subscription')
+    this.requirePublication('subscription')
+    return await this.subscriptionService.getCurrentSubscription()
+  }
+
+  async subscriptions(options?: { offset?: number; limit?: number }): Promise<unknown> {
+    this.requireAuth('subscriptions')
+    return await this.subscriptionService.getAllSubscriptions(options)
+  }
+
+  // ── Notes listing (require auth) ────────────────────────────────────
+
+  async *notesFeed(options: { limit?: number } = {}): AsyncGenerator<unknown> {
+    this.requireAuth('notesFeed')
+    this.requirePublication('notesFeed')
+    let cursor: string | undefined
+    let totalYielded = 0
+
+    while (true) {
+      const result = await this.noteService.getNotes({ cursor })
+      for (const item of result.items) {
+        if (options.limit && totalYielded >= options.limit) return
+        yield item
+        totalYielded++
+      }
+      if (!result.nextCursor) break
+      cursor = result.nextCursor
+    }
+  }
+
+  // ── Settings methods (require auth) ─────────────────────────────────
+
+  async publisherSettings(): Promise<unknown> {
+    this.requireAuth('publisherSettings')
+    this.requirePublication('publisherSettings')
+    return await this.settingsService.getPublisherSettings()
   }
 
   // ── Private helpers ────────────────────────────────────────────────
