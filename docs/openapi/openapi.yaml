@@ -247,16 +247,12 @@ paths:
           name: types
           schema:
             type: string
-          description: |
-            Comma-separated content types. Pass `note` to get a notes-only
-            feed (used by `getNotesForProfile`).
+          description: Comma-separated content types (e.g. `note` for notes-only feed).
         - in: query
           name: types[]
           schema:
             type: string
-          description: |
-            Repeated query parameter form (e.g. `types[]=like`) used by
-            `getProfileLikes` for the likes timeline.
+          description: Repeated parameter for content type filtering (e.g. `types[]=like`).
         - in: query
           name: tab
           schema:
@@ -1058,10 +1054,8 @@ paths:
           schema:
             type: integer
             minimum: 1
-          description: Draft ID.
       responses:
         '200':
-          description: Draft payload.
           content:
             application/json:
               schema:
@@ -1087,7 +1081,6 @@ paths:
           schema:
             type: integer
             minimum: 1
-          description: Draft ID.
       requestBody:
         required: true
         content:
@@ -1097,14 +1090,12 @@ paths:
               properties:
                 draft_title:
                   type: string
-                  description: Updated title.
                 draft_body:
                   type: string
                   description: Updated HTML body.
               additionalProperties: true
       responses:
         '200':
-          description: Updated draft.
           content:
             application/json:
               schema:
@@ -1128,7 +1119,6 @@ paths:
           schema:
             type: integer
             minimum: 1
-          description: Draft ID.
       responses:
         '200':
           description: Deletion confirmed.
@@ -1163,7 +1153,6 @@ paths:
               properties:
                 draft_title:
                   type: string
-                  description: Draft title.
                 draft_body:
                   type: string
                   description: HTML body content.
@@ -1182,7 +1171,6 @@ paths:
                   description: Byline entries with user IDs.
       responses:
         '200':
-          description: Created draft.
           content:
             application/json:
               schema:
@@ -1696,7 +1684,6 @@ paths:
         - substackSession: []
       responses:
         '200':
-          description: Pledge plans.
           content:
             application/json:
               schema:
@@ -1972,7 +1959,7 @@ components:
           description: URL of the author's avatar image, rendered as a circular thumbnail.
         bio:
           type: string
-          description: Author bio text shown on hover/click of their name.
+          description: Short biography displayed on the author's profile page.
         is_admin:
           type: boolean
           description: Whether the author is a publication admin.
@@ -2004,7 +1991,7 @@ components:
           description: URL of the user's avatar/profile image.
         bio:
           type: string
-          description: User bio text displayed on their profile page.
+          description: Short biography displayed on the author's profile page.
         profile_set_up_at:
           type: string
           format: date-time
@@ -2025,7 +2012,7 @@ components:
           description: Unique numeric post ID.
         title:
           type: string
-          description: Post title displayed prominently as a clickable link in preview cards and as the page heading.
+          description: Post title, shown as heading and in preview cards.
         subtitle:
           type: string
           description: Secondary text shown below the post title in preview cards.
@@ -2039,26 +2026,25 @@ components:
         canonical_url:
           type: string
           format: uri
-          description: Canonical URL of the post, shown in the browser address bar and `<link rel="canonical">`.
+          description: Canonical URL of the post.
         type:
           type: string
-          description: Content type identifier. `newsletter` for standard posts, `podcast` for audio posts.
+          description: 'Content type: `newsletter` or `podcast`.'
         truncated_body_text:
           type: string
-          description: Plain-text body excerpt used as preview text in archive cards and search results.
+          description: Plain-text body excerpt for previews and search results.
         cover_image:
           type: string
           format: uri
-          description: URL of the post cover image, shown as a thumbnail in preview cards and full-width in the post header.
+          description: URL of the post cover image.
         audience:
           type: string
-          description: Who can see the full content. `everyone` for public posts, `only_paid` for paywalled posts (shows lock icon).
+          description: 'Visibility: `everyone` for public, `only_paid` for paywalled.'
         publication_id:
           type: integer
-          description: Numeric ID of the publication this post belongs to.
         reactions:
           $ref: '#/components/schemas/Reactions'
-          description: Reaction counts keyed by emoji, displayed with heart icons in the post action bar.
+          description: Reaction counts keyed by emoji.
         comment_count:
           type: integer
           description: Number of comments, displayed with a comment icon in the action bar.
@@ -2124,7 +2110,6 @@ components:
           description: Unique numeric post ID.
         publication_id:
           type: integer
-          description: Numeric ID of the publication.
         title:
           type: string
           description: Post title shown as a clickable heading in listing cards.
@@ -2168,7 +2153,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Byline'
-          description: Array of author bylines shown in the post header with name, photo, and profile link.
+          description: Author bylines shown in the post header with name, photo, and profile link.
       required:
         - id
         - title
@@ -2210,7 +2195,6 @@ components:
           description: Unique numeric section ID.
         publication_id:
           type: integer
-          description: Numeric ID of the parent publication.
         name:
           type: string
           description: Section display name shown as a navigation tab in the publication header.
@@ -2232,17 +2216,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PublicationPost'
-          description: Array of recent posts displayed on the homepage.
+          description: Recent posts displayed on the homepage.
         pinnedPosts:
           type: array
           items:
             $ref: '#/components/schemas/PublicationPost'
-          description: Array of pinned posts shown at the top with a pin icon and "PINNED" label.
+          description: Posts pinned to the top of the homepage.
         sections:
           type: array
           items:
             $ref: '#/components/schemas/Section'
-          description: Array of publication sections defining the navigation tabs.
+          description: Publication sections defining the navigation tabs.
         publicationName:
           type: string
           description: Display name of the publication, shown in the header navbar and browser title.
@@ -2252,7 +2236,7 @@ components:
           description: URL of the publication logo displayed in the header navbar.
         publicationCustomDomain:
           type: string
-          description: Custom domain if configured (e.g. `www.example.com`). Null if using default Substack domain.
+          description: Custom domain (e.g. `www.example.com`). Null if using Substack default.
       additionalProperties: true
     NoteAttachment:
       type: object
@@ -2319,7 +2303,7 @@ components:
           description: Previous display name. Null if never changed.
         bio:
           type: string
-          description: User bio text.
+          description: Short biography displayed on the author's profile page.
         profile_set_up_at:
           type: string
           format: date-time
@@ -2334,7 +2318,7 @@ components:
         status:
           type: object
           additionalProperties: true
-          description: Object containing user status information (e.g. `payments_state`, `pledges_enabled`).
+          description: User status info (e.g. `payments_state`, `pledges_enabled`).
         primary_publication:
           type: object
           additionalProperties: true
@@ -2357,7 +2341,6 @@ components:
           description: Plain-text body content of the note.
         user_id:
           type: integer
-          description: Numeric ID of the note author.
         type:
           type: string
           description: Comment type. `feed` for standalone notes.
@@ -2389,7 +2372,7 @@ components:
         body_json:
           type: object
           additionalProperties: true
-          description: ProseMirror JSON document (schema version `v1`) containing the note's formatted content.
+          description: ProseMirror JSON document containing the note's formatted content.
         publication_id:
           type: integer
           description: Publication ID if posted on behalf of a publication. Null for standalone notes.
@@ -2401,7 +2384,7 @@ components:
             - type: string
               format: date-time
             - type: 'null'
-          description: ISO 8601 timestamp of last edit. Null if never edited; shown as "(edited)" in the UI.
+          description: ISO 8601 timestamp of last edit. Null if never edited.
         ancestor_path:
           type: string
           description: Dot-separated path of parent comment IDs. Empty string for root-level notes.
@@ -2417,7 +2400,7 @@ components:
           description: URL of the author's avatar image.
         bio:
           type: string
-          description: Author bio text.
+          description: Short biography displayed on the author's profile page.
         handle:
           type: string
           description: Author @handle shown next to their name.
@@ -2428,7 +2411,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NoteAttachment'
-          description: Array of attached media (images, post links) shown below the note content.
+          description: Attached media (images, post links) shown below the note content.
         userStatus:
           type: object
           additionalProperties: true
@@ -2502,7 +2485,7 @@ components:
             page_rank:
               type: integer
           additionalProperties: true
-          description: Context object describing the note's origin, associated users, and retrieval metadata.
+          description: Origin, associated users, and retrieval metadata for the note.
         publication:
           type: object
           additionalProperties: true
@@ -2518,7 +2501,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NoteComment'
-          description: Array of parent comments in the thread.
+          description: Parent comments in the thread.
         isMuted:
           type: boolean
           description: Whether the current user has muted this thread.
@@ -2568,7 +2551,6 @@ components:
           description: Plain-text body content of the comment.
         user_id:
           type: integer
-          description: Numeric ID of the comment author.
         type:
           type: string
           description: Comment type (e.g. `feed`).
@@ -2581,7 +2563,7 @@ components:
           description: Author display name shown as bold text above the comment.
         reaction_count:
           type: integer
-          description: Number of likes/hearts, shown with a heart icon below the comment.
+          description: Number of likes/hearts on the comment.
         reactions:
           $ref: '#/components/schemas/Reactions'
           description: Reaction counts keyed by emoji.
@@ -2593,7 +2575,7 @@ components:
           description: Whether the current user has restacked this comment.
         children_count:
           type: integer
-          description: Number of direct replies, shown as "X replies" text with expand button.
+          description: Number of direct replies.
         body_json:
           type: object
           additionalProperties: true
@@ -2609,13 +2591,13 @@ components:
             - type: string
               format: date-time
             - type: 'null'
-          description: ISO 8601 timestamp of last edit. Shown as "(edited)" label in the UI. Null if never edited.
+          description: ISO 8601 timestamp of last edit. Null if never edited.
         ancestor_path:
           type: string
-          description: Dot-separated path of parent comment IDs for thread nesting. Empty string for root-level comments.
+          description: Dot-separated parent comment IDs for thread nesting. Empty for root-level.
         reply_minimum_role:
           type: string
-          description: Minimum role required to reply. `everyone` for public, `only_paid` for paid-only comments.
+          description: 'Minimum role to reply: `everyone` or `only_paid`.'
         media_clip_id:
           type: string
           description: ID of an attached media clip. Null if none.
@@ -2625,7 +2607,7 @@ components:
           description: URL of the author's avatar shown as a circular image next to the comment.
         bio:
           type: string
-          description: Author bio text.
+          description: Short biography displayed on the author's profile page.
         handle:
           type: string
           description: Author @handle shown next to their name.
@@ -2636,7 +2618,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NoteAttachment'
-          description: Array of attached media (images, post links).
+          description: Attached media (images, post links).
         userStatus:
           type: object
           additionalProperties: true
@@ -2685,7 +2667,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Comment'
-          description: Array of comment objects.
         more:
           type: boolean
           description: True if more pages of comments exist.
@@ -2718,7 +2699,7 @@ components:
               - comment
               - descendantComments
             additionalProperties: true
-          description: Array of comment reply branches (thread subtrees).
+          description: Comment reply branches (thread subtrees).
         moreBranches:
           type: integer
           description: Count of additional reply branches not included in this response.
@@ -2753,7 +2734,7 @@ components:
               - handle
               - type
             additionalProperties: true
-          description: Array of suggested handle strings based on the user's name.
+          description: Suggested handle strings based on the user's name.
       required:
         - potentialHandles
       additionalProperties: true
@@ -2772,7 +2753,6 @@ components:
           description: Unique numeric user ID.
         name:
           type: string
-          description: Display name.
         handle:
           type: string
           description: Unique @handle.
@@ -2782,7 +2762,7 @@ components:
           description: URL of the user's avatar image.
         bio:
           type: string
-          description: User bio text.
+          description: Short biography displayed on the author's profile page.
       required:
         - id
       additionalProperties: true
@@ -2815,11 +2795,10 @@ components:
           description: URL of the profile cover/banner image shown at the top of the profile page.
         bio:
           type: string
-          description: Profile bio text.
+          description: Short biography displayed on the author's profile page.
         url:
           type: string
           format: uri
-          description: Profile URL.
         twitter_screen_name:
           type: string
           description: Twitter/X handle if connected. Null if not linked.
@@ -2827,7 +2806,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PublicationUser'
-          description: Array of publication-user relationships showing which publications the user belongs to.
+          description: Publication-user relationships showing which publications the user belongs to.
       required:
         - id
         - name
@@ -2982,7 +2961,6 @@ components:
           description: Unique numeric user ID.
         name:
           type: string
-          description: Display name.
         handle:
           type: string
           description: Unique @handle.
@@ -2992,7 +2970,7 @@ components:
           description: URL of the user's avatar.
         bio:
           type: string
-          description: User bio text.
+          description: Short biography displayed on the author's profile page.
       required:
         - id
         - name
@@ -3006,7 +2984,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ProfileSearchResult'
-          description: Array of matching profile search results.
+          description: Matching profile search results.
         more:
           type: boolean
           description: Whether additional search results are available beyond this page.
@@ -3041,7 +3019,6 @@ components:
           description: URL of the publication logo displayed in the header navbar.
         author_id:
           type: integer
-          description: Numeric ID of the publication's owner/author.
         theme_var_background_pop:
           type: string
           description: Hex color for the publication's accent/highlight theme color (e.g. `#2EE240`).
@@ -3071,10 +3048,8 @@ components:
           description: Unique relationship ID.
         user_id:
           type: integer
-          description: Numeric ID of the user.
         publication_id:
           type: integer
-          description: Numeric ID of the publication.
         role:
           type: string
           description: Role within the publication (e.g. `admin`, `writer`).
@@ -3087,7 +3062,7 @@ components:
         publication:
           type: object
           additionalProperties: true
-          description: The publication object this relationship refers to.
+          description: The publication for this relationship.
       additionalProperties: true
     PrimaryPublication:
       type: object
@@ -3117,7 +3092,6 @@ components:
           oneOf:
             - type: integer
             - type: 'null'
-          description: Numeric ID of the publication owner.
         handles_enabled:
           oneOf:
             - type: boolean
@@ -3158,8 +3132,7 @@ components:
               items:
                 $ref: '#/components/schemas/Subcategory'
             - type: 'null'
-          description: |
-            May be `null` when a category has no subcategories.
+          description: May be `null` when a category has no subcategories.
         created_at:
           type: string
           format: date-time
@@ -3172,7 +3145,7 @@ components:
           oneOf:
             - type: integer
             - type: 'null'
-          description: Numeric ID of the parent category. Null for top-level categories.
+          description: The parent category. Null for top-level categories.
         emoji:
           oneOf:
             - type: string
@@ -3220,7 +3193,6 @@ components:
           oneOf:
             - type: integer
             - type: 'null'
-          description: Numeric ID of the parent category.
         slug:
           type: string
           description: URL slug for the subcategory.
@@ -3262,7 +3234,6 @@ components:
       properties:
         author_id:
           type: integer
-          description: Numeric ID of the publication author.
         name:
           type: string
           description: Publication display name.
@@ -3299,7 +3270,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CategoryPublication'
-          description: Array of publications in this category.
+          description: Publications in this category.
         more:
           type: boolean
           description: Whether more publications are available.
@@ -3313,7 +3284,6 @@ components:
           description: Unique numeric user ID.
         name:
           type: string
-          description: Display name.
         handle:
           oneOf:
             - type: string
@@ -3330,7 +3300,7 @@ components:
           description: Previous display name. Null if never changed.
         bio:
           type: string
-          description: Author bio text.
+          description: Short biography displayed on the author's profile page.
         profile_set_up_at:
           oneOf:
             - type: string
@@ -3347,7 +3317,7 @@ components:
           type: array
           items:
             type: object
-          description: Array of the author's publication relationships.
+          description: The author's publication relationships.
         is_guest:
           type: boolean
           description: Whether the author is a guest contributor.
@@ -3359,7 +3329,6 @@ components:
         status:
           type: object
           additionalProperties: true
-          description: Object containing user status information.
       required:
         - id
         - name
@@ -3374,7 +3343,6 @@ components:
       properties:
         post_id:
           type: integer
-          description: Numeric ID of the associated post.
         type:
           type: string
           description: Feed item type identifier.
@@ -3429,7 +3397,6 @@ components:
           type: array
           items:
             type: object
-          description: Additional view tracking data.
         subtitle:
           oneOf:
             - type: string
@@ -3476,12 +3443,11 @@ components:
           type: array
           items:
             type: string
-          description: Array of author objects for the item.
         published_bylines:
           type: array
           items:
             $ref: '#/components/schemas/InboxItemAuthor'
-          description: Array of byline objects for the published authors.
+          description: Byline objects for the published authors.
         publication_id:
           oneOf:
             - type: integer
@@ -3575,7 +3541,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/InboxItem'
-          description: Array of feed items.
         nextCursor:
           oneOf:
             - type: string
@@ -3593,7 +3558,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/InboxItem'
-          description: Array of inbox feed items.
       additionalProperties: true
     Facepile:
       type: object
@@ -3615,7 +3579,7 @@ components:
               - id
               - name
             additionalProperties: true
-          description: Array of users who reacted, shown as overlapping avatar thumbnails.
+          description: Users who reacted, shown as overlapping avatar thumbnails.
       required:
         - reactors
       additionalProperties: true
@@ -3703,7 +3667,6 @@ components:
               - name
               - groups
             additionalProperties: true
-          description: Array of subscriber list objects.
       required:
         - subscriberLists
       additionalProperties: true
@@ -3728,7 +3691,6 @@ components:
       properties:
         user_id:
           type: integer
-          description: Numeric ID of the authenticated user.
         last_home_tab:
           type: string
           description: Identifier of the last-viewed home tab.
@@ -3753,14 +3715,12 @@ components:
           type: array
           items:
             type: string
-          description: |
-            Attachment IDs returned by `POST /api/v1/comment/attachment/`.
+          description: Attachment IDs returned by `POST /api/v1/comment/attachment/`.
         replyMinimumRole:
           type: string
           enum:
             - everyone
-          description: |
-            Who can reply to the note. Currently only `everyone` is supported.
+          description: Who can reply to the note. Currently only `everyone` is supported.
       examples:
         - bodyJson:
             type: doc
@@ -3783,7 +3743,6 @@ components:
       properties:
         id:
           type: integer
-          description: Numeric ID of the published note.
         body:
           type: string
           description: Plain-text body of the published note.
@@ -3800,7 +3759,6 @@ components:
           description: Note type (e.g. `feed`).
         user_id:
           type: integer
-          description: Numeric ID of the author.
         publication_id:
           type: integer
           description: Publication ID if posted on behalf of a publication. Null for standalone notes.
@@ -3808,7 +3766,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NoteAttachment'
-          description: Array of attached media.
+          description: Attached media.
       additionalProperties: true
     CreateAttachmentRequest:
       type: object
@@ -3838,7 +3796,6 @@ components:
           type: string
           enum:
             - link
-          description: Attachment type.
         url:
           type: string
           format: uri
@@ -3846,7 +3803,6 @@ components:
         image_url:
           type: string
           format: uri
-          description: Preview image URL.
         title:
           type: string
           description: Title of the linked content.
@@ -3927,7 +3883,6 @@ components:
         cover_image:
           type: string
           format: uri
-          description: Cover image URL.
         should_send_email:
           type: boolean
           description: Whether to send an email notification on publish.
@@ -3945,7 +3900,6 @@ components:
           description: Paywall metering strategy. `none` for no metering.
         section_id:
           type: integer
-          description: Numeric ID of the section this draft belongs to.
         section_slug:
           type: string
           description: URL slug of the section.
@@ -3992,7 +3946,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DraftPost'
-          description: Array of post/draft items.
         offset:
           type: integer
           description: Pagination offset.
@@ -4045,7 +3998,7 @@ components:
           description: URL of the cover/banner image.
         email_from_name:
           type: string
-          description: Display name used in email "From" field.
+          description: Display name used in the email From field.
         language:
           type: string
           description: ISO 639-1 language code.
@@ -4053,7 +4006,6 @@ components:
           type: array
           items:
             type: object
-          description: Array of category/topic tags.
         has_paid_subs:
           type: boolean
           description: Whether the publication has any paid subscribers.
@@ -4085,7 +4037,6 @@ components:
       properties:
         id:
           type: integer
-          description: Numeric tag ID.
         name:
           type: string
           description: Tag display name, shown as a hashtag link in the post body.
@@ -4099,13 +4050,11 @@ components:
       properties:
         id:
           type: integer
-          description: Subscription ID.
         user_id:
           type: integer
           description: Subscriber's user ID.
         publication_id:
           type: integer
-          description: Publication ID.
         email_disabled:
           type: boolean
           description: Whether email delivery is disabled for this subscription.
@@ -4114,7 +4063,6 @@ components:
           description: Subscription tier. `free_signup` for free, `subscribed` for paid.
         type:
           type: string
-          description: Subscription type.
         created_at:
           type: string
           format: date-time
@@ -4138,7 +4086,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Subscription'
-          description: Array of subscription objects.
         more:
           type: boolean
           description: Whether more subscriptions are available.
@@ -4172,7 +4119,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LiveStream'
-          description: Array of live stream objects.
         hasMore:
           type: boolean
           description: Whether more live streams are available.
@@ -4191,7 +4137,6 @@ components:
           description: Total emails sent.
         views:
           type: integer
-          description: Total views.
         openRate:
           type: number
           description: Email open rate (0-1).
@@ -4227,7 +4172,7 @@ components:
               clicks:
                 type: integer
             additionalProperties: true
-          description: Array of time-series data points for email open/click statistics.
+          description: Time-series data points for email open/click statistics.
       additionalProperties: true
     UnreadActivity:
       type: object
@@ -4264,7 +4209,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PublicationUser'
-          description: Array of publication-user relationship objects.
+          description: Publication-user relationship objects.
       additionalProperties: true
     BoostSettings:
       type: object
@@ -4293,7 +4238,6 @@ components:
           description: Substack subdomain.
         custom_domain:
           type: string
-          description: Custom domain.
         language:
           type: string
           description: ISO 639-1 language code.
@@ -4325,7 +4269,6 @@ components:
       properties:
         name:
           type: string
-          description: Plan name.
         amount:
           type: integer
           description: Plan amount in minor currency units (e.g. cents).
@@ -4347,7 +4290,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PledgePlan'
-          description: Array of available pledge/payment plan options.
+          description: Available pledge/payment plan options.
       additionalProperties: true
     PledgePlansSummary:
       type: object
@@ -4357,7 +4300,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PledgePlan'
-          description: Array of plan summary objects.
         pledgeSummary:
           type: object
           description: Aggregate pledge statistics.
@@ -4372,7 +4314,6 @@ components:
       properties:
         publication_id:
           type: integer
-          description: Publication ID.
         tier:
           type: string
           description: Bestseller tier level.
@@ -4429,7 +4370,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/RecommendationItem'
-          description: Array of recommendation items.
         next_cursor:
           oneOf:
             - type: string
@@ -4458,7 +4398,7 @@ components:
               count:
                 type: integer
             additionalProperties: true
-          description: Array of publication recommendation statistics.
+          description: Publication recommendation statistics.
       additionalProperties: true
     RecommendationsExist:
       type: object
