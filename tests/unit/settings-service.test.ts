@@ -66,6 +66,11 @@ describe('SettingsService', () => {
       expect(result).toEqual(mockResponse)
       expect(mockClient.get).toHaveBeenCalledWith('/publication/sections')
     })
+
+    it('should propagate errors', async () => {
+      mockClient.get.mockRejectedValueOnce(new Error('HTTP 500'))
+      await expect(service.getSections()).rejects.toThrow('HTTP 500')
+    })
   })
 
   describe('getSubscription', () => {
@@ -88,6 +93,21 @@ describe('SettingsService', () => {
     it('should propagate errors', async () => {
       mockClient.get.mockRejectedValueOnce(new Error('HTTP 401'))
       await expect(service.getSubscription()).rejects.toThrow('HTTP 401')
+    })
+  })
+
+  describe('getBoostSettings', () => {
+    it('When requesting boost settings', async () => {
+      const mockResponse = {
+        boost_enabled: false,
+        features: { boost_first_month_upsell: false, credit_token_enabled: false }
+      }
+      mockClient.get.mockResolvedValueOnce(mockResponse)
+
+      const result = await service.getBoostSettings()
+
+      expect(result).toEqual(mockResponse)
+      expect(mockClient.get).toHaveBeenCalledWith('/boost')
     })
   })
 })

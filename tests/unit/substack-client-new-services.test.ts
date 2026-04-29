@@ -6,7 +6,8 @@ import {
   SettingsService,
   NoteService,
   CommentService,
-  PublicationService
+  PublicationService,
+  DashboardService
 } from '@substack-api/internal/services'
 
 jest.mock('@substack-api/internal/http-client')
@@ -20,6 +21,7 @@ describe('SubstackClient new service methods', () => {
   let mockNoteService: jest.Mocked<NoteService>
   let mockCommentService: jest.Mocked<CommentService>
   let mockPublicationService: jest.Mocked<PublicationService>
+  let mockDashboardService: jest.Mocked<DashboardService>
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -45,6 +47,13 @@ describe('SubstackClient new service methods', () => {
 
     mockSettingsService = new SettingsService(mockHttpClient) as jest.Mocked<SettingsService>
     mockSettingsService.getPublisherSettings = jest.fn()
+    mockSettingsService.getPublicationUser = jest.fn()
+    mockSettingsService.getSections = jest.fn()
+    mockSettingsService.getSubscription = jest.fn()
+    mockSettingsService.getBoostSettings = jest.fn()
+
+    mockDashboardService = new DashboardService(mockHttpClient) as jest.Mocked<DashboardService>
+    mockDashboardService.getDashboardSummaryV1 = jest.fn()
 
     mockNoteService = new NoteService(mockHttpClient) as jest.Mocked<NoteService>
     mockNoteService.getNotes = jest.fn()
@@ -75,6 +84,7 @@ describe('SubstackClient new service methods', () => {
     anyClient.noteService = mockNoteService
     anyClient.commentService = mockCommentService
     anyClient.publicationService = mockPublicationService
+    anyClient.dashboardService = mockDashboardService
   })
 
   describe('publicationDetails', () => {
@@ -292,6 +302,76 @@ describe('SubstackClient new service methods', () => {
     it('should throw when no publicationUrl', async () => {
       const noPubClient = new SubstackClient({ token: 'test' })
       await expect(noPubClient.eligibleHosts(1)).rejects.toThrow('Publication required')
+    })
+  })
+
+  describe('publicationUser', () => {
+    it('should delegate to settingsService', async () => {
+      mockSettingsService.getPublicationUser.mockResolvedValue({ pub_users: [] })
+      const result = await client.publicationUser()
+      expect(mockSettingsService.getPublicationUser).toHaveBeenCalled()
+      expect(result).toEqual({ pub_users: [] })
+    })
+
+    it('should throw when no auth', async () => {
+      const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
+      await expect(noAuthClient.publicationUser()).rejects.toThrow('Authentication required')
+    })
+  })
+
+  describe('sections', () => {
+    it('should delegate to settingsService', async () => {
+      mockSettingsService.getSections.mockResolvedValue([])
+      const result = await client.sections()
+      expect(mockSettingsService.getSections).toHaveBeenCalled()
+      expect(result).toEqual([])
+    })
+
+    it('should throw when no publicationUrl', async () => {
+      const noPubClient = new SubstackClient({ token: 'test' })
+      await expect(noPubClient.sections()).rejects.toThrow('Publication required')
+    })
+  })
+
+  describe('subscriptionSettings', () => {
+    it('should delegate to settingsService', async () => {
+      mockSettingsService.getSubscription.mockResolvedValue({ id: 1 })
+      const result = await client.subscriptionSettings()
+      expect(mockSettingsService.getSubscription).toHaveBeenCalled()
+      expect(result).toEqual({ id: 1 })
+    })
+
+    it('should throw when no auth', async () => {
+      const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
+      await expect(noAuthClient.subscriptionSettings()).rejects.toThrow('Authentication required')
+    })
+  })
+
+  describe('boostSettings', () => {
+    it('should delegate to settingsService', async () => {
+      mockSettingsService.getBoostSettings.mockResolvedValue({ boost_enabled: false })
+      const result = await client.boostSettings()
+      expect(mockSettingsService.getBoostSettings).toHaveBeenCalled()
+      expect(result).toEqual({ boost_enabled: false })
+    })
+
+    it('should throw when no auth', async () => {
+      const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
+      await expect(noAuthClient.boostSettings()).rejects.toThrow('Authentication required')
+    })
+  })
+
+  describe('dashboardSummaryV1', () => {
+    it('should delegate to dashboardService', async () => {
+      mockDashboardService.getDashboardSummaryV1.mockResolvedValue({ totalEmail: 2925 })
+      const result = await client.dashboardSummaryV1()
+      expect(mockDashboardService.getDashboardSummaryV1).toHaveBeenCalled()
+      expect(result).toEqual({ totalEmail: 2925 })
+    })
+
+    it('should throw when no auth', async () => {
+      const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
+      await expect(noAuthClient.dashboardSummaryV1()).rejects.toThrow('Authentication required')
     })
   })
 })

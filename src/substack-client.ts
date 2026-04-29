@@ -723,6 +723,12 @@ export class SubstackClient {
     return await this.settingsService.getSubscription()
   }
 
+  async boostSettings(): Promise<unknown> {
+    this.requireAuth('boostSettings')
+    this.requirePublication('boostSettings')
+    return await this.settingsService.getBoostSettings()
+  }
+
   // ── Subscriber stats methods (require auth) ──────────────────────────
 
   async subscriberStats(): Promise<unknown> {
