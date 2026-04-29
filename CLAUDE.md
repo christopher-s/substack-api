@@ -37,7 +37,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm format:check` - Check formatting without changing files
 - `pnpm check-test-names` - Validate test naming conventions
 
-**Required before committing:** Run `pnpm lint`, `pnpm build`, and `pnpm test`
+**Required before committing:** Run `pnpm lint`, `pnpm format:check`, `pnpm build`, and `pnpm test`
+
+`pnpm lint` alone is insufficient — it does not always catch Prettier formatting drift that CI's linter step catches. Always run `pnpm format:check` (or `pnpm format` to auto-fix) as a separate verification before pushing.
 
 ## Architecture
 
