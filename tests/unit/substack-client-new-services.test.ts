@@ -53,7 +53,6 @@ describe('SubstackClient new service methods', () => {
     mockSettingsService.getBoostSettings = jest.fn()
 
     mockDashboardService = new DashboardService(mockHttpClient) as jest.Mocked<DashboardService>
-    mockDashboardService.getDashboardSummaryV1 = jest.fn()
 
     mockNoteService = new NoteService(mockHttpClient) as jest.Mocked<NoteService>
     mockNoteService.getNotes = jest.fn()
@@ -358,20 +357,6 @@ describe('SubstackClient new service methods', () => {
     it('should throw when no auth', async () => {
       const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
       await expect(noAuthClient.boostSettings()).rejects.toThrow('Authentication required')
-    })
-  })
-
-  describe('dashboardSummaryV1', () => {
-    it('should delegate to dashboardService', async () => {
-      mockDashboardService.getDashboardSummaryV1.mockResolvedValue({ totalEmail: 2925 })
-      const result = await client.dashboardSummaryV1()
-      expect(mockDashboardService.getDashboardSummaryV1).toHaveBeenCalled()
-      expect(result).toEqual({ totalEmail: 2925 })
-    })
-
-    it('should throw when no auth', async () => {
-      const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
-      await expect(noAuthClient.dashboardSummaryV1()).rejects.toThrow('Authentication required')
     })
   })
 })

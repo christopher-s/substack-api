@@ -49,20 +49,4 @@ export class DashboardService {
   async getUnreadMessageCount(): Promise<unknown> {
     return await this.publicationClient.get<unknown>('/messages/unread-count')
   }
-
-  /**
-   * Get growth suggestion tip.
-   * GET /api/v1/grow/suggestion
-   */
-  async getGrowthSuggestion(): Promise<unknown> {
-    return await this.publicationClient.get<unknown>('/grow/suggestion')
-  }
-
-  /**
-   * Get dashboard summary v1 (subscriber counts, views, open rate, pledges).
-   * GET /api/v1/publish-dashboard/summary
-   */
-  async getDashboardSummaryV1(): Promise<unknown> {
-    return await this.publicationClient.get<unknown>('/publish-dashboard/summary')
-  }
 }

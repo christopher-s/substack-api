@@ -966,18 +966,6 @@ export class SubstackClient {
     return await this.dashboardService.getUnreadMessageCount()
   }
 
-  async growthSuggestion(): Promise<unknown> {
-    this.requireAuth('growthSuggestion')
-    this.requirePublication('growthSuggestion')
-    return await this.dashboardService.getGrowthSuggestion()
-  }
-
-  async dashboardSummaryV1(): Promise<unknown> {
-    this.requireAuth('dashboardSummaryV1')
-    this.requirePublication('dashboardSummaryV1')
-    return await this.dashboardService.getDashboardSummaryV1()
-  }
-
   // ── Recommendation methods (require auth) ───────────────────────────
 
   async outgoingRecommendations(publicationId: number): Promise<unknown> {

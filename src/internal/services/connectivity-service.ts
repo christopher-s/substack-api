@@ -3,7 +3,8 @@ import type { FollowingService } from '@substack-api/internal/services/following
 
 /**
  * Service responsible for checking API connectivity and session validity
- * Provides a clean boolean indicator of whether the API is accessible
+ * Uses FollowingService.getOwnId (which calls /handle/options + /user/{slug}/public_profile)
+ * as a lightweight authenticated read probe.
  */
 export class ConnectivityService {
   constructor(

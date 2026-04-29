@@ -739,34 +739,6 @@ paths:
                 additionalProperties: true
         '204':
           description: Seen state acknowledged (no body).
-  /api/v1/user-setting:
-    put:
-      tags:
-        - following
-        - connectivity
-      summary: Write a user setting
-      description: |
-        Writes a single user setting (the client uses `last_home_tab`). The
-        response includes the authenticated `user_id`, which is how the client
-        derives the current user's ID and probes connectivity.
-      operationId: writeUserSetting
-      security:
-        - substackSession: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserSettingRequest'
-      responses:
-        '200':
-          description: Updated user setting record (includes `user_id`).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserSettingResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
   /api/v1/user/{userId}/subscriber-lists:
     get:
       tags:
@@ -1452,27 +1424,6 @@ paths:
                 type: array
                 items:
                   type: object
-  /api/v1/publish-dashboard/summary:
-    get:
-      tags:
-        - dashboard
-      summary: Publish dashboard summary (v1)
-      description: |
-        Returns aggregate dashboard metrics for the publication: subscriber
-        counts, email stats, views, open rate, and pledge information.
-        Requires authentication and a publication-scoped host.
-      operationId: getDashboardSummary
-      security:
-        - substackSession: []
-      responses:
-        '200':
-          description: Dashboard summary metrics.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DashboardSummary'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
   /api/v1/publish-dashboard/summary-v2:
     get:
       tags:
@@ -1493,6 +1444,716 @@ paths:
                 $ref: '#/components/schemas/DashboardSummary'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  # ── Publication Stats: Network ──────────────────────────────────
+
+  /api/v1/publication/stats/network_attribution:
+    get:
+      tags:
+        - stats
+      summary: Network attribution for subscriber acquisition
+      description: |
+        Shows where subscribers come from within the Substack network. Each row
+        represents a source (e.g. search, recommendations, cross-promotion) with
+        subscriber counts and percentage share for the given time window.
+      operationId: getNetworkAttribution
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: time_window
+          schema:
+            type: string
+            default: 90+days
+          description: Time window for attribution data.
+        - in: query
+          name: is_subscribed
+          schema:
+            type: boolean
+            default: false
+          description: Filter to subscribed users only.
+      responses:
+        '200':
+          description: Network attribution rows.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      type: object
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Publication Stats: Audience ─────────────────────────────────
+
+  /api/v1/publication/stats/followers/timeseries:
+    get:
+      tags:
+        - stats
+      summary: Follower count time series
+      description: |
+        Returns follower count chart data over time. Used in the Audience tab
+        to display how the publication's follower base has grown.
+      operationId: getFollowerTimeseries
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date for the time range (ISO format).
+      responses:
+        '200':
+          description: Follower count time series data.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  timeseries:
+                    type: array
+                    items:
+                      type: array
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/publication/stats/audience_insights/location:
+    get:
+      tags:
+        - stats
+      summary: Audience geographic breakdown
+      description: |
+        Returns a geographic breakdown of the audience. The granularity
+        parameter controls whether results are US-state-level or global-country-level.
+        Used in the Audience tab to render the location map.
+      operationId: getAudienceLocation
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: metric
+          schema:
+            type: string
+            default: free+signups
+          description: Audience metric to measure (e.g. free+signups, paid+signups).
+        - in: query
+          name: granularity
+          schema:
+            type: string
+            default: usa
+          description: Geographic granularity — usa for US states, global for countries.
+      responses:
+        '200':
+          description: Audience location data.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/publication/stats/audience_insights/location/total:
+    get:
+      tags:
+        - stats
+      summary: Aggregate audience location totals
+      description: |
+        Returns aggregate location totals across all granularities. Used in the
+        Audience tab to display summary counts for global and US audiences.
+      operationId: getAudienceLocationTotal
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Aggregate location totals.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  global:
+                    type: object
+                    properties:
+                      locations:
+                        type: integer
+                      total:
+                        type: integer
+                  usa:
+                    type: object
+                    properties:
+                      locations:
+                        type: integer
+                      total:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/publication/stats/audience_insights/overlap:
+    get:
+      tags:
+        - stats
+      summary: Publications with overlapping audiences
+      description: |
+        Returns other publications whose audiences overlap with this one. Each
+        entry includes the overlap percentage and the publication metadata.
+        Used in the Audience tab to show audience similarity.
+      operationId: getAudienceOverlap
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 6
+          description: Maximum number of overlapping publications to return.
+      responses:
+        '200':
+          description: Audience overlap data.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+                  properties:
+                    percentOverlap:
+                      type: string
+                    pub:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Publication Stats: Traffic ───────────────────────────────────
+
+  /api/v1/publication/stats/publication_traffic/30d_views:
+    get:
+      tags:
+        - stats
+      summary: 30-day view count with delta
+      description: |
+        Returns the total view count for the past 30 days along with the
+        percentage change from the prior period. Displayed as a KPI card in
+        the Traffic tab of the publisher dashboard.
+      operationId: getTraffic30dViews
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: 30-day traffic summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  views:
+                    type: integer
+                  viewsDiff:
+                    type: number
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/publication/stats/visitor_sources:
+    get:
+      tags:
+        - stats
+      summary: Breakdown of visitor sources
+      description: |
+        Returns a paginated list of where visitors come from (e.g. direct,
+        search, social). Each row has the source name, view count, and
+        visitor count. Used in the Traffic tab source breakdown table.
+      operationId: getVisitorSources
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: from_date
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date for the time range.
+        - in: query
+          name: to_date
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date for the time range.
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+          description: Pagination offset.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+          description: Maximum number of results to return.
+        - in: query
+          name: order_by
+          schema:
+            type: string
+            default: views
+          description: Field to sort results by.
+        - in: query
+          name: order_direction
+          schema:
+            type: string
+            default: desc
+          description: Sort direction (asc or desc).
+      responses:
+        '200':
+          description: Visitor source breakdown.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/publication/stats/publication_traffic/timeseries:
+    get:
+      tags:
+        - stats
+      summary: Traffic time series
+      description: |
+        Returns traffic chart data over time as an array of [date, value] pairs.
+        Optionally filtered by traffic category (e.g. organic). Used in the
+        Traffic tab to render the views chart.
+      operationId: getTrafficTimeseries
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date for the time range.
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date for the time range.
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: Optional traffic category filter (e.g. organic).
+      responses:
+        '200':
+          description: Traffic time series data.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Publication Stats: Posts / Email ─────────────────────────────
+
+  /api/v1/publication/stats/email_stats/30d_open_rate:
+    get:
+      tags:
+        - stats
+      summary: 30-day email open rate KPI
+      description: |
+        Returns the aggregate email open rate for the past 30 days along with
+        the change from the prior period. Displayed as a KPI card in the Posts
+        tab of the publisher dashboard.
+      operationId: getEmail30dOpenRate
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: 30-day email open rate.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  openRate:
+                    type: number
+                  openRateDiff:
+                    type: number
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/publication/stats/email_stats:
+    get:
+      tags:
+        - stats
+      summary: Per-post email statistics
+      description: |
+        Returns a paginated table of per-post email statistics including open
+        rates, click rates, and delivery counts. Each row represents a single
+        post's email campaign performance.
+      operationId: getEmailStats
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+          description: Pagination offset.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+          description: Maximum number of results to return.
+        - in: query
+          name: order_by
+          schema:
+            type: string
+            default: post_date
+          description: Field to sort results by.
+        - in: query
+          name: order_direction
+          schema:
+            type: string
+            default: desc
+          description: Sort direction (asc or desc).
+      responses:
+        '200':
+          description: Per-post email statistics.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Publication Stats: Pledges ───────────────────────────────────
+
+  /api/v1/publication/stats/payment_pledges/summary:
+    get:
+      tags:
+        - stats
+      summary: Aggregate pledge revenue summary
+      description: |
+        Returns aggregate pledge revenue totals including total pledge count and
+        total monetary amount. Displayed as the headline KPI in the Pledges tab
+        of the publisher dashboard.
+      operationId: getPledgeSummary
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Pledge revenue summary.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  totalPledges:
+                    type: integer
+                  totalPledgeAmount:
+                    type: integer
+                  currency:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/publication/stats/payment_pledges:
+    get:
+      tags:
+        - stats
+      summary: Individual pledge records
+      description: |
+        Returns a list of individual pledge records with user details and pledge
+        metadata (amount, interval, founding status, optional note). Used in the
+        Pledges tab to display the pledge ledger.
+      operationId: getPledges
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+          description: Maximum number of pledge records to return.
+      responses:
+        '200':
+          description: Individual pledge records.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  pledgeAndUserData:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Publication Stats: Sharing ───────────────────────────────────
+
+  /api/v1/publication/stats/reader-referrals:
+    get:
+      tags:
+        - stats
+      summary: Reader referral leaderboard
+      description: |
+        Returns a leaderboard of readers who have referred the most new visitors
+        or subscribers. Each row includes the reader's identity and referral
+        counts. Used in the Sharing tab of the publisher dashboard.
+      operationId: getReaderReferrals
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date for the referral window.
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+          description: Pagination offset.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+          description: Maximum number of results to return.
+        - in: query
+          name: order_by
+          schema:
+            type: string
+            default: visitors
+          description: Field to sort results by.
+        - in: query
+          name: order_direction
+          schema:
+            type: string
+            default: desc
+          description: Sort direction (asc or desc).
+      responses:
+        '200':
+          description: Reader referral data.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Growth Stats ─────────────────────────────────────────────────
+
+  /api/v1/publication/stats/growth/sources:
+    get:
+      tags:
+        - growth
+      summary: Hierarchical growth source breakdown
+      description: |
+        Returns a hierarchical breakdown of traffic and subscriber sources
+        (Substack, Direct, Search, Social, Email) with nested children. Each
+        source includes metrics like user counts and timeseries data.
+      operationId: getGrowthSources
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: from_date
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date for the time range.
+        - in: query
+          name: to_date
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date for the time range.
+        - in: query
+          name: order_by
+          schema:
+            type: string
+            default: users
+          description: Field to sort results by.
+        - in: query
+          name: order_direction
+          schema:
+            type: string
+            default: desc
+          description: Sort direction (asc or desc).
+      responses:
+        '200':
+          description: Growth source breakdown.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  sourceMetrics:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/publication/stats/growth/partial-timeseries:
+    post:
+      tags:
+        - growth
+      summary: Growth source time series chart data
+      description: |
+        Accepts a list of selected growth sources and returns timeseries chart
+        data for each. Used to render the visitor growth chart with selectable
+        source overlays in the Growth section of the publisher dashboard.
+      operationId: getGrowthPartialTimeseries
+      security:
+        - substackSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              required:
+                - sources
+                - orderBy
+                - orderDirection
+              properties:
+                sources:
+                  type: array
+                  items:
+                    type: object
+                  description: Array of source objects to include in the timeseries.
+                orderBy:
+                  type: string
+                  description: Field to order by.
+                orderDirection:
+                  type: string
+                  description: Sort direction (asc or desc).
+                fromDate:
+                  type: string
+                  format: date
+                  description: Optional start date for the time range.
+                toDate:
+                  type: string
+                  format: date
+                  description: Optional end date for the time range.
+      responses:
+        '200':
+          description: Growth timeseries data.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  timeseries:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/publication/stats/growth/events:
+    get:
+      tags:
+        - growth
+      summary: Publication events for growth correlation
+      description: |
+        Returns a list of publication events (posts, notes, etc.) within a date
+        range. Used to correlate publication activity with growth spikes shown
+        on the Growth visitors chart.
+      operationId: getGrowthEvents
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: from_date
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date for the event window.
+        - in: query
+          name: to_date
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date for the event window.
+      responses:
+        '200':
+          description: Publication events.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                properties:
+                  pubEvents:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        date:
+                          type: string
+                          format: date
+                        title:
+                          type: string
+                        slug:
+                          type: string
+                        type:
+                          type: string
+                        url:
+                          type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /api/v1/publication/stats/emails/timeseries:
     get:
       tags:
@@ -1564,26 +2225,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnreadMessagesCount'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-  /api/v1/grow/suggestion:
-    get:
-      tags:
-        - dashboard
-      summary: Growth suggestion
-      description: |
-        Returns a growth suggestion for the publication. Requires authentication
-        and a publication-scoped host.
-      operationId: getGrowSuggestion
-      security:
-        - substackSession: []
-      responses:
-        '200':
-          description: Growth suggestion payload.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GrowSuggestion'
         '401':
           $ref: '#/components/responses/Unauthorized'
   /api/v1/publication_user:
@@ -3677,33 +4318,6 @@ components:
       required:
         - subscriberLists
       additionalProperties: true
-    UserSettingRequest:
-      type: object
-      description: |
-        Body for `PUT /api/v1/user-setting`. The client always writes
-        `last_home_tab` and uses the response's `user_id` to derive the
-        authenticated user's identity / probe connectivity.
-      properties:
-        last_home_tab:
-          type: string
-          description: Last home-tab key (e.g. `home`, `discover`).
-      examples:
-        - last_home_tab: home
-      required:
-        - last_home_tab
-      additionalProperties: true
-    UserSettingResponse:
-      type: object
-      description: Updated user-setting record. Includes the authenticated `user_id`.
-      properties:
-        user_id:
-          type: integer
-        last_home_tab:
-          type: string
-          description: Identifier of the last-viewed home tab.
-      required:
-        - user_id
-      additionalProperties: true
     PublishNoteRequest:
       type: object
       description: Body for `POST /api/v1/comment/feed/`.
@@ -4201,17 +4815,6 @@ components:
         count:
           type: integer
           description: Number of unread messages.
-      additionalProperties: true
-    GrowSuggestion:
-      type: object
-      description: Growth suggestion for the publication.
-      properties:
-        suggestion:
-          type: string
-          description: Growth suggestion text.
-        type:
-          type: string
-          description: Suggestion type.
       additionalProperties: true
     PublicationUsersResponse:
       type: object

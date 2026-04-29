@@ -1,5 +1,9 @@
 import type { HttpClient } from '@substack-api/internal/http-client'
-import { SubscriberLists } from '@substack-api/internal/types'
+import {
+  SubscriberLists,
+  PotentialHandlesCodec,
+  SubstackFullProfileCodec
+} from '@substack-api/internal/types'
 import { decodeOrThrow } from '@substack-api/internal/validation'
 
 type FollowingUser = {
@@ -17,11 +21,17 @@ export class FollowingService {
   ) {}
 
   async getOwnId(): Promise<number> {
-    const { user_id } = await this.substackClient.put<{ user_id: number }>('/user-setting', {
-      type: 'last_home_tab',
-      value_text: 'inbox'
-    })
-    return user_id
+    const rawHandles = await this.substackClient.get<unknown>('/handle/options')
+    const handles = decodeOrThrow(PotentialHandlesCodec, rawHandles, 'Potential handles response')
+    const existing = handles.potentialHandles.find((h) => h.type === 'existing')
+    if (!existing) {
+      throw new Error('No existing handle found for authenticated user')
+    }
+    const rawProfile = await this.substackClient.get<unknown>(
+      `/user/${existing.handle}/public_profile`
+    )
+    const profile = decodeOrThrow(SubstackFullProfileCodec, rawProfile, 'Full profile response')
+    return profile.id
   }
   /**
    * Get users that the authenticated user follows

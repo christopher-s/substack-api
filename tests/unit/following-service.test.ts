@@ -19,43 +19,46 @@ describe('FollowingService', () => {
     mockPublicationClient.get = jest.fn()
 
     mockSubstackClient = new HttpClient('https://substack.com', 'test') as jest.Mocked<HttpClient>
-    mockSubstackClient.put = jest.fn()
+    mockSubstackClient.get = jest.fn()
 
     followingService = new FollowingService(mockPublicationClient, mockSubstackClient)
   })
 
   describe('getFollowing', () => {
-    it('should fetch following users successfully', async () => {
-      const mockUserId = 12345
-      const mockSubscriberLists = {
-        subscriberLists: [
-          {
-            id: 'following-list',
-            name: 'Following',
-            groups: [
-              {
-                users: [
-                  { id: 123, handle: 'user123' },
-                  { id: 456, handle: 'user456' },
-                  { id: 789, handle: 'user789' }
-                ]
-              }
-            ]
-          }
-        ]
-      }
+    const mockHandleOptions = {
+      potentialHandles: [{ id: '1', handle: 'testuser', type: 'existing' }]
+    }
+    const mockProfile = { id: 12345, handle: 'testuser', name: 'Test User' }
+    const mockSubscriberLists = {
+      subscriberLists: [
+        {
+          id: 'following-list',
+          name: 'Following',
+          groups: [
+            {
+              users: [
+                { id: 123, handle: 'user123' },
+                { id: 456, handle: 'user456' },
+                { id: 789, handle: 'user789' }
+              ]
+            }
+          ]
+        }
+      ]
+    }
 
-      mockSubstackClient.put.mockResolvedValue({ user_id: mockUserId })
+    it('should fetch following users successfully', async () => {
+      mockSubstackClient.get
+        .mockResolvedValueOnce(mockHandleOptions)
+        .mockResolvedValueOnce(mockProfile)
       mockPublicationClient.get.mockResolvedValue(mockSubscriberLists)
 
       const result = await followingService.getFollowing()
 
-      expect(mockSubstackClient.put).toHaveBeenCalledWith('/user-setting', {
-        type: 'last_home_tab',
-        value_text: 'inbox'
-      })
+      expect(mockSubstackClient.get).toHaveBeenCalledWith('/handle/options')
+      expect(mockSubstackClient.get).toHaveBeenCalledWith('/user/testuser/public_profile')
       expect(mockPublicationClient.get).toHaveBeenCalledWith(
-        `/user/${mockUserId}/subscriber-lists?lists=following`
+        '/user/12345/subscriber-lists?lists=following'
       )
       expect(result).toEqual([
         { id: 123, handle: 'user123' },
@@ -65,42 +68,39 @@ describe('FollowingService', () => {
     })
 
     it('When requesting empty array when no following users', async () => {
-      const mockUserId = 12345
-      const mockSubscriberLists = {
+      const emptyLists = {
         subscriberLists: [
           {
             id: 'following-list',
             name: 'Following',
-            groups: [
-              {
-                users: []
-              }
-            ]
+            groups: [{ users: [] }]
           }
         ]
       }
 
-      mockSubstackClient.put.mockResolvedValue({ user_id: mockUserId })
-      mockPublicationClient.get.mockResolvedValue(mockSubscriberLists)
+      mockSubstackClient.get
+        .mockResolvedValueOnce(mockHandleOptions)
+        .mockResolvedValueOnce(mockProfile)
+      mockPublicationClient.get.mockResolvedValue(emptyLists)
 
       const result = await followingService.getFollowing()
 
       expect(result).toEqual([])
     })
 
-    it('When when request fails', async () => {
-      const mockUserId = 12345
+    it('When subscriber-lists request fails', async () => {
       const error = new Error('Network error')
 
-      mockSubstackClient.put.mockResolvedValue({ user_id: mockUserId })
+      mockSubstackClient.get
+        .mockResolvedValueOnce(mockHandleOptions)
+        .mockResolvedValueOnce(mockProfile)
       mockPublicationClient.get.mockRejectedValue(error)
 
       await expect(followingService.getFollowing()).rejects.toThrow('Network error')
     })
 
     it('When authentication errors gracefully', async () => {
-      const error = new Error('Unauthorized')
-      mockSubstackClient.put.mockRejectedValue(error)
+      mockSubstackClient.get.mockRejectedValue(new Error('Unauthorized'))
 
       await expect(followingService.getFollowing()).rejects.toThrow('Unauthorized')
     })
