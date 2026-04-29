@@ -481,15 +481,20 @@ describe('PublicationStatsService', () => {
   describe('Settings & Plans', () => {
     describe('getPledgePlans', () => {
       it('When requesting pledge plans', async () => {
-        const mockResponse = [
-          {
-            plan_id: 'monthly_5',
-            plan_interval: 'month',
-            payment_amount: 500,
-            payment_currency: 'usd',
-            subscriber_count: 120
-          }
-        ]
+        const mockResponse = {
+          enabled: true,
+          payment_pledge_plans: [
+            { name: 'Yearly', amount: 8000, interval: 'year', currency: 'usd' },
+            { name: 'Monthly', amount: 800, interval: 'month', currency: 'usd' },
+            {
+              name: 'Founding',
+              amount: 15000,
+              interval: 'year',
+              is_founding: true,
+              currency: 'usd'
+            }
+          ]
+        }
         mockPublicationClient.get.mockResolvedValueOnce(mockResponse)
 
         const result = await service.getPledgePlans()
@@ -502,10 +507,9 @@ describe('PublicationStatsService', () => {
     describe('getPledgePlansSummary', () => {
       it('When requesting pledge plans summary', async () => {
         const mockResponse = {
-          total_subscribers: 350,
-          monthly_revenue: 17500,
-          annual_revenue: 150000,
-          currency: 'usd'
+          plans: [{ name: 'Monthly', amount: 800, interval: 'month', currency: 'usd' }],
+          pledgeSummary: { usd: { '800': { month: 19 } } },
+          pledgeCount: 34
         }
         mockPublicationClient.get.mockResolvedValueOnce(mockResponse)
 

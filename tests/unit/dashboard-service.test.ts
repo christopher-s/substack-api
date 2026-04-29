@@ -165,4 +165,38 @@ describe('DashboardService', () => {
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/grow/suggestion')
     })
   })
+
+  describe('getDashboardSummaryV1', () => {
+    it('When fetching dashboard summary v1', async () => {
+      const mockSummary = {
+        appSubscribers: 2358,
+        appSubscribersLast30Days: 17,
+        subscribers: 0,
+        totalEmail: 2925,
+        totalEmailLast30Days: -16,
+        views: 10963,
+        viewsDelta: -787,
+        openRate: 27.85,
+        openRateDiff: 0.42,
+        pledgesAmount: 309400,
+        numPledges: 34,
+        pledgeCurrency: 'usd',
+        isBestseller: false
+      }
+
+      mockPublicationClient.get.mockResolvedValueOnce(mockSummary)
+
+      const result = await service.getDashboardSummaryV1()
+
+      expect(result).toEqual(mockSummary)
+      expect(mockPublicationClient.get).toHaveBeenCalledWith('/publish-dashboard/summary')
+    })
+
+    it('When dashboard summary v1 request fails', async () => {
+      mockPublicationClient.get.mockRejectedValueOnce(new Error('Summary V1 API Error'))
+
+      await expect(service.getDashboardSummaryV1()).rejects.toThrow('Summary V1 API Error')
+      expect(mockPublicationClient.get).toHaveBeenCalledWith('/publish-dashboard/summary')
+    })
+  })
 })

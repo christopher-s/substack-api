@@ -705,6 +705,24 @@ export class SubstackClient {
     return await this.settingsService.getPublisherSettings()
   }
 
+  async publicationUser(): Promise<unknown> {
+    this.requireAuth('publicationUser')
+    this.requirePublication('publicationUser')
+    return await this.settingsService.getPublicationUser()
+  }
+
+  async sections(): Promise<unknown> {
+    this.requireAuth('sections')
+    this.requirePublication('sections')
+    return await this.settingsService.getSections()
+  }
+
+  async subscriptionSettings(): Promise<unknown> {
+    this.requireAuth('subscriptionSettings')
+    this.requirePublication('subscriptionSettings')
+    return await this.settingsService.getSubscription()
+  }
+
   // ── Subscriber stats methods (require auth) ──────────────────────────
 
   async subscriberStats(): Promise<unknown> {
@@ -909,6 +927,12 @@ export class SubstackClient {
     this.requireAuth('growthSuggestion')
     this.requirePublication('growthSuggestion')
     return await this.dashboardService.getGrowthSuggestion()
+  }
+
+  async dashboardSummaryV1(): Promise<unknown> {
+    this.requireAuth('dashboardSummaryV1')
+    this.requirePublication('dashboardSummaryV1')
+    return await this.dashboardService.getDashboardSummaryV1()
   }
 
   // ── Recommendation methods (require auth) ───────────────────────────
