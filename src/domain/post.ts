@@ -98,7 +98,7 @@ export class PreviewPost implements Post {
         count++
       }
     } catch (error) {
-      throw new Error(`Failed to get comments for post ${this.id}: ${(error as Error).message}`)
+      throw new Error(`Failed to get comments for post ${this.id}: ${(error as Error).message}`, { cause: error })
     }
   }
 
@@ -112,7 +112,7 @@ export class PreviewPost implements Post {
       const fullPostData = await this.deps.postService.getPostById(this.id)
       return new FullPost(fullPostData, this.deps)
     } catch (error) {
-      throw new Error(`Failed to fetch full post ${this.id}: ${(error as Error).message}`)
+      throw new Error(`Failed to fetch full post ${this.id}: ${(error as Error).message}`, { cause: error })
     }
   }
 }
@@ -198,7 +198,7 @@ export class FullPost implements Post {
         count++
       }
     } catch (error) {
-      throw new Error(`Failed to get comments for post ${this.id}: ${(error as Error).message}`)
+      throw new Error(`Failed to get comments for post ${this.id}: ${(error as Error).message}`, { cause: error })
     }
   }
 }
