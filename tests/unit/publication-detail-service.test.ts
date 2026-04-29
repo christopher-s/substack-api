@@ -30,7 +30,10 @@ describe('PublicationDetailService', () => {
 
   describe('getPostTags', () => {
     it('should fetch post tags', async () => {
-      const mockResponse = [{ id: 1, name: 'Technology' }, { id: 2, name: 'Science' }]
+      const mockResponse = [
+        { id: 1, name: 'Technology' },
+        { id: 2, name: 'Science' }
+      ]
       mockClient.get.mockResolvedValue(mockResponse)
 
       const result = await service.getPostTags()

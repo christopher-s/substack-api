@@ -183,7 +183,9 @@ export class SubstackClient {
       const profile = await this.profileService.getProfileBySlug(slug)
       return new Profile(profile, this.buildEntityDeps(), profile.handle)
     } catch (error) {
-      throw new Error(`Profile with slug '${slug}' not found: ${(error as Error).message}`, { cause: error })
+      throw new Error(`Profile with slug '${slug}' not found: ${(error as Error).message}`, {
+        cause: error
+      })
     }
   }
 
@@ -195,7 +197,9 @@ export class SubstackClient {
       const profile = await this.profileService.getProfileById(id)
       return new Profile(profile, this.buildEntityDeps(), profile.handle)
     } catch (error) {
-      throw new Error(`Profile with ID ${id} not found: ${(error as Error).message}`, { cause: error })
+      throw new Error(`Profile with ID ${id} not found: ${(error as Error).message}`, {
+        cause: error
+      })
     }
   }
 
@@ -231,7 +235,9 @@ export class SubstackClient {
       const commentData = await this.commentService.getCommentById(id)
       return new Comment(commentData, this.publicationClient)
     } catch (error) {
-      throw new Error(`Comment with ID ${id} not found: ${(error as Error).message}`, { cause: error })
+      throw new Error(`Comment with ID ${id} not found: ${(error as Error).message}`, {
+        cause: error
+      })
     }
   }
 
@@ -268,7 +274,6 @@ export class SubstackClient {
 
       if (remaining !== undefined && branches.length > remaining) {
         yield { ...response, commentBranches: branches.slice(0, remaining) }
-        totalYielded += remaining
         return
       }
 
@@ -542,28 +547,19 @@ export class SubstackClient {
 
   // ── Post management methods (require auth + publication) ───────────
 
-  async publishedPosts(options?: {
-    offset?: number
-    limit?: number
-  }): Promise<unknown> {
+  async publishedPosts(options?: { offset?: number; limit?: number }): Promise<unknown> {
     this.requireAuth('publishedPosts')
     this.requirePublication('publishedPosts')
     return await this.postManagementService.getPublishedPosts(options)
   }
 
-  async drafts(options?: {
-    offset?: number
-    limit?: number
-  }): Promise<unknown> {
+  async drafts(options?: { offset?: number; limit?: number }): Promise<unknown> {
     this.requireAuth('drafts')
     this.requirePublication('drafts')
     return await this.postManagementService.getDrafts(options)
   }
 
-  async scheduledPosts(options?: {
-    offset?: number
-    limit?: number
-  }): Promise<unknown> {
+  async scheduledPosts(options?: { offset?: number; limit?: number }): Promise<unknown> {
     this.requireAuth('scheduledPosts')
     this.requirePublication('scheduledPosts')
     return await this.postManagementService.getScheduledPosts(options)
