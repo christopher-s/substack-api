@@ -13,7 +13,9 @@ import { decodeOrThrow } from '@substack-api/internal/validation'
  */
 export class CommentService {
   constructor(
+    // publicationClient for endpoints under a specific publication domain (e.g. /post/{id}/comments)
     private readonly publicationClient: HttpClient,
+    // substackClient for global endpoints under substack.com (e.g. /reader/comment/{id}/replies)
     private readonly substackClient: HttpClient
   ) {}
 
@@ -29,7 +31,7 @@ export class CommentService {
     const response = await this.publicationClient.get<{
       comments?: unknown[]
       more?: boolean
-    }>(`/post/${postId}/comments`)
+    }>(`/post/${encodeURIComponent(String(postId))}/comments`)
 
     const comments = response.comments || []
 
@@ -48,11 +50,11 @@ export class CommentService {
    * @throws {Error} When comment is not found, API request fails, or validation fails
    */
   async getCommentById(id: number): Promise<SubstackComment> {
-    const rawResponse = await this.publicationClient.get<unknown>(`/reader/comment/${id}`)
+    const rawResponse = await this.publicationClient.get<unknown>(
+      `/reader/comment/${encodeURIComponent(String(id))}`
+    )
     const response = decodeOrThrow(SubstackCommentResponseCodec, rawResponse, 'Comment response')
-    // Return the comment from the response, casting through unknown to satisfy SubstackComment
-    // The response shape differs from SubstackComment but has compatible fields
-    return response.item.comment as unknown as SubstackComment
+    return response.item.comment
   }
 
   /**
@@ -69,7 +71,7 @@ export class CommentService {
     }
     const query = params.toString() ? `?${params.toString()}` : ''
     const response = await this.substackClient.get<unknown>(
-      `/reader/comment/${commentId}/replies${query}`
+      `/reader/comment/${encodeURIComponent(String(commentId))}/replies${query}`
     )
     return decodeOrThrow(SubstackCommentRepliesResponseCodec, response, 'Comment replies')
   }

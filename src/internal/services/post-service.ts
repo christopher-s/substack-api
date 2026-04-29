@@ -22,7 +22,9 @@ export class PostService {
    */
   async getPostById(id: number): Promise<SubstackFullPost> {
     // Post lookup by ID must use the global substack.com endpoint, not publication-specific hostnames
-    const rawResponse = await this.substackClient.get<{ post: unknown }>(`/posts/by-id/${id}`)
+    const rawResponse = await this.substackClient.get<{ post: unknown }>(
+      `/posts/by-id/${encodeURIComponent(String(id))}`
+    )
 
     // Extract the post data from the wrapper object
     if (!rawResponse.post) {
@@ -70,12 +72,15 @@ export class PostService {
     posts: SubstackPreviewPost[]
     nextCursor?: string | null
   }> {
+    const params = new URLSearchParams({
+      profile_user_id: String(profileId),
+      limit: String(options.limit),
+      offset: String(options.offset)
+    })
     const response = await this.substackClient.get<{
       posts?: unknown[]
       nextCursor?: string | null
-    }>(
-      `/profile/posts?profile_user_id=${profileId}&limit=${options.limit}&offset=${options.offset}`
-    )
+    }>(`/profile/posts?${params.toString()}`)
 
     const posts = response.posts || []
 

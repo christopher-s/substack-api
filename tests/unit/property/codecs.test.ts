@@ -8,14 +8,13 @@ import { isRight, isLeft } from 'fp-ts/Either'
 
 import {
   SubstackUserCodec,
-  SubstackBylineCodec,
   HandleTypeCodec,
   SubstackPreviewPostCodec,
   SubstackCommentCodec,
   SubstackCategoryCodec,
   SubstackNoteCodec
 } from '@substack-api/internal/types'
-import { SubstackPublicationCodec } from '@substack-api/internal/types/substack-publication'
+import { SubstackBylineCodec } from '@substack-api/internal/types/substack-byline'
 
 /* ------------------------------------------------------------------ */
 /*  Arbitrary builders                                                 */
@@ -39,14 +38,6 @@ const substackBylineArb = fc.record({
   name: fc.string(),
   handle: fc.string(),
   photo_url: fc.string()
-})
-
-const substackPublicationArb = fc.record({
-  name: fc.string(),
-  hostname: fc.string(),
-  subdomain: fc.string(),
-  logo_url: fc.option(fc.string(), { nil: undefined }),
-  description: fc.option(fc.string(), { nil: undefined })
 })
 
 const handleTypeArb = fc.oneof(
@@ -125,6 +116,16 @@ const substackPreviewPostArb = fc.record({
   pins: maybeArb(fc.array(fc.anything()))
 })
 
+const substackNoteAttachmentArb = fc.record({
+  id: fc.oneof(fc.integer(), fc.string()),
+  type: fc.string(),
+  imageUrl: maybeArb(fc.string()),
+  imageWidth: maybeArb(fc.integer()),
+  imageHeight: maybeArb(fc.integer()),
+  explicit: maybeArb(fc.boolean()),
+  publication: maybeArb(fc.anything())
+})
+
 const substackCommentArb = fc.record({
   id: fc.integer(),
   body: fc.string(),
@@ -148,7 +149,7 @@ const substackCommentArb = fc.record({
   bio: maybeArb(fc.string()),
   handle: maybeArb(fc.string()),
   user_bestseller_tier: maybeArb(fc.string()),
-  attachments: maybeArb(fc.array(fc.anything())),
+  attachments: maybeArb(fc.array(substackNoteAttachmentArb)),
   userStatus: maybeArb(fc.anything()),
   user_primary_publication: maybeArb(fc.anything()),
   language: maybeArb(fc.string()),
@@ -200,16 +201,6 @@ const substackNoteUserArb = fc.record({
   bestseller_tier: maybeArb(fc.string()),
   status: maybeArb(fc.anything()),
   primary_publication: maybeArb(fc.anything())
-})
-
-const substackNoteAttachmentArb = fc.record({
-  id: fc.oneof(fc.integer(), fc.string()),
-  type: fc.string(),
-  imageUrl: maybeArb(fc.string()),
-  imageWidth: maybeArb(fc.integer()),
-  imageHeight: maybeArb(fc.integer()),
-  explicit: maybeArb(fc.boolean()),
-  publication: maybeArb(fc.anything())
 })
 
 const substackNoteCommentArb = fc.record({
@@ -314,10 +305,6 @@ describe('codec round-trips', () => {
     assertRoundTrip(SubstackBylineCodec, substackBylineArb)
   })
 
-  it('SubstackPublicationCodec', () => {
-    assertRoundTrip(SubstackPublicationCodec, substackPublicationArb)
-  })
-
   it('HandleTypeCodec', () => {
     assertRoundTrip(HandleTypeCodec, handleTypeArb)
   })
@@ -352,13 +339,6 @@ describe('codec rejects invalid data', () => {
       const { name: _name, ...rest } = v as Record<string, unknown>
       return rest
     })
-  })
-
-  it('SubstackPublicationCodec rejects number hostname', () => {
-    assertRejectsInvalid(SubstackPublicationCodec, substackPublicationArb, (v) => ({
-      ...(v as Record<string, unknown>),
-      hostname: 12345
-    }))
   })
 
   it('HandleTypeCodec rejects unknown literal', () => {

@@ -65,10 +65,12 @@ export class PublicationService {
     limit?: number
   }): Promise<SubstackPublicationPost[]> {
     const params = new URLSearchParams()
-    params.set('sort', options?.sort || 'new')
-    params.set('search', options?.search || '')
-    params.set('offset', String(options?.offset ?? 0))
-    params.set('limit', String(options?.limit ?? 25))
+    if (options?.sort && options.sort !== 'new') params.set('sort', options.sort)
+    if (options?.search) params.set('search', options.search)
+    if (options?.offset !== undefined && options.offset !== 0)
+      params.set('offset', String(options.offset))
+    if (options?.limit !== undefined && options.limit !== 25)
+      params.set('limit', String(options.limit))
 
     const response = await this.publicationClient.get<unknown[]>(`/archive?${params.toString()}`)
 
@@ -101,7 +103,9 @@ export class PublicationService {
    * GET {pub}/api/v1/post/{id}/facepile (anonymous)
    */
   async getPostFacepile(postId: number): Promise<SubstackFacepile> {
-    const response = await this.publicationClient.get<unknown>(`/post/${postId}/facepile`)
+    const response = await this.publicationClient.get<unknown>(
+      `/post/${encodeURIComponent(String(postId))}/facepile`
+    )
     return decodeOrThrow(SubstackFacepileCodec, response, 'Facepile response')
   }
 
@@ -111,7 +115,7 @@ export class PublicationService {
    */
   async getActiveLiveStream(publicationId: number): Promise<SubstackLiveStreamResponse> {
     const response = await this.publicationClient.get<unknown>(
-      `/live_streams/active/pub/${publicationId}`
+      `/live_streams/active/pub/${encodeURIComponent(String(publicationId))}`
     )
     return decodeOrThrow(SubstackLiveStreamResponseCodec, response, 'Live stream response')
   }
@@ -121,6 +125,6 @@ export class PublicationService {
    * POST {pub}/api/v1/posts/{postId}/seen (anonymous)
    */
   async markPostSeen(postId: number): Promise<void> {
-    await this.publicationClient.post(`/posts/${postId}/seen`)
+    await this.publicationClient.post(`/posts/${encodeURIComponent(String(postId))}/seen`)
   }
 }

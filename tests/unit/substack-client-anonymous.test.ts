@@ -32,6 +32,9 @@ describe('SubstackClient anonymous and discovery methods', () => {
     mockDiscoveryService.getProfileLikes = jest.fn()
     mockDiscoveryService.search = jest.fn()
     mockDiscoveryService.searchProfiles = jest.fn()
+    mockDiscoveryService.exploreSearch = jest.fn()
+    mockDiscoveryService.getPublicationFeed = jest.fn()
+    mockDiscoveryService.getCategoryPublications = jest.fn()
 
     mockCommentService = new CommentService(
       mockHttpClient,
@@ -45,6 +48,9 @@ describe('SubstackClient anonymous and discovery methods', () => {
     mockPublicationService.getHomepageData = jest.fn()
     mockPublicationService.getArchive = jest.fn()
     mockPublicationService.getPostFacepile = jest.fn()
+    mockPublicationService.getActiveLiveStream = jest.fn()
+    mockPublicationService.markPostSeen = jest.fn()
+    mockPublicationService.getPosts = jest.fn()
 
     client = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
 
@@ -388,6 +394,67 @@ describe('SubstackClient anonymous and discovery methods', () => {
       expect(results).toHaveLength(2)
       expect(mockCommentService.getReplies).toHaveBeenCalledWith(123, { cursor: 'next' })
     })
+
+    it('should respect limit and trim the last page', async () => {
+      mockCommentService.getReplies.mockResolvedValueOnce({
+        commentBranches: [
+          { comment: { id: 1, body: 'A', date: '2025-01-01' }, descendantComments: [] },
+          { comment: { id: 2, body: 'B', date: '2025-01-02' }, descendantComments: [] },
+          { comment: { id: 3, body: 'C', date: '2025-01-03' }, descendantComments: [] }
+        ],
+        moreBranches: 5,
+        nextCursor: 'next'
+      })
+
+      const results = []
+      for await (const response of client.commentRepliesFeed(123, { limit: 2 })) {
+        results.push(response)
+      }
+      expect(results).toHaveLength(1)
+      expect(results[0].commentBranches).toHaveLength(2)
+      expect(results[0].commentBranches[0].comment.id).toBe(1)
+      expect(results[0].commentBranches[1].comment.id).toBe(2)
+      expect(mockCommentService.getReplies).toHaveBeenCalledTimes(1)
+    })
+
+    it('should respect limit across multiple pages', async () => {
+      mockCommentService.getReplies.mockResolvedValueOnce({
+        commentBranches: [
+          { comment: { id: 1, body: 'A', date: '2025-01-01' }, descendantComments: [] },
+          { comment: { id: 2, body: 'B', date: '2025-01-02' }, descendantComments: [] },
+          { comment: { id: 3, body: 'C', date: '2025-01-03' }, descendantComments: [] },
+          { comment: { id: 4, body: 'D', date: '2025-01-04' }, descendantComments: [] },
+          { comment: { id: 5, body: 'E', date: '2025-01-05' }, descendantComments: [] }
+        ],
+        moreBranches: 5,
+        nextCursor: 'page2'
+      })
+      mockCommentService.getReplies.mockResolvedValueOnce({
+        commentBranches: [
+          { comment: { id: 6, body: 'F', date: '2025-01-06' }, descendantComments: [] },
+          { comment: { id: 7, body: 'G', date: '2025-01-07' }, descendantComments: [] },
+          { comment: { id: 8, body: 'H', date: '2025-01-08' }, descendantComments: [] },
+          { comment: { id: 9, body: 'I', date: '2025-01-09' }, descendantComments: [] },
+          { comment: { id: 10, body: 'J', date: '2025-01-10' }, descendantComments: [] }
+        ],
+        moreBranches: 0,
+        nextCursor: null
+      })
+
+      const results = []
+      let totalBranches = 0
+      for await (const response of client.commentRepliesFeed(123, { limit: 7 })) {
+        results.push(response)
+        totalBranches += response.commentBranches.length
+      }
+      expect(results).toHaveLength(2)
+      expect(totalBranches).toBe(7)
+      expect(results[0].commentBranches).toHaveLength(5)
+      expect(results[1].commentBranches).toHaveLength(2)
+      expect(mockCommentService.getReplies).toHaveBeenCalledTimes(2)
+      expect(mockCommentService.getReplies).toHaveBeenNthCalledWith(1, 123, { cursor: undefined })
+      expect(mockCommentService.getReplies).toHaveBeenNthCalledWith(2, 123, { cursor: 'page2' })
+    })
   })
 
   describe('profileSearch', () => {
@@ -432,6 +499,217 @@ describe('SubstackClient anonymous and discovery methods', () => {
       expect(results).toHaveLength(3)
       expect(mockDiscoveryService.searchProfiles).toHaveBeenCalledWith('test', { page: 1 })
       expect(mockDiscoveryService.searchProfiles).toHaveBeenCalledWith('test', { page: 2 })
+    })
+  })
+
+  describe('exploreSearch', () => {
+    it('should yield explore search results', async () => {
+      mockDiscoveryService.exploreSearch.mockResolvedValueOnce({
+        items: [{ type: 'post', entity_key: 'explore-1' }],
+        nextCursor: null
+      })
+      const results = []
+      for await (const item of client.exploreSearch()) {
+        results.push(item)
+      }
+      expect(results).toHaveLength(1)
+      expect(mockDiscoveryService.exploreSearch).toHaveBeenCalledWith({
+        tab: undefined,
+        cursor: undefined
+      })
+    })
+
+    it('should pass tab option and paginate', async () => {
+      mockDiscoveryService.exploreSearch.mockResolvedValueOnce({
+        items: [{ type: 'note', entity_key: 'note-1' }],
+        nextCursor: 'next'
+      })
+      mockDiscoveryService.exploreSearch.mockResolvedValueOnce({
+        items: [{ type: 'note', entity_key: 'note-2' }],
+        nextCursor: null
+      })
+      const results = []
+      for await (const item of client.exploreSearch({ tab: 'notes' })) {
+        results.push(item)
+      }
+      expect(results).toHaveLength(2)
+      expect(mockDiscoveryService.exploreSearch).toHaveBeenCalledWith({
+        tab: 'notes',
+        cursor: undefined
+      })
+      expect(mockDiscoveryService.exploreSearch).toHaveBeenLastCalledWith({
+        tab: 'notes',
+        cursor: 'next'
+      })
+    })
+
+    it('should respect limit', async () => {
+      mockDiscoveryService.exploreSearch.mockResolvedValue({
+        items: [
+          { type: 'post', entity_key: 'a' },
+          { type: 'post', entity_key: 'b' }
+        ],
+        nextCursor: null
+      })
+      const results = []
+      for await (const item of client.exploreSearch({ limit: 1 })) {
+        results.push(item)
+      }
+      expect(results).toHaveLength(1)
+    })
+  })
+
+  describe('publicationFeed', () => {
+    it('should yield publication feed items', async () => {
+      mockDiscoveryService.getPublicationFeed.mockResolvedValueOnce({
+        items: [{ type: 'post', entity_key: 'pub-1' }],
+        nextCursor: null
+      })
+      const results = []
+      for await (const item of client.publicationFeed(42)) {
+        results.push(item)
+      }
+      expect(results).toHaveLength(1)
+      expect(mockDiscoveryService.getPublicationFeed).toHaveBeenCalledWith(42, {
+        tab: undefined,
+        cursor: undefined
+      })
+    })
+
+    it('should pass tab option and paginate', async () => {
+      mockDiscoveryService.getPublicationFeed.mockResolvedValueOnce({
+        items: [{ type: 'post', entity_key: 'pub-1' }],
+        nextCursor: 'page2'
+      })
+      mockDiscoveryService.getPublicationFeed.mockResolvedValueOnce({
+        items: [{ type: 'note', entity_key: 'pub-2' }],
+        nextCursor: null
+      })
+      const results = []
+      for await (const item of client.publicationFeed(42, { tab: 'posts' })) {
+        results.push(item)
+      }
+      expect(results).toHaveLength(2)
+      expect(mockDiscoveryService.getPublicationFeed).toHaveBeenCalledWith(42, {
+        tab: 'posts',
+        cursor: undefined
+      })
+      expect(mockDiscoveryService.getPublicationFeed).toHaveBeenLastCalledWith(42, {
+        tab: 'posts',
+        cursor: 'page2'
+      })
+    })
+
+    it('should respect limit', async () => {
+      mockDiscoveryService.getPublicationFeed.mockResolvedValue({
+        items: [
+          { type: 'post', entity_key: 'a' },
+          { type: 'post', entity_key: 'b' }
+        ],
+        nextCursor: null
+      })
+      const results = []
+      for await (const item of client.publicationFeed(42, { limit: 1 })) {
+        results.push(item)
+      }
+      expect(results).toHaveLength(1)
+    })
+  })
+
+  describe('categoryPublications', () => {
+    it('should delegate to discovery service with category id', async () => {
+      mockDiscoveryService.getCategoryPublications.mockResolvedValue({
+        publications: [
+          {
+            author_id: 1,
+            name: 'Pub',
+            subdomain: 'pub',
+            logo_url: '',
+            cover_photo_url: '',
+            created_at: undefined,
+            custom_domain: undefined
+          }
+        ],
+        more: false
+      })
+      const result = await client.categoryPublications('tech')
+      expect(mockDiscoveryService.getCategoryPublications).toHaveBeenCalledWith('tech', undefined)
+      expect(result.publications).toHaveLength(1)
+    })
+
+    it('should pass limit and offset options', async () => {
+      mockDiscoveryService.getCategoryPublications.mockResolvedValue({
+        publications: [],
+        more: false
+      })
+      await client.categoryPublications(1, { limit: 10, offset: 20 })
+      expect(mockDiscoveryService.getCategoryPublications).toHaveBeenCalledWith(1, {
+        limit: 10,
+        offset: 20
+      })
+    })
+  })
+
+  describe('activeLiveStream', () => {
+    it('should delegate to publication service', async () => {
+      mockPublicationService.getActiveLiveStream.mockResolvedValue({
+        activeLiveStream: { id: 1, title: 'Live' }
+      })
+      const result = await client.activeLiveStream(99)
+      expect(mockPublicationService.getActiveLiveStream).toHaveBeenCalledWith(99)
+      expect(result).toBeDefined()
+    })
+  })
+
+  describe('markPostSeen', () => {
+    it('should delegate to publication service', async () => {
+      mockPublicationService.markPostSeen.mockResolvedValue(undefined)
+      await client.markPostSeen(77)
+      expect(mockPublicationService.markPostSeen).toHaveBeenCalledWith(77)
+    })
+  })
+
+  describe('publicationPosts', () => {
+    it('should yield PublicationPost instances', async () => {
+      mockPublicationService.getPosts.mockResolvedValueOnce([
+        {
+          id: 1,
+          title: 'Post',
+          slug: 'post',
+          post_date: '2026-01-01T00:00:00Z',
+          canonical_url: 'https://test.substack.com/p/post'
+        }
+      ])
+      const results = []
+      for await (const post of client.publicationPosts()) {
+        results.push(post)
+      }
+      expect(results).toHaveLength(1)
+      expect(results[0].title).toBe('Post')
+    })
+
+    it('should paginate and respect limit', async () => {
+      mockPublicationService.getPosts.mockResolvedValueOnce([
+        {
+          id: 1,
+          title: 'A',
+          slug: 'a',
+          post_date: '2026-01-01T00:00:00Z',
+          canonical_url: 'https://test.substack.com/p/a'
+        },
+        {
+          id: 2,
+          title: 'B',
+          slug: 'b',
+          post_date: '2026-01-02T00:00:00Z',
+          canonical_url: 'https://test.substack.com/p/b'
+        }
+      ])
+      const results = []
+      for await (const post of client.publicationPosts({ limit: 1 })) {
+        results.push(post)
+      }
+      expect(results).toHaveLength(1)
     })
   })
 

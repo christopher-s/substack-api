@@ -108,7 +108,7 @@ export class SubstackClient {
     this.profileService = new ProfileService(this.substackClient)
     this.commentService = new CommentService(this.publicationClient, this.substackClient)
     this.followingService = new FollowingService(this.publicationClient, this.substackClient)
-    this.connectivityService = new ConnectivityService(this.substackClient)
+    this.connectivityService = new ConnectivityService(this.substackClient, this.followingService)
     this.newNoteService = new NoteBuilderFactory(this.substackClient)
     this.discoveryService = new DiscoveryService(this.substackClient)
     this.publicationService = new PublicationService(this.publicationClient)
@@ -251,10 +251,18 @@ export class SubstackClient {
 
     while (true) {
       const response = await this.commentService.getReplies(commentId, { cursor })
-      yield response
-      totalYielded += response.commentBranches?.length ?? 0
+      const branches = response.commentBranches ?? []
+      const remaining = options.limit !== undefined ? options.limit - totalYielded : undefined
 
-      if (options.limit && totalYielded >= options.limit) return
+      if (remaining !== undefined && branches.length > remaining) {
+        yield { ...response, commentBranches: branches.slice(0, remaining) }
+        totalYielded += remaining
+        return
+      }
+
+      yield response
+      totalYielded += branches.length
+
       if (!response.nextCursor) break
       cursor = response.nextCursor
     }
@@ -273,6 +281,7 @@ export class SubstackClient {
   /**
    * Get trending posts with associated publications
    * GET /api/v1/trending (anonymous)
+   * @deprecated Returns empty `publications` and `trendingPosts` arrays. Use {@link topPosts} instead.
    */
   async trending(options?: { limit?: number }): Promise<SubstackTrendingResponse> {
     return await this.discoveryService.getTrending(options)
@@ -285,6 +294,7 @@ export class SubstackClient {
    * which yields individual items.
    * @param options.limit - Max items to yield per page (passed to API)
    * @throws {Error} On network or API errors
+   * @deprecated Returns empty `publications` and `trendingPosts` arrays. Use {@link topPosts} instead.
    */
   async *trendingFeed(options: { limit?: number } = {}): AsyncGenerator<SubstackTrendingResponse> {
     let offset = 0

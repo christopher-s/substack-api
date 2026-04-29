@@ -44,7 +44,6 @@ export type { SubstackTheme } from '@substack-api/internal/types/substack-theme'
 export type { SubstackUserLink } from '@substack-api/internal/types/substack-user-link'
 export type { SubstackPublicationUser } from '@substack-api/internal/types/substack-publication-user'
 export type { SubstackByline } from '@substack-api/internal/types/substack-byline'
-export { SubstackBylineCodec } from '@substack-api/internal/types/substack-byline'
 export type { SubstackProfileSubscription } from '@substack-api/internal/types/substack-profile-subscription'
 
 // Note API types
@@ -111,7 +110,6 @@ export { SubstackLiveStreamResponseCodec } from '@substack-api/internal/types/su
 
 // Trending types
 export type { SubstackTrendingResponse } from '@substack-api/internal/types/substack-trending'
-export { SubstackTrendingResponseCodec } from '@substack-api/internal/types/substack-trending'
 
 // Comment replies types
 export type { SubstackCommentRepliesResponse } from '@substack-api/internal/types/substack-comment-replies'

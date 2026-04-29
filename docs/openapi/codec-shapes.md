@@ -398,8 +398,8 @@ Minimal feed wrapper for `/user/.../profile`.
 
 ## SubstackTrendingResponseCodec
 - posts: array of {SubstackTrendingPostCodec} (required)
-- publications: array of {SubstackTrendingPublicationCodec} (required)
-- trendingPosts: array of unknown (required) — typed as `SubstackTrendingPostRef[]` interface in code
+- publications: array of {SubstackTrendingPublicationCodec} (required) — always empty `[]`; the upstream endpoint is deprecated
+- trendingPosts: array of unknown (required) — typed as `SubstackTrendingPostRef[]` interface in code; always empty `[]` for backwards compatibility
 
 ### SubstackTrendingPostCodec (nested)
 - id: number (required)

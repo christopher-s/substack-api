@@ -2,7 +2,7 @@ import type { HttpClient } from '@substack-api/internal/http-client'
 import { SubscriberLists } from '@substack-api/internal/types'
 import { decodeOrThrow } from '@substack-api/internal/validation'
 
-export type FollowingUser = {
+type FollowingUser = {
   id: number
   handle: string
 }

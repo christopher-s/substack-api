@@ -7,7 +7,7 @@ export interface SubstackNoteComment {
   photo_url: string
   id: number
   body: string
-  body_json?: Record<string, unknown>
+  body_json?: unknown
   publication_id?: number | null
   post_id?: number | null
   user_id: number

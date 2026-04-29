@@ -381,22 +381,6 @@ describe('Note Entity', () => {
     })
   })
 
-  describe('like()', () => {
-    it('When for unimplemented like functionality', async () => {
-      await expect(note.like()).rejects.toThrow(
-        'Note liking is not supported by this version of the API'
-      )
-    })
-  })
-
-  describe('addComment()', () => {
-    it('When for unimplemented comment functionality', async () => {
-      await expect(note.addComment('Test comment')).rejects.toThrow(
-        'Note commenting is not supported by this version of the API'
-      )
-    })
-  })
-
   describe('properties', () => {
     it('should have correct property values', () => {
       expect(note.id).toBe('789')

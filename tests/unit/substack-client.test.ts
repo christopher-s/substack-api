@@ -64,7 +64,8 @@ describe('SubstackClient', () => {
     mockFollowingService.getFollowing = jest.fn()
 
     mockConnectivityService = new ConnectivityService(
-      mockSubstackClient
+      mockSubstackClient,
+      mockFollowingService
     ) as jest.Mocked<ConnectivityService>
     mockConnectivityService.isConnected = jest.fn()
 

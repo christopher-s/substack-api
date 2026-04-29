@@ -21,8 +21,6 @@ export interface Post {
   readonly publishedAt: Date
 
   comments(options?: { limit?: number }): AsyncIterable<Comment>
-  like(): Promise<void>
-  addComment(data: { body: string }): Promise<Comment>
 }
 
 /**
@@ -80,12 +78,7 @@ export class PreviewPost implements Post {
     this.podcastUrl = rawData.podcast_url || undefined
 
     // Extract author from publishedBylines if available
-    const byline = (
-      rawData.publishedBylines as unknown as
-        | Array<{ id: number; name: string; handle: string; photo_url: string }>
-        | null
-        | undefined
-    )?.[0]
+    const byline = rawData.publishedBylines?.[0]
     this.author = byline
       ? { id: byline.id, name: byline.name, handle: byline.handle, avatarUrl: byline.photo_url }
       : { id: 0, name: 'Unknown Author', handle: 'unknown', avatarUrl: '' }
@@ -107,20 +100,6 @@ export class PreviewPost implements Post {
     } catch (error) {
       throw new Error(`Failed to get comments for post ${this.id}: ${(error as Error).message}`)
     }
-  }
-
-  /**
-   * Like this post
-   */
-  async like(): Promise<void> {
-    throw new Error('Post liking is not supported by this version of the API')
-  }
-
-  /**
-   * Add a comment to this post
-   */
-  async addComment(_data: { body: string }): Promise<Comment> {
-    throw new Error('Comment creation is not supported by this version of the API')
   }
 
   /**
@@ -184,12 +163,7 @@ export class FullPost implements Post {
     this.url = rawData.canonical_url || undefined
 
     // Extract author from publishedBylines if available
-    const byline = (
-      rawData.publishedBylines as unknown as
-        | Array<{ id: number; name: string; handle: string; photo_url: string }>
-        | null
-        | undefined
-    )?.[0]
+    const byline = rawData.publishedBylines?.[0]
     this.author = byline
       ? { id: byline.id, name: byline.name, handle: byline.handle, avatarUrl: byline.photo_url }
       : { id: 0, name: 'Unknown Author', handle: 'unknown', avatarUrl: '' }
@@ -226,19 +200,5 @@ export class FullPost implements Post {
     } catch (error) {
       throw new Error(`Failed to get comments for post ${this.id}: ${(error as Error).message}`)
     }
-  }
-
-  /**
-   * Like this post
-   */
-  async like(): Promise<void> {
-    throw new Error('Post liking is not supported by this version of the API')
-  }
-
-  /**
-   * Add a comment to this post
-   */
-  async addComment(_data: { body: string }): Promise<Comment> {
-    throw new Error('Comment creation is not supported by this version of the API')
   }
 }

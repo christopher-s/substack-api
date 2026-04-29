@@ -196,6 +196,19 @@ Substack uses session cookies for authentication. To obtain your token:
 
 The site renders the OpenAPI 3.1 specification with Scalar, allowing you to browse every endpoint, parameter, and response shape.
 
+Key client methods:
+
+| Method | Description |
+|---|---|
+| `client.topPosts()` | Trending posts from the homepage feed |
+| `client.profileForSlug(slug)` | Public profile with posts, comments, notes |
+| `client.postForId(id)` | Post details and comments |
+| `client.search(query)` | Full-text search across posts, people, publications, notes |
+| `client.ownProfile()` | Authenticated profile with write access |
+| `me.newNote()` | Publish a note via the fluent builder API |
+
+See the docs site for the complete endpoint inventory.
+
 ## Testing
 
 The project uses a four-tier testing strategy:

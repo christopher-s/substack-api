@@ -844,18 +844,29 @@ components:
             body_html:
               type: string
               description: Rendered HTML body. Only present for posts the caller has access to (free posts, or paywalled posts when authenticated as a subscriber).
-            body_text: { type: string }
+            htmlBody: { type: string }
+            description: { type: string }
             wordcount: { type: integer }
             audience: { type: string }
             podcast_url: { type: string, format: uri }
-            video_upload_id: { type: string }
-            byline:
-              $ref: '#/components/schemas/Byline'
             publishedBylines:
               type: array
               items: { $ref: '#/components/schemas/Byline' }
             reactions:
               $ref: '#/components/schemas/Reactions'
+            reaction_count: { type: integer }
+            restacks: { type: integer }
+            comment_count: { type: integer }
+            child_comment_count: { type: integer }
+            postTags:
+              type: array
+              items: { type: string }
+            subtitle: { type: string }
+            slug: { type: string }
+            canonical_url: { type: string, format: uri }
+            type: { type: string }
+            truncated_body_text: { type: string }
+            cover_image: { type: string, format: uri }
           additionalProperties: true
 
     PublicationPost:
@@ -951,7 +962,10 @@ components:
         embedded media. Attachments are created via `POST /api/v1/comment/attachment/`
         and referenced from the publish payload.
       properties:
-        id: { type: string }
+        id:
+          oneOf:
+            - { type: integer }
+            - { type: string }
         type:
           type: string
           enum: [link, image, video, audio, embed]
@@ -963,58 +977,150 @@ components:
         favicon_url: { type: string, format: uri }
       additionalProperties: true
 
-    Note:
+    NoteUser:
       type: object
-      description: |
-        A Substack note. Substack treats notes as comments, so the API surface
-        overlaps with the Comment shape — see `/api/v1/reader/comment/{id}`.
+      description: A user referenced in a note context.
       properties:
         id: { type: integer }
-        type:
-          type: string
-          enum: [comment, feed_comment]
+        name: { type: string }
+        handle: { type: string }
+        photo_url: { type: string, format: uri }
+        previous_name: { type: string }
+        bio: { type: string }
+        profile_set_up_at: { type: string, format: date-time }
+        reader_installed_at: { type: string, format: date-time }
+        bestseller_tier: { type: string }
+        status: {}
+        primary_publication: {}
+      required: [id, name, handle, photo_url]
+      additionalProperties: true
+
+    NoteComment:
+      type: object
+      description: The nested comment object inside a note feed envelope.
+      properties:
+        id: { type: integer }
         body: { type: string }
+        user_id: { type: integer }
+        type: { type: string }
+        date: { type: string, format: date-time }
+        name: { type: string }
+        reaction_count: { type: integer }
+        reactions:
+          $ref: '#/components/schemas/Reactions'
+        restacks: { type: integer }
+        restacked: { type: boolean }
+        children_count: { type: integer }
+        language: { type: string }
         body_json:
           type: object
           additionalProperties: true
-          description: ProseMirror document of the note body.
+        publication_id: { type: integer }
+        post_id: { type: integer }
+        edited_at: { type: string, format: date-time }
+        ancestor_path: { type: string }
+        reply_minimum_role: { type: string }
+        media_clip_id: { type: string }
+        photo_url: { type: string, format: uri }
+        bio: { type: string }
+        handle: { type: string }
+        user_bestseller_tier: { type: string }
+        attachments:
+          type: array
+          items: { $ref: '#/components/schemas/NoteAttachment' }
+        userStatus: {}
+        user_primary_publication: {}
+        autotranslate_to: { type: string }
+        tracking_parameters:
+          type: object
+          additionalProperties: true
+      required: [id, body]
+      additionalProperties: true
+
+    Note:
+      type: object
+      description: |
+        A Substack note feed envelope. Notes are returned as wrapper objects
+        with `entity_key` and `type`, plus optional nested `comment`, `context`,
+        and `parentComments` fields.
+      properties:
+        entity_key: { type: string }
+        type: { type: string }
+        context:
+          type: object
+          properties:
+            type: { type: string }
+            timestamp: { type: string, format: date-time }
+            users:
+              type: array
+              items: { $ref: '#/components/schemas/NoteUser' }
+            fallbackReason: { type: string }
+            fallbackUrl: { type: string, format: uri }
+            isFresh: { type: boolean }
+            source: { type: string }
+            page: { type: string }
+            page_rank: { type: integer }
+          additionalProperties: true
+        publication: {}
+        post: {}
+        comment:
+          $ref: '#/components/schemas/NoteComment'
+        parentComments:
+          type: array
+          items: { $ref: '#/components/schemas/NoteComment' }
+        isMuted: { type: boolean }
+        canReply: { type: boolean }
+        trackingParameters:
+          type: object
+          additionalProperties: true
+      required: [entity_key, type]
+      additionalProperties: true
+
+    Comment:
+      type: object
+      description: A comment on a post. Flat object with no inheritance from Note.
+      properties:
+        id: { type: integer }
+        body: { type: string }
+        user_id: { type: integer }
+        type: { type: string }
         date: { type: string, format: date-time }
+        name: { type: string }
+        reaction_count: { type: integer }
+        reactions:
+          $ref: '#/components/schemas/Reactions'
+        restacks: { type: integer }
+        restacked: { type: boolean }
+        children_count: { type: integer }
+        body_json:
+          type: object
+          additionalProperties: true
+        publication_id: { type: integer }
+        post_id: { type: integer }
         edited_at:
           oneOf:
             - { type: string, format: date-time }
             - { type: 'null' }
-        deleted: { type: boolean }
-        post_id:
-          oneOf:
-            - { type: integer }
-            - { type: 'null' }
-        publication_id: { type: integer }
-        user_id: { type: integer }
-        name: { type: string }
-        handle: { type: string }
+        ancestor_path: { type: string }
+        reply_minimum_role: { type: string }
+        media_clip_id: { type: string }
         photo_url: { type: string, format: uri }
-        reaction_count: { type: integer }
-        reactions:
-          $ref: '#/components/schemas/Reactions'
-        children_count: { type: integer }
+        bio: { type: string }
+        handle: { type: string }
+        user_bestseller_tier: { type: string }
         attachments:
           type: array
           items: { $ref: '#/components/schemas/NoteAttachment' }
-      required: [id]
-      additionalProperties: true
-
-    Comment:
-      allOf:
-        - $ref: '#/components/schemas/Note'
-        - type: object
-          description: A comment on a post (notes share the same shape).
-          properties:
-            ancestor_path: { type: string }
-            parent_comment_id:
-              oneOf:
-                - { type: integer }
-                - { type: 'null' }
+        userStatus: {}
+        user_primary_publication: {}
+        language: { type: string }
+        autotranslate_to: { type: string }
+        tracking_parameters:
+          type: object
           additionalProperties: true
+        author_is_admin: { type: boolean }
+      required: [id, body]
+      additionalProperties: true
 
     CommentResponse:
       type: object
@@ -1115,30 +1221,149 @@ components:
         publicationUsers:
           type: array
           items:
-            $ref: '#/components/schemas/Publication'
+            $ref: '#/components/schemas/PublicationUser'
       required: [id]
       additionalProperties: true
 
     FullProfile:
-      allOf:
-        - $ref: '#/components/schemas/Profile'
-        - type: object
-          description: |
-            Full profile with extra fields exposed by
-            `GET /api/v1/user/{slug}/public_profile`.
-          properties:
-            subscriptions:
-              type: array
-              items:
-                type: object
-                properties:
-                  publication_id: { type: integer }
-                  domain: { type: string }
-                  membership_state: { type: string }
-                additionalProperties: true
-            subscription_count: { type: integer }
-            following_count: { type: integer }
-          additionalProperties: true
+      type: object
+      description: |
+        Full profile with extra fields exposed by
+        `GET /api/v1/user/{slug}/public_profile`.
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        handle: { type: string }
+        photo_url: { type: string, format: uri }
+        bio: { type: string }
+        slug: { type: string }
+        cover_photo_url: { type: string, format: uri }
+        url: { type: string, format: uri }
+        twitter_screen_name: { type: string }
+        publicationUsers:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicationUser'
+        tos_accepted_at:
+          oneOf:
+            - { type: string, format: date-time }
+            - { type: 'null' }
+        profile_disabled:
+          oneOf:
+            - { type: boolean }
+            - { type: 'null' }
+        userLinks:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer }
+              user_id: { type: integer }
+              url: { type: string, format: uri }
+              title: { type: string }
+            additionalProperties: true
+        subscriptions:
+          type: array
+          items:
+            type: object
+            properties:
+              publication_id: { type: integer }
+              user_id: { type: integer }
+              created_at: { type: string, format: date-time }
+              type: { type: string }
+            additionalProperties: true
+        subscriptionsTruncated:
+          oneOf:
+            - { type: boolean }
+            - { type: 'null' }
+        hasGuestPost:
+          oneOf:
+            - { type: boolean }
+            - { type: 'null' }
+        primaryPublication:
+          oneOf:
+            - { $ref: '#/components/schemas/PrimaryPublication' }
+            - { type: 'null' }
+        max_pub_tier:
+          oneOf:
+            - { type: integer }
+            - { type: 'null' }
+        hasActivity:
+          oneOf:
+            - { type: boolean }
+            - { type: 'null' }
+        hasLikes:
+          oneOf:
+            - { type: boolean }
+            - { type: 'null' }
+        lists:
+          type: array
+          items: { type: object }
+        rough_num_free_subscribers_int:
+          oneOf:
+            - { type: integer }
+            - { type: 'null' }
+        rough_num_free_subscribers:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        bestseller_badge_disabled:
+          oneOf:
+            - { type: boolean }
+            - { type: 'null' }
+        subscriberCountString:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        subscriberCount:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        subscriberCountNumber:
+          oneOf:
+            - { type: integer }
+            - { type: 'null' }
+        hasHiddenPublicationUsers:
+          oneOf:
+            - { type: boolean }
+            - { type: 'null' }
+        visibleSubscriptionsCount:
+          oneOf:
+            - { type: integer }
+            - { type: 'null' }
+        previousSlug:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        primaryPublicationIsPledged:
+          oneOf:
+            - { type: boolean }
+            - { type: 'null' }
+        primaryPublicationSubscriptionState:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        isSubscribed:
+          oneOf:
+            - { type: boolean }
+            - { type: 'null' }
+        isFollowing:
+          oneOf:
+            - { type: boolean }
+            - { type: 'null' }
+        followsViewer:
+          oneOf:
+            - { type: boolean }
+            - { type: 'null' }
+        can_dm:
+          oneOf:
+            - { type: boolean }
+            - { type: 'null' }
+        dm_upgrade_options:
+          type: array
+          items: { type: string }
+      required: [id, name, handle, photo_url]
+      additionalProperties: true
 
     ProfileSearchResult:
       type: object
@@ -1186,6 +1411,44 @@ components:
       required: [id, name]
       additionalProperties: true
 
+    PublicationUser:
+      type: object
+      description: Relationship between a user and a publication.
+      properties:
+        id: { type: integer }
+        user_id: { type: integer }
+        publication_id: { type: integer }
+        role: { type: string }
+        public: { type: boolean }
+        is_primary: { type: boolean }
+        publication: {}
+      additionalProperties: true
+
+    PrimaryPublication:
+      type: object
+      description: The primary publication for a user profile.
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        subdomain: { type: string }
+        custom_domain:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        logo_url:
+          oneOf:
+            - { type: string, format: uri }
+            - { type: 'null' }
+        author_id:
+          oneOf:
+            - { type: integer }
+            - { type: 'null' }
+        handles_enabled:
+          oneOf:
+            - { type: boolean }
+            - { type: 'null' }
+      additionalProperties: true
+
     Category:
       type: object
       description: A Substack content category with optional subcategories.
@@ -1228,24 +1491,157 @@ components:
           type: boolean
       additionalProperties: true
 
+    InboxItemAuthor:
+      type: object
+      description: Author/byline in an inbox item.
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        handle:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        photo_url: { type: string, format: uri }
+        previous_name:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        bio: { type: string }
+        profile_set_up_at:
+          oneOf:
+            - { type: string, format: date-time }
+            - { type: 'null' }
+        reader_installed_at:
+          oneOf:
+            - { type: string, format: date-time }
+            - { type: 'null' }
+        publicationUsers:
+          type: array
+          items: { type: object }
+        is_guest: { type: boolean }
+        bestseller_tier:
+          oneOf:
+            - { type: integer }
+            - { type: 'null' }
+        status: {}
+      required: [id, name, handle, photo_url]
+      additionalProperties: true
+
     InboxItem:
       type: object
       description: |
         A single feed item from `/inbox/top`, `/reader/feed`, or `/top/search`.
-        Discovery feeds return heterogeneous items — posts, notes, comments —
-        keyed by a `type` discriminator.
+        Represents a flat post object (not a polymorphic wrapper).
       properties:
-        type:
-          type: string
-          enum: [post, note, comment, publication, profile]
-        post:
-          $ref: '#/components/schemas/PreviewPost'
-        comment:
-          $ref: '#/components/schemas/Comment'
-        publication:
-          $ref: '#/components/schemas/Publication'
-        profile:
-          $ref: '#/components/schemas/Profile'
+        post_id: { type: integer }
+        type: { type: string }
+        title: { type: string }
+        web_url: { type: string, format: uri }
+        content_key: { type: string }
+        updated_at: { type: string, format: date-time }
+        content_date:
+          oneOf:
+            - { type: string, format: date-time }
+            - { type: 'null' }
+        inbox_date:
+          oneOf:
+            - { type: string, format: date-time }
+            - { type: 'null' }
+        seen_at:
+          oneOf:
+            - { type: string, format: date-time }
+            - { type: 'null' }
+        saved_at:
+          oneOf:
+            - { type: string, format: date-time }
+            - { type: 'null' }
+        archived_at:
+          oneOf:
+            - { type: string, format: date-time }
+            - { type: 'null' }
+        skip_inbox: { type: boolean }
+        extra_views:
+          type: array
+          items: { type: object }
+        subtitle:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        cover_photo_url:
+          oneOf:
+            - { type: string, format: uri }
+            - { type: 'null' }
+        detail_view_subtitle:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        audience: { type: string }
+        postType: { type: string }
+        is_preview: { type: boolean }
+        video_id:
+          oneOf:
+            - { type: integer }
+            - { type: string }
+            - { type: 'null' }
+        audio_url:
+          oneOf:
+            - { type: string, format: uri }
+            - { type: 'null' }
+        audio_type:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        authors:
+          type: array
+          items: { type: string }
+        published_bylines:
+          type: array
+          items: { $ref: '#/components/schemas/InboxItemAuthor' }
+        publication_id:
+          oneOf:
+            - { type: integer }
+            - { type: 'null' }
+        publisher_name:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        publisher_image_url:
+          oneOf:
+            - { type: string, format: uri }
+            - { type: 'null' }
+        like_count:
+          oneOf:
+            - { type: integer }
+            - { type: 'null' }
+        comment_count:
+          oneOf:
+            - { type: integer }
+            - { type: 'null' }
+        read_progress: { type: number }
+        max_read_progress: { type: number }
+        audio_progress: { type: number }
+        max_audio_progress: { type: number }
+        video_progress: { type: number }
+        max_video_progress: { type: number }
+        is_personal_mode: { type: boolean }
+        is_saved: { type: boolean }
+        created_at: { type: string, format: date-time }
+        uuid: { type: string }
+        coverImagePalette: {}
+        duration_metadata:
+          oneOf:
+            - type: object
+              properties:
+                word_count:
+                  oneOf:
+                    - { type: integer }
+                    - { type: 'null' }
+                audio_duration:
+                  oneOf:
+                    - { type: integer }
+                    - { type: 'null' }
+            - { type: 'null' }
+      required: [post_id, type, title, web_url]
       additionalProperties: true
 
     PaginatedFeed:
@@ -1350,18 +1746,23 @@ components:
           type: object
           description: ProseMirror JSON document.
           additionalProperties: true
+        tabId:
+          type: string
+          description: Unique tab identifier for the note session.
+        surface:
+          type: string
+          description: Surface context where the note is published.
         attachmentIds:
           type: array
           items: { type: string }
           description: |
             Attachment IDs returned by `POST /api/v1/comment/attachment/`.
-        type:
-          type: string
-          enum: [feed]
         replyMinimumRole:
           type: string
-          enum: [everyone, subscribers, founding_members]
-      required: [bodyJson]
+          enum: [everyone]
+          description: |
+            Who can reply to the note. Currently only `everyone` is supported.
+      required: [bodyJson, tabId, surface]
       additionalProperties: true
 
     PublishNoteResponse:

@@ -50,8 +50,10 @@ export class DiscoveryService {
   /**
    * Get trending posts with associated publications
    *
+   * GET /api/v1/inbox/top (active endpoint)
+   *
    * NOTE: The original /api/v1/trending endpoint has been deprecated by Substack
-   * and now returns an HTML page. This method falls back to /api/v1/inbox/top
+   * and now returns an HTML page. This method falls back to /inbox/top
    * and maps inbox items to the SubstackTrendingResponse shape for backward
    * compatibility. Publications and trendingPosts arrays will be empty since
    * the replacement endpoint does not provide them.
@@ -153,6 +155,8 @@ export class DiscoveryService {
     nextCursor: string | null
   }> {
     const tab = options?.tab || 'for-you'
+    // type='base' requests the base feed format (posts + notes + comments)
+    // rather than the enriched format that includes extra metadata
     const params = new URLSearchParams({ tab, type: 'base' })
     if (options?.cursor) {
       params.set('cursor', options.cursor)
@@ -181,7 +185,9 @@ export class DiscoveryService {
     if (options?.tab) params.set('tab', options.tab)
     if (options?.cursor) params.set('cursor', options.cursor)
     const query = params.toString() ? `?${params.toString()}` : ''
-    return this.fetchCursorFeed(`/reader/feed/profile/${profileId}${query}`)
+    return this.fetchCursorFeed(
+      `/reader/feed/profile/${encodeURIComponent(String(profileId))}${query}`
+    )
   }
 
   /**
@@ -196,7 +202,9 @@ export class DiscoveryService {
     if (options?.tab) params.set('tab', options.tab)
     if (options?.cursor) params.set('cursor', options.cursor)
     const query = params.toString() ? `?${params.toString()}` : ''
-    return this.fetchCursorFeed(`/reader/feed/publication/${publicationId}${query}`)
+    return this.fetchCursorFeed(
+      `/reader/feed/publication/${encodeURIComponent(String(publicationId))}${query}`
+    )
   }
 
   /**
@@ -210,7 +218,9 @@ export class DiscoveryService {
     const params = new URLSearchParams()
     params.append('types[]', 'like')
     if (options?.cursor) params.set('cursor', options.cursor)
-    return this.fetchCursorFeed(`/reader/feed/profile/${profileId}?${params.toString()}`)
+    return this.fetchCursorFeed(
+      `/reader/feed/profile/${encodeURIComponent(String(profileId))}?${params.toString()}`
+    )
   }
 
   /**
@@ -228,7 +238,7 @@ export class DiscoveryService {
     const response = await this.substackClient.get<{
       publications?: unknown[]
       more?: boolean
-    }>(`/category/public/${categoryId}/posts${query}`)
+    }>(`/category/public/${encodeURIComponent(String(categoryId))}/posts${query}`)
 
     const publications = (response.publications || []).map((pub, i) =>
       decodeOrThrow(SubstackCategoryPublicationCodec, pub, `Category publication ${i}`)
@@ -281,6 +291,8 @@ export class DiscoveryService {
     cursor?: string
   }): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
     const tab = options?.tab || 'explore'
+    // type='base' requests the base feed format (posts + notes + comments)
+    // rather than the enriched format that includes extra metadata
     const params = new URLSearchParams({ tab, type: 'base' })
     if (options?.cursor) {
       params.set('cursor', options.cursor)
@@ -317,9 +329,12 @@ export class DiscoveryService {
       return item as FeedItem
     })
 
+    // Normalize empty string to null so consumers don't loop forever
+    const nextCursor = decoded.nextCursor && decoded.nextCursor !== '' ? decoded.nextCursor : null
+
     return {
       items,
-      nextCursor: decoded.nextCursor || null
+      nextCursor
     }
   }
 }

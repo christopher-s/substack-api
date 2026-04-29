@@ -48,22 +48,6 @@ describe('PreviewPost Entity - Core', () => {
     post = new PreviewPost(mockPostData, deps)
   })
 
-  describe('like()', () => {
-    it('When liking a post, then throws not-supported error', async () => {
-      await expect(post.like()).rejects.toThrow(
-        'Post liking is not supported by this version of the API'
-      )
-    })
-  })
-
-  describe('addComment()', () => {
-    it('When adding a comment, then throws not-supported error', async () => {
-      await expect(post.addComment({ body: 'Test comment' })).rejects.toThrow(
-        'Comment creation is not supported by this version of the API'
-      )
-    })
-  })
-
   describe('properties', () => {
     it('When accessing properties, then returns correct values', () => {
       expect(post.id).toBe(456)

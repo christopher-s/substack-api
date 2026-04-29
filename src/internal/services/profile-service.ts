@@ -17,7 +17,10 @@ export class ProfileService {
   async getOwnSlug(): Promise<string> {
     const rawResponse = await this.substackClient.get<unknown>('/handle/options')
     const data = decodeOrThrow(PotentialHandlesCodec, rawResponse, 'Potential handles response')
-    const existingHandle = data.potentialHandles.filter((handle) => handle.type == 'existing')[0]
+    const existingHandle = data.potentialHandles.find((handle) => handle.type === 'existing')
+    if (!existingHandle) {
+      throw new Error('No existing handle found for authenticated user')
+    }
     return existingHandle.handle
   }
   /**

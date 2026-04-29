@@ -19,7 +19,7 @@ const SubstackNoteUserCodec = t.intersection([
   })
 ])
 
-const SubstackNoteAttachmentCodec = t.intersection([
+export const SubstackNoteAttachmentCodec = t.intersection([
   t.type({
     id: t.union([t.number, t.string]),
     type: t.string

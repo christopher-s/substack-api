@@ -1,5 +1,6 @@
 import * as t from 'io-ts'
 import { maybe } from '@substack-api/internal/types/helpers'
+import { SubstackNoteAttachmentCodec } from '@substack-api/internal/types/substack-note'
 
 /**
  * Raw API response shape for comments from /post/{id}/comments endpoint
@@ -31,7 +32,7 @@ export const SubstackCommentCodec = t.intersection([
     bio: maybe(t.string),
     handle: maybe(t.string),
     user_bestseller_tier: maybe(t.string),
-    attachments: maybe(t.array(t.unknown)),
+    attachments: maybe(t.array(SubstackNoteAttachmentCodec)),
     userStatus: maybe(t.unknown),
     user_primary_publication: maybe(t.unknown),
     language: maybe(t.string),

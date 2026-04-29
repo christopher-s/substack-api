@@ -11,7 +11,6 @@ import {
   SubstackInboxItemCodec,
   SubstackFullProfileCodec,
   SubstackProfileSearchResponseCodec,
-  SubstackTrendingResponseCodec,
   SubstackPublicationPostCodec,
   SubstackPublicationFullPostCodec,
   SubstackFacepileCodec,
@@ -115,49 +114,6 @@ describe('Live API Validation', () => {
       } else {
         console.log('   ⚠️ No inbox items to validate')
       }
-    } catch (e) {
-      skipIfFlaky(e)
-    }
-  })
-
-  it('When probing /api/v1/trending via inbox/top fallback, then validates trending response', async () => {
-    try {
-      const data = (await probe(`${BASE_URL}/api/v1/inbox/top?limit=3`)) as {
-        items?: Array<Record<string, unknown>>
-      }
-      const items = data.items || []
-      const ok = validate('Trending response (inbox/top)', SubstackTrendingResponseCodec, {
-        posts: items.map((item) => ({
-          id: (item.post_id as number) ?? 0,
-          title: (item.title as string) ?? '',
-          slug: (item.web_url as string)
-            ? (String(item.web_url).split('/').pop()?.split('?')[0] ?? '')
-            : '',
-          post_date: (item.content_date as string) ?? '',
-          type: (item.postType as string) ?? (item.type as string) ?? 'newsletter',
-          audience: item.audience as string | undefined,
-          subtitle: item.subtitle as string | undefined,
-          canonical_url: item.web_url as string | undefined,
-          reactions: item.like_count != null ? { '❤': item.like_count as number } : undefined,
-          restacks: undefined,
-          wordcount: (item.duration_metadata as Record<string, number> | undefined)?.word_count,
-          comment_count: item.comment_count as number | undefined,
-          cover_image: item.cover_photo_url as string | undefined,
-          publishedBylines: (item.published_bylines as Array<Record<string, unknown>> | undefined)
-            ? (item.published_bylines as Array<Record<string, unknown>>)
-                .filter((b) => b.handle != null)
-                .map((b) => ({
-                  id: b.id as number,
-                  name: b.name as string,
-                  handle: b.handle as string,
-                  photo_url: b.photo_url as string
-                }))
-            : undefined
-        })),
-        publications: [],
-        trendingPosts: []
-      })
-      expect(ok).toBe(true)
     } catch (e) {
       skipIfFlaky(e)
     }

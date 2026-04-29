@@ -14,13 +14,11 @@ describe('PublicationService branches', () => {
     service = new PublicationService(mockClient)
   })
 
-  it('getArchive should use new sort and defaults when no options', async () => {
+  it('getArchive should omit defaults when no options', async () => {
     mockClient.get.mockResolvedValue([])
     await service.getArchive()
     const url = mockClient.get.mock.calls[0][0] as string
-    expect(url).toContain('sort=new')
-    expect(url).toContain('offset=0')
-    expect(url).toContain('limit=25')
+    expect(url).toBe('/archive?')
   })
 
   it('getArchive should use search option', async () => {
