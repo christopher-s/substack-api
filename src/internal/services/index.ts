@@ -19,3 +19,5 @@ export { SettingsService } from '@substack-api/internal/services/settings-servic
 export { GrowthStatsService } from '@substack-api/internal/services/growth-stats-service'
 export { SubscriberStatsService } from '@substack-api/internal/services/subscriber-stats-service'
 export { PublicationStatsService } from '@substack-api/internal/services/publication-stats-service'
+export { DashboardService } from '@substack-api/internal/services/dashboard-service'
+export { RecommendationService } from '@substack-api/internal/services/recommendation-service'

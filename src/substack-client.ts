@@ -12,6 +12,7 @@ import type { EntityDeps } from '@substack-api/domain/entity-deps'
 import {
   CommentService,
   ConnectivityService,
+  DashboardService,
   DiscoveryService,
   FollowingService,
   GrowthStatsService,
@@ -22,6 +23,7 @@ import {
   PublicationDetailService,
   PublicationService,
   PublicationStatsService,
+  RecommendationService,
   SettingsService,
   SubscriberStatsService,
   SubscriptionService
@@ -70,6 +72,8 @@ export class SubstackClient {
   private readonly subscriberStatsService: SubscriberStatsService
   private readonly growthStatsService: GrowthStatsService
   private readonly publicationStatsService: PublicationStatsService
+  private readonly dashboardService: DashboardService
+  private readonly recommendationService: RecommendationService
   private readonly perPage: number
   private readonly token: string | undefined
   private readonly hasPublication: boolean
@@ -130,9 +134,14 @@ export class SubstackClient {
     this.publicationDetailService = new PublicationDetailService(this.publicationClient)
     this.subscriptionService = new SubscriptionService(this.publicationClient, this.substackClient)
     this.settingsService = new SettingsService(this.publicationClient)
-    this.subscriberStatsService = new SubscriberStatsService(this.publicationClient, this.substackClient)
+    this.subscriberStatsService = new SubscriberStatsService(
+      this.publicationClient,
+      this.substackClient
+    )
     this.growthStatsService = new GrowthStatsService(this.publicationClient)
     this.publicationStatsService = new PublicationStatsService(this.publicationClient)
+    this.dashboardService = new DashboardService(this.publicationClient)
+    this.recommendationService = new RecommendationService(this.publicationClient)
   }
 
   /** Throw a clear error when an authenticated method is called without a token */
@@ -844,6 +853,116 @@ export class SubstackClient {
     this.requireAuth('readerReferrals')
     this.requirePublication('readerReferrals')
     return await this.publicationStatsService.getReaderReferrals(options)
+  }
+
+  async pledgePlans(): Promise<unknown> {
+    this.requireAuth('pledgePlans')
+    this.requirePublication('pledgePlans')
+    return await this.publicationStatsService.getPledgePlans()
+  }
+
+  async pledgePlansSummary(): Promise<unknown> {
+    this.requireAuth('pledgePlansSummary')
+    this.requirePublication('pledgePlansSummary')
+    return await this.publicationStatsService.getPledgePlansSummary()
+  }
+
+  async publicationSettings(): Promise<unknown> {
+    this.requireAuth('publicationSettings')
+    this.requirePublication('publicationSettings')
+    return await this.publicationStatsService.getPublicationSettings()
+  }
+
+  async bestsellerTier(): Promise<unknown> {
+    this.requireAuth('bestsellerTier')
+    this.requirePublication('bestsellerTier')
+    return await this.publicationStatsService.getBestsellerTier()
+  }
+
+  // ── Dashboard methods (require auth) ────────────────────────────────
+
+  async dashboardSummary(options?: { range?: number }): Promise<unknown> {
+    this.requireAuth('dashboardSummary')
+    this.requirePublication('dashboardSummary')
+    return await this.dashboardService.getDashboardSummary(options)
+  }
+
+  async emailsTimeseries(options: { from: string }): Promise<unknown> {
+    this.requireAuth('emailsTimeseries')
+    this.requirePublication('emailsTimeseries')
+    return await this.dashboardService.getEmailsTimeseries(options)
+  }
+
+  async unreadActivity(): Promise<unknown> {
+    this.requireAuth('unreadActivity')
+    this.requirePublication('unreadActivity')
+    return await this.dashboardService.getUnreadActivity()
+  }
+
+  async unreadMessageCount(): Promise<unknown> {
+    this.requireAuth('unreadMessageCount')
+    this.requirePublication('unreadMessageCount')
+    return await this.dashboardService.getUnreadMessageCount()
+  }
+
+  async growthSuggestion(): Promise<unknown> {
+    this.requireAuth('growthSuggestion')
+    this.requirePublication('growthSuggestion')
+    return await this.dashboardService.getGrowthSuggestion()
+  }
+
+  // ── Recommendation methods (require auth) ───────────────────────────
+
+  async outgoingRecommendations(publicationId: number): Promise<unknown> {
+    this.requireAuth('outgoingRecommendations')
+    this.requirePublication('outgoingRecommendations')
+    return await this.recommendationService.getOutgoingRecommendations(publicationId)
+  }
+
+  async outgoingRecommendationsPaginated(
+    publicationId: number,
+    options?: { offset?: number; limit?: number; paginate?: boolean }
+  ): Promise<unknown> {
+    this.requireAuth('outgoingRecommendationsPaginated')
+    this.requirePublication('outgoingRecommendationsPaginated')
+    return await this.recommendationService.getOutgoingRecommendationsPaginated(
+      publicationId,
+      options
+    )
+  }
+
+  async outgoingRecommendationStats(options?: {
+    offset?: number
+    limit?: number
+    orderBy?: string
+    orderDirection?: string
+  }): Promise<unknown> {
+    this.requireAuth('outgoingRecommendationStats')
+    this.requirePublication('outgoingRecommendationStats')
+    return await this.recommendationService.getOutgoingRecommendationStats(options)
+  }
+
+  async incomingRecommendationStats(options?: {
+    offset?: number
+    limit?: number
+    orderBy?: string
+    orderDirection?: string
+  }): Promise<unknown> {
+    this.requireAuth('incomingRecommendationStats')
+    this.requirePublication('incomingRecommendationStats')
+    return await this.recommendationService.getIncomingRecommendationStats(options)
+  }
+
+  async recommendationsExist(): Promise<unknown> {
+    this.requireAuth('recommendationsExist')
+    this.requirePublication('recommendationsExist')
+    return await this.recommendationService.recommendationsExist()
+  }
+
+  async suggestedRecommendations(publicationId: number): Promise<unknown> {
+    this.requireAuth('suggestedRecommendations')
+    this.requirePublication('suggestedRecommendations')
+    return await this.recommendationService.getSuggestedRecommendations(publicationId)
   }
 
   // ── Private helpers ────────────────────────────────────────────────

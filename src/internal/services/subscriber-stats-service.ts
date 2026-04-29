@@ -14,9 +14,7 @@ export class SubscriberStatsService {
     const cursor = options?.cursor
     const params = new URLSearchParams()
     if (cursor) params.set('cursor', cursor)
-    const path = cursor
-      ? `/subscriptions/page_v2?${params.toString()}`
-      : '/subscriptions/page_v2'
+    const path = cursor ? `/subscriptions/page_v2?${params.toString()}` : '/subscriptions/page_v2'
     return await this.substackClient.get<unknown>(path)
   }
 }

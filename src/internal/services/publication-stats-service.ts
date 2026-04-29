@@ -31,10 +31,7 @@ export class PublicationStatsService {
     )
   }
 
-  async getAudienceLocation(options?: {
-    metric?: string
-    granularity?: string
-  }): Promise<unknown> {
+  async getAudienceLocation(options?: { metric?: string; granularity?: string }): Promise<unknown> {
     const params = new URLSearchParams()
     params.set('metric', options?.metric ?? 'free+signups')
     params.set('granularity', options?.granularity ?? 'usa')
@@ -104,9 +101,7 @@ export class PublicationStatsService {
   // Posts tab
 
   async getEmail30dOpenRate(): Promise<unknown> {
-    return await this.publicationClient.get<unknown>(
-      '/publication/stats/email_stats/30d_open_rate'
-    )
+    return await this.publicationClient.get<unknown>('/publication/stats/email_stats/30d_open_rate')
   }
 
   async getEmailStats(options?: {
@@ -128,9 +123,7 @@ export class PublicationStatsService {
   // Pledges tab
 
   async getPledgeSummary(): Promise<unknown> {
-    return await this.publicationClient.get<unknown>(
-      '/publication/stats/payment_pledges/summary'
-    )
+    return await this.publicationClient.get<unknown>('/publication/stats/payment_pledges/summary')
   }
 
   async getPledges(options?: { limit?: number }): Promise<unknown> {
@@ -159,5 +152,23 @@ export class PublicationStatsService {
     return await this.publicationClient.get<unknown>(
       `/publication/stats/reader-referrals?${params.toString()}`
     )
+  }
+
+  // Settings & Plans
+
+  async getPledgePlans(): Promise<unknown> {
+    return await this.publicationClient.get<unknown>('/pledges/plans')
+  }
+
+  async getPledgePlansSummary(): Promise<unknown> {
+    return await this.publicationClient.get<unknown>('/pledges/plans/summary')
+  }
+
+  async getPublicationSettings(): Promise<unknown> {
+    return await this.publicationClient.get<unknown>('/publication_settings')
+  }
+
+  async getBestsellerTier(): Promise<unknown> {
+    return await this.publicationClient.get<unknown>('/publication/bestseller_tier')
   }
 }

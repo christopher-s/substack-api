@@ -80,9 +80,9 @@ describe('PublicationStatsService', () => {
       it('When follower timeseries request fails', async () => {
         mockPublicationClient.get.mockRejectedValueOnce(new Error('Timeseries API Error'))
 
-        await expect(
-          service.getFollowerTimeseries({ from: '2024-01-01' })
-        ).rejects.toThrow('Timeseries API Error')
+        await expect(service.getFollowerTimeseries({ from: '2024-01-01' })).rejects.toThrow(
+          'Timeseries API Error'
+        )
       })
     })
 
@@ -139,9 +139,7 @@ describe('PublicationStatsService', () => {
 
     describe('getAudienceOverlap', () => {
       it('When requesting audience overlap with default limit', async () => {
-        const mockResponse = [
-          { percentOverlap: '25', pub: { id: 1, name: 'Other Pub' } }
-        ]
+        const mockResponse = [{ percentOverlap: '25', pub: { id: 1, name: 'Other Pub' } }]
         mockPublicationClient.get.mockResolvedValueOnce(mockResponse)
 
         const result = await service.getAudienceOverlap()
@@ -338,7 +336,12 @@ describe('PublicationStatsService', () => {
       it('When requesting email stats with custom options', async () => {
         mockPublicationClient.get.mockResolvedValueOnce({ rows: [] })
 
-        await service.getEmailStats({ offset: 20, limit: 10, orderBy: 'open_rate', orderDirection: 'asc' })
+        await service.getEmailStats({
+          offset: 20,
+          limit: 10,
+          orderBy: 'open_rate',
+          orderDirection: 'asc'
+        })
 
         expect(mockPublicationClient.get).toHaveBeenCalledWith(
           '/publication/stats/email_stats?offset=20&limit=10&order_by=open_rate&order_direction=asc'
@@ -468,9 +471,101 @@ describe('PublicationStatsService', () => {
       it('When reader referrals request fails', async () => {
         mockPublicationClient.get.mockRejectedValueOnce(new Error('Referrals API Error'))
 
-        await expect(
-          service.getReaderReferrals({ to: '2024-01-31' })
-        ).rejects.toThrow('Referrals API Error')
+        await expect(service.getReaderReferrals({ to: '2024-01-31' })).rejects.toThrow(
+          'Referrals API Error'
+        )
+      })
+    })
+  })
+
+  describe('Settings & Plans', () => {
+    describe('getPledgePlans', () => {
+      it('When requesting pledge plans', async () => {
+        const mockResponse = [
+          {
+            plan_id: 'monthly_5',
+            plan_interval: 'month',
+            payment_amount: 500,
+            payment_currency: 'usd',
+            subscriber_count: 120
+          }
+        ]
+        mockPublicationClient.get.mockResolvedValueOnce(mockResponse)
+
+        const result = await service.getPledgePlans()
+
+        expect(result).toEqual(mockResponse)
+        expect(mockPublicationClient.get).toHaveBeenCalledWith('/pledges/plans')
+      })
+    })
+
+    describe('getPledgePlansSummary', () => {
+      it('When requesting pledge plans summary', async () => {
+        const mockResponse = {
+          total_subscribers: 350,
+          monthly_revenue: 17500,
+          annual_revenue: 150000,
+          currency: 'usd'
+        }
+        mockPublicationClient.get.mockResolvedValueOnce(mockResponse)
+
+        const result = await service.getPledgePlansSummary()
+
+        expect(result).toEqual(mockResponse)
+        expect(mockPublicationClient.get).toHaveBeenCalledWith('/pledges/plans/summary')
+      })
+    })
+
+    describe('getPublicationSettings', () => {
+      it('When requesting publication settings', async () => {
+        const mockResponse = {
+          publication_id: 123,
+          name: 'My Publication',
+          homepage: 'https://substack.com/@mypub',
+          language: 'en',
+          created_at: '2023-01-01T00:00:00Z'
+        }
+        mockPublicationClient.get.mockResolvedValueOnce(mockResponse)
+
+        const result = await service.getPublicationSettings()
+
+        expect(result).toEqual(mockResponse)
+        expect(mockPublicationClient.get).toHaveBeenCalledWith('/publication_settings')
+      })
+    })
+
+    describe('getBestsellerTier', () => {
+      it('When requesting bestseller tier', async () => {
+        const mockResponse = {
+          publication_id: 123,
+          tier: 'top_10',
+          category: 'technology',
+          rank: 5,
+          updated_at: '2024-01-15T00:00:00Z'
+        }
+        mockPublicationClient.get.mockResolvedValueOnce(mockResponse)
+
+        const result = await service.getBestsellerTier()
+
+        expect(result).toEqual(mockResponse)
+        expect(mockPublicationClient.get).toHaveBeenCalledWith('/publication/bestseller_tier')
+      })
+    })
+
+    describe('error propagation', () => {
+      it('should propagate errors from getPledgePlans', async () => {
+        mockPublicationClient.get.mockRejectedValueOnce(new Error('HTTP 500'))
+        await expect(service.getPledgePlans()).rejects.toThrow('HTTP 500')
+      })
+
+      it('should propagate errors from getPublicationSettings', async () => {
+        mockPublicationClient.get.mockRejectedValueOnce(new Error('HTTP 403'))
+        await expect(service.getPublicationSettings()).rejects.toThrow('HTTP 403')
+      })
+
+      it('should propagate errors from getBestsellerTier', async () => {
+        mockPublicationClient.get.mockRejectedValueOnce(new Error('HTTP 502'))
+        await expect(service.getBestsellerTier()).rejects.toThrow('HTTP 502')
       })
     })
   })

@@ -49,12 +49,12 @@ export class GrowthStatsService {
    * Get publication events for correlating growth spikes.
    * GET /api/v1/publication/stats/growth/events
    */
-  async getGrowthEvents(options: {
-    fromDate: string
-    toDate: string
-  }): Promise<unknown> {
+  async getGrowthEvents(options: { fromDate: string; toDate: string }): Promise<unknown> {
+    const params = new URLSearchParams()
+    params.set('from_date', options.fromDate)
+    params.set('to_date', options.toDate)
     return await this.publicationClient.get<unknown>(
-      `/publication/stats/growth/events?from_date=${encodeURIComponent(options.fromDate)}&to_date=${encodeURIComponent(options.toDate)}`
+      `/publication/stats/growth/events?${params.toString()}`
     )
   }
 }
