@@ -734,6 +734,12 @@ export class SubstackClient {
     }
   }
 
+  async noteStats(entityKey: string): Promise<unknown> {
+    this.requireAuth('noteStats')
+    this.requirePublication('noteStats')
+    return await this.noteService.getNoteStats(entityKey)
+  }
+
   // ── Settings methods (require auth) ─────────────────────────────────
 
   async publisherSettings(): Promise<unknown> {

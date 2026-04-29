@@ -346,6 +346,40 @@ paths:
                 $ref: '#/components/schemas/PaginatedFeed'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/v1/note_stats/{entityKey}:
+    get:
+      tags:
+        - note
+      summary: Analytics stats for a note
+      description: |
+        Card-based analytics for a single note. Returns an array of "cards"
+        covering impressions (line chart over time), surfaces (bar chart of
+        impression sources like feed, profile, email), audience (bar chart of
+        viewer types like free, paid, other), and interactions (list of
+        engagement actions — likes, restacks, replies).
+      operationId: getNoteStats
+      security:
+        - substackSession: []
+      parameters:
+        - in: path
+          name: entityKey
+          required: true
+          schema:
+            type: string
+          description: |
+            Note entity key, prefixed with `c-` (e.g. `c-251155220`).
+            Derived from the comment ID used in the `/reader/comment/{id}` endpoint.
+      responses:
+        '200':
+          description: Note analytics cards.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Note not found or no stats available.
   /api/v1/post/{postId}/comments:
     get:
       tags:
@@ -5022,4 +5056,44 @@ components:
         exist:
           type: boolean
           description: Whether any recommendations are configured.
+      additionalProperties: true
+    NoteStats:
+      type: object
+      description: |
+        Analytics stats for a single note, returned as an array of cards.
+        Each card represents a metric category displayed in the Substack UI.
+      properties:
+        cards:
+          type: array
+          description: Metric cards for the note.
+          items:
+            $ref: '#/components/schemas/NoteStatsCard'
+      additionalProperties: true
+    NoteStatsCard:
+      type: object
+      description: A single analytics metric card for a note.
+      properties:
+        title:
+          type: string
+          description: Card title (e.g. "Impressions", "Surfaces", "Audience", "Interactions").
+        value:
+          type: integer
+          description: Primary numeric value for the metric.
+        cards:
+          type: array
+          description: Nested sub-cards (e.g. breakdown of impression sources).
+          items:
+            $ref: '#/components/schemas/NoteStatsCard'
+        timeseries:
+          type: array
+          description: Time-series data points (for charts like impressions over time).
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              value:
+                type: integer
+            additionalProperties: true
       additionalProperties: true

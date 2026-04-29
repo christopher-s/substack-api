@@ -56,6 +56,7 @@ describe('SubstackClient new service methods', () => {
 
     mockNoteService = new NoteService(mockHttpClient) as jest.Mocked<NoteService>
     mockNoteService.getNotes = jest.fn()
+    mockNoteService.getNoteStats = jest.fn()
 
     mockCommentService = new CommentService(
       mockHttpClient,
@@ -229,6 +230,26 @@ describe('SubstackClient new service methods', () => {
       const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
       const gen = noAuthClient.notesFeed()
       await expect(gen.next()).rejects.toThrow('Authentication required')
+    })
+  })
+
+  describe('noteStats', () => {
+    it('should delegate to noteService', async () => {
+      const mockStats = { cards: [{ title: 'Impressions', value: 42 }] }
+      mockNoteService.getNoteStats.mockResolvedValue(mockStats)
+      const result = await client.noteStats('c-251155220')
+      expect(mockNoteService.getNoteStats).toHaveBeenCalledWith('c-251155220')
+      expect(result).toEqual(mockStats)
+    })
+
+    it('should throw when no auth', async () => {
+      const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
+      await expect(noAuthClient.noteStats('c-1')).rejects.toThrow('Authentication required')
+    })
+
+    it('should throw when no publicationUrl', async () => {
+      const noPubClient = new SubstackClient({ token: 'test' })
+      await expect(noPubClient.noteStats('c-1')).rejects.toThrow('Publication required')
     })
   })
 

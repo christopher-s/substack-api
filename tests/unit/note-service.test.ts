@@ -225,4 +225,23 @@ describe('NoteService', () => {
       )
     })
   })
+
+  describe('getNoteStats', () => {
+    it('When fetching stats for a note', async () => {
+      const mockStats = { cards: [{ title: 'Impressions', value: 42 }] }
+      mockPublicationClient.get.mockResolvedValueOnce(mockStats)
+
+      const result = await noteService.getNoteStats('c-251155220')
+
+      expect(result).toEqual(mockStats)
+      expect(mockPublicationClient.get).toHaveBeenCalledWith('/note_stats/c-251155220')
+    })
+
+    it('When note stats request fails', async () => {
+      mockPublicationClient.get.mockRejectedValueOnce(new Error('Stats API Error'))
+
+      await expect(noteService.getNoteStats('c-123')).rejects.toThrow('Stats API Error')
+      expect(mockPublicationClient.get).toHaveBeenCalledWith('/note_stats/c-123')
+    })
+  })
 })

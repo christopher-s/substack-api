@@ -142,4 +142,9 @@ export class NoteService {
       nextCursor: response.nextCursor ?? null
     }
   }
+
+  /** Get analytics stats for a note (impressions, surfaces, audience, interactions). */
+  async getNoteStats(entityKey: string): Promise<unknown> {
+    return await this.publicationClient.get<unknown>(`/note_stats/${entityKey}`)
+  }
 }
