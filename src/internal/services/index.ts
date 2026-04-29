@@ -16,3 +16,6 @@ export { PostManagementService } from '@substack-api/internal/services/post-mana
 export { PublicationDetailService } from '@substack-api/internal/services/publication-detail-service'
 export { SubscriptionService } from '@substack-api/internal/services/subscription-service'
 export { SettingsService } from '@substack-api/internal/services/settings-service'
+export { GrowthStatsService } from '@substack-api/internal/services/growth-stats-service'
+export { SubscriberStatsService } from '@substack-api/internal/services/subscriber-stats-service'
+export { PublicationStatsService } from '@substack-api/internal/services/publication-stats-service'
