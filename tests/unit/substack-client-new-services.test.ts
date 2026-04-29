@@ -7,7 +7,8 @@ import {
   NoteService,
   CommentService,
   PublicationService,
-  DashboardService
+  DashboardService,
+  DiscoveryService
 } from '@substack-api/internal/services'
 
 jest.mock('@substack-api/internal/http-client')
@@ -22,6 +23,7 @@ describe('SubstackClient new service methods', () => {
   let mockCommentService: jest.Mocked<CommentService>
   let mockPublicationService: jest.Mocked<PublicationService>
   let mockDashboardService: jest.Mocked<DashboardService>
+  let mockDiscoveryService: jest.Mocked<DiscoveryService>
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -54,6 +56,9 @@ describe('SubstackClient new service methods', () => {
 
     mockDashboardService = new DashboardService(mockHttpClient) as jest.Mocked<DashboardService>
 
+    mockDiscoveryService = new DiscoveryService(mockHttpClient) as jest.Mocked<DiscoveryService>
+    mockDiscoveryService.getFeed = jest.fn()
+
     mockNoteService = new NoteService(mockHttpClient) as jest.Mocked<NoteService>
     mockNoteService.getNotes = jest.fn()
     mockNoteService.getNoteStats = jest.fn()
@@ -85,6 +90,7 @@ describe('SubstackClient new service methods', () => {
     anyClient.commentService = mockCommentService
     anyClient.publicationService = mockPublicationService
     anyClient.dashboardService = mockDashboardService
+    anyClient.discoveryService = mockDiscoveryService
   })
 
   describe('publicationDetails', () => {
@@ -378,6 +384,80 @@ describe('SubstackClient new service methods', () => {
     it('should throw when no auth', async () => {
       const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
       await expect(noAuthClient.boostSettings()).rejects.toThrow('Authentication required')
+    })
+  })
+
+  describe('activityFeed', () => {
+    it('should yield items from discoveryService', async () => {
+      mockDiscoveryService.getFeed.mockResolvedValueOnce({
+        items: [{ type: 'comment', entity_key: 'c-1' }],
+        nextCursor: null
+      })
+      const results: unknown[] = []
+      for await (const item of client.activityFeed()) {
+        results.push(item)
+      }
+      expect(results).toHaveLength(1)
+      expect(mockDiscoveryService.getFeed).toHaveBeenCalledWith({
+        tabId: undefined,
+        cursor: undefined
+      })
+    })
+
+    it('should pass tabId to discoveryService', async () => {
+      mockDiscoveryService.getFeed.mockResolvedValueOnce({
+        items: [],
+        nextCursor: null
+      })
+      const results: unknown[] = []
+      for await (const item of client.activityFeed({ tabId: 'subscribed' })) {
+        results.push(item)
+      }
+      expect(mockDiscoveryService.getFeed).toHaveBeenCalledWith(
+        expect.objectContaining({ tabId: 'subscribed' })
+      )
+    })
+
+    it('should call onTabs callback with tabs metadata', async () => {
+      const mockTabs = [
+        { id: 'for-you', name: 'For you', type: 'base' },
+        { id: 'subscribed', name: 'Following', type: 'secondary' }
+      ]
+      mockDiscoveryService.getFeed.mockResolvedValueOnce({
+        items: [{ type: 'comment', entity_key: 'c-1' }],
+        nextCursor: null,
+        tabs: mockTabs
+      })
+      const receivedTabs: unknown[] = []
+      for await (const item of client.activityFeed({
+        onTabs: (tabs) => receivedTabs.push(...tabs)
+      })) {
+        // consume items
+      }
+      expect(receivedTabs).toEqual(mockTabs)
+    })
+
+    it('should paginate with cursor', async () => {
+      mockDiscoveryService.getFeed
+        .mockResolvedValueOnce({
+          items: [{ type: 'comment', entity_key: 'c-1' }],
+          nextCursor: 'page2'
+        })
+        .mockResolvedValueOnce({
+          items: [{ type: 'post', entity_key: 'p-2' }],
+          nextCursor: null
+        })
+      const results: unknown[] = []
+      for await (const item of client.activityFeed()) {
+        results.push(item)
+      }
+      expect(results).toHaveLength(2)
+    })
+
+    it('should throw when no auth', async () => {
+      const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
+      const gen = noAuthClient.activityFeed()
+      await expect(gen.next()).rejects.toThrow('Authentication required')
     })
   })
 })

@@ -30,7 +30,11 @@ import {
 } from '@substack-api/internal/services'
 import { NoteBuilderFactory } from '@substack-api/domain'
 import { markdownToHtml } from '@substack-api/internal/markdown-to-html'
-import type { FeedTab, ProfileFeedTab } from '@substack-api/internal/services/discovery-service'
+import type {
+  FeedTab,
+  ProfileFeedTab,
+  ActivityFeedTab
+} from '@substack-api/internal/services/discovery-service'
 import type {
   FeedItem,
   SubstackInboxItem,
@@ -360,6 +364,28 @@ export class SubstackClient {
       (cursor) => this.discoveryService.getFeed({ tab: options.tab, cursor }),
       options.limit
     )
+  }
+
+  /**
+   * Get activity feed (requires auth).
+   * Yields feed items from /api/v1/reader/feed with tab filtering support.
+   * @param options.tabId - Feed tab: 'for-you', 'subscribed', 'bestseller', or category ID
+   * @param options.limit - Max items to yield
+   * @param options.onTabs - Callback receiving tabs metadata from the first page
+   */
+  async *activityFeed(
+    options: { tabId?: string; limit?: number; onTabs?: (tabs: ActivityFeedTab[]) => void } = {}
+  ): AsyncGenerator<FeedItem> {
+    this.requireAuth('activityFeed')
+    let tabsDelivered = false
+    yield* this.paginateFeed(async (cursor) => {
+      const result = await this.discoveryService.getFeed({ tabId: options.tabId, cursor })
+      if (!tabsDelivered && result.tabs && options.onTabs) {
+        options.onTabs(result.tabs)
+        tabsDelivered = true
+      }
+      return result
+    }, options.limit)
   }
 
   /**

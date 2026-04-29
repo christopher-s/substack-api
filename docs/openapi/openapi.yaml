@@ -431,11 +431,21 @@ paths:
     get:
       tags:
         - discovery
-      summary: Discovery reader feed
+        - activity
+      summary: Reader feed (discovery and activity)
       description: |
-        The main discovery feed exposed to readers. `tab` selects the surface
-        (`for-you`, `top`, `popular`, `catchup`, `notes`, `explore`); `type`
-        is a required content-type filter.
+        The main reader feed powering both discovery and the activity page.
+        Supports two parameter styles:
+
+        - **Discovery**: `tab` selects the surface (`for-you`, `top`, `popular`,
+          `catchup`, `notes`, `explore`) with `type=base`.
+        - **Activity**: `tab_id` selects the activity tab (`for-you`,
+          `subscribed`, `bestseller`, or a numeric category ID like `"4"` for
+          Technology). The response includes a `tabs` array listing all
+          available tabs.
+
+        Authenticated requests include personalized items (user suggestions,
+        follow-ups). Anonymous requests return the public discovery feed.
       operationId: getReaderFeed
       parameters:
         - in: query
@@ -449,21 +459,27 @@ paths:
               - catchup
               - notes
               - explore
-          description: Feed tab filter (e.g. `for_you`, `following`).
+          description: Discovery feed tab filter.
         - in: query
-          name: type
-          required: true
+          name: tab_id
           schema:
             type: string
-          description: Required content-type filter (e.g. `posts`, `notes`).
+          description: |
+            Activity feed tab ID. Named tabs (`for-you`, `subscribed`,
+            `bestseller`) or numeric category IDs (e.g. `"4"` for Technology).
+        - in: query
+          name: type
+          schema:
+            type: string
+          description: Content-type filter for discovery mode (e.g. `base`).
         - $ref: '#/components/parameters/CursorQuery'
       responses:
         '200':
-          description: Paginated reader feed.
+          description: Paginated reader feed with optional tabs metadata.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedFeed'
+                $ref: '#/components/schemas/ActivityFeedResponse'
   /api/v1/categories:
     get:
       tags:
@@ -5096,4 +5112,45 @@ components:
               value:
                 type: integer
             additionalProperties: true
+      additionalProperties: true
+    ActivityFeedResponse:
+      type: object
+      description: |
+        Response from the reader feed endpoint. Extends the standard paginated
+        feed with `tabs` metadata (present on first page of activity feed).
+      properties:
+        items:
+          type: array
+          description: Feed items (comments/notes, posts, user suggestions).
+          items:
+            $ref: '#/components/schemas/FeedItem'
+        nextCursor:
+          type: string
+          nullable: true
+          description: Base64-encoded cursor for the next page.
+        tabs:
+          type: array
+          description: Available feed tabs (present on first page with `tab_id`).
+          items:
+            $ref: '#/components/schemas/ActivityFeedTab'
+      additionalProperties: true
+    ActivityFeedTab:
+      type: object
+      description: A tab descriptor from the activity feed.
+      properties:
+        id:
+          type: string
+          description: Tab identifier (e.g. "for-you", "subscribed", "4").
+        name:
+          type: string
+          description: Display name (e.g. "For you", "Following", "Technology").
+        type:
+          type: string
+          description: Tab type (`base`, `secondary`, or `category`).
+        layout:
+          type: string
+          description: Layout hint for the tab.
+        slug:
+          type: string
+          description: URL slug for category tabs.
       additionalProperties: true

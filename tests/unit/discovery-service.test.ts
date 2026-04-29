@@ -73,6 +73,29 @@ describe('DiscoveryService', () => {
         )
       }
     })
+
+    it('should use tab_id parameter when tabId is provided', async () => {
+      mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
+      await service.getFeed({ tabId: 'subscribed' })
+      expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining('tab_id=subscribed'))
+      expect(mockClient.get).not.toHaveBeenCalledWith(expect.stringContaining('tab='))
+    })
+
+    it('should return tabs metadata when present', async () => {
+      const mockTabs = [
+        { id: 'for-you', name: 'For you', type: 'base' },
+        { id: 'subscribed', name: 'Following', type: 'secondary' }
+      ]
+      mockClient.get.mockResolvedValue({ items: [], nextCursor: null, tabs: mockTabs })
+      const result = await service.getFeed({ tabId: 'for-you' })
+      expect(result.tabs).toEqual(mockTabs)
+    })
+
+    it('should omit tabs when not in response', async () => {
+      mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
+      const result = await service.getFeed()
+      expect(result.tabs).toBeUndefined()
+    })
   })
 
   describe('getCategories', () => {

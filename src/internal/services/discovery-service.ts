@@ -27,8 +27,19 @@ export type FeedTab = 'for-you' | 'top' | 'popular' | 'catchup' | 'notes' | 'exp
 export type ProfileFeedTab = 'posts' | 'notes' | 'comments' | 'likes'
 
 /**
- * Service for discovery endpoints: trending, feed, categories, profile activity
- * All endpoints work anonymously (no auth required).
+ * A tab descriptor from the activity feed response.
+ */
+export interface ActivityFeedTab {
+  id: string
+  name: string
+  type: string
+  layout?: string
+  slug?: string
+}
+
+/**
+ * Service for discovery endpoints: trending, feed, categories, profile activity.
+ * Most endpoints work anonymously. `getFeed` with `tabId` is typically used with auth.
  */
 export class DiscoveryService {
   constructor(private readonly substackClient: HttpClient) {}
@@ -147,17 +158,22 @@ export class DiscoveryService {
   }
 
   /**
-   * Get discovery feed (posts, notes, comments)
-   * GET /api/v1/reader/feed?tab={tab}&type=base (anonymous, paginated)
+   * Get reader feed (discovery or activity).
+   * GET /api/v1/reader/feed?tab={tab}&type=base (anonymous)
+   * GET /api/v1/reader/feed?tab_id={tabId} (authenticated, includes tabs metadata)
    */
-  async getFeed(options?: { tab?: FeedTab; cursor?: string }): Promise<{
+  async getFeed(options?: { tab?: FeedTab; tabId?: string; cursor?: string }): Promise<{
     items: FeedItem[]
     nextCursor: string | null
+    tabs?: ActivityFeedTab[]
   }> {
-    const tab = options?.tab || 'for-you'
-    // type='base' requests the base feed format (posts + notes + comments)
-    // rather than the enriched format that includes extra metadata
-    const params = new URLSearchParams({ tab, type: 'base' })
+    const params = new URLSearchParams()
+    if (options?.tabId) {
+      params.set('tab_id', options.tabId)
+    } else {
+      params.set('tab', options?.tab || 'for-you')
+      params.set('type', 'base')
+    }
     if (options?.cursor) {
       params.set('cursor', options.cursor)
     }
@@ -304,17 +320,18 @@ export class DiscoveryService {
 
   /**
    * Shared cursor-feed fetcher for paginated feed endpoints.
-   * Handles the common pattern: fetch URL, normalize items/nextCursor.
+   * Handles the common pattern: fetch URL, normalize items/nextCursor/tabs.
    */
   private async fetchCursorFeed(
     url: string
-  ): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
+  ): Promise<{ items: FeedItem[]; nextCursor: string | null; tabs?: ActivityFeedTab[] }> {
     const response = await this.substackClient.get<unknown>(url)
 
     const decoded = decodeOrThrow(
       t.type({
         items: t.union([t.array(t.unknown), t.null, t.undefined]),
-        nextCursor: t.union([t.string, t.null, t.undefined])
+        nextCursor: t.union([t.string, t.null, t.undefined]),
+        tabs: t.union([t.array(t.unknown), t.null, t.undefined])
       }),
       response,
       'cursor feed response'
@@ -332,9 +349,14 @@ export class DiscoveryService {
     // Normalize empty string to null so consumers don't loop forever
     const nextCursor = decoded.nextCursor && decoded.nextCursor !== '' ? decoded.nextCursor : null
 
+    const tabs: ActivityFeedTab[] | undefined = decoded.tabs
+      ? (decoded.tabs as ActivityFeedTab[])
+      : undefined
+
     return {
       items,
-      nextCursor
+      nextCursor,
+      ...(tabs && { tabs })
     }
   }
 }
