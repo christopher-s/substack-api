@@ -20,11 +20,11 @@ export function validateE2ECredentials(): RequiredEnvVars {
 ❌ Missing required Substack credentials. Set SUBSTACK_API_KEY and SUBSTACK_HOSTNAME.
 
 Required environment variables:
-- SUBSTACK_API_KEY: Your Substack API key (required)
+- SUBSTACK_API_KEY: Your Substack session cookie value (substack.sid) (required)
 - SUBSTACK_HOSTNAME: Your Substack hostname (optional)
 
 You can set these variables:
-1. In your environment: export SUBSTACK_API_KEY=your-key-here
+1. In your environment: export SUBSTACK_API_KEY=your-substack-sid-cookie-value
 2. In a .env file in the project root (copy from .env.example)
 3. Alternative names: E2E_API_KEY, E2E_HOSTNAME
 

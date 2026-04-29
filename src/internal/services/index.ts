@@ -12,3 +12,7 @@ export { ConnectivityService } from '@substack-api/internal/services/connectivit
 export { DiscoveryService } from '@substack-api/internal/services/discovery-service'
 export type { FeedTab, ProfileFeedTab } from '@substack-api/internal/services/discovery-service'
 export { PublicationService } from '@substack-api/internal/services/publication-service'
+export { PostManagementService } from '@substack-api/internal/services/post-management-service'
+export { PublicationDetailService } from '@substack-api/internal/services/publication-detail-service'
+export { SubscriptionService } from '@substack-api/internal/services/subscription-service'
+export { SettingsService } from '@substack-api/internal/services/settings-service'

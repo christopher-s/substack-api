@@ -127,4 +127,15 @@ export class PublicationService {
   async markPostSeen(postId: number): Promise<void> {
     await this.publicationClient.post(`/posts/${encodeURIComponent(String(postId))}/seen`)
   }
+
+  async getLiveStreams(status?: string): Promise<unknown> {
+    const params = status ? `?status=${status}` : '?status=scheduled'
+    return await this.publicationClient.get<unknown>(`/live_streams${params}`)
+  }
+
+  async getEligibleHosts(publicationId: number): Promise<unknown> {
+    return await this.publicationClient.get<unknown>(
+      `/live_stream/eligible_hosts?publication_id=${publicationId}`
+    )
+  }
 }

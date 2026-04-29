@@ -43,6 +43,13 @@ info:
     public API contract, so every field, route, and behaviour is empirical and
     may change without notice. Pin the client library version to a tested
     release for stability.
+
+    ## Naming conventions
+
+    Path segments mirror the underlying Substack API, which mixes
+    underscore-separated (`post_management`, `live_streams`) and
+    dash-separated (`post-tag`, `by-id`) naming. This spec preserves
+    the original naming for accuracy.
   contact:
     name: substack-api maintainers
     url: https://github.com/christopher-s/substack-api/issues
@@ -59,7 +66,7 @@ servers:
     description: Publication-scoped host (archive, homepage, comments on a post, notes feed, …)
     variables:
       publication:
-        default: on
+        default: 'on'
         description: |
           Publication subdomain (the segment before `.substack.com`). For example,
           `stratechery` for `https://stratechery.substack.com`. The default
@@ -81,6 +88,12 @@ tags:
     description: Authenticated user's following / subscriber-list operations.
   - name: connectivity
     description: Connectivity / authentication probes.
+  - name: post-management
+    description: Draft CRUD, post management counts, and publishing workflows.
+  - name: subscription
+    description: Subscription status (per-publication and global).
+  - name: settings
+    description: Publisher and publication settings.
 security: []
 paths:
   /api/v1/posts/by-id/{id}:
@@ -334,7 +347,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedFeed'
+                $ref: '#/components/schemas/TopInboxFeed'
   /api/v1/reader/feed:
     get:
       tags: [discovery]
@@ -595,6 +608,8 @@ paths:
       summary: Mark a post as seen
       description: Records that the authenticated reader has seen a post.
       operationId: markPostSeen
+      security:
+        - substackSession: []
       parameters:
         - $ref: '#/components/parameters/PostIdPath'
       responses:
@@ -717,6 +732,533 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
 
+  # ── Post Management ──────────────────────────────────────────────────
+
+  /api/v1/post_management/published:
+    get:
+      tags: [post-management]
+      summary: List published posts (publisher dashboard)
+      description: |
+        Paginated list of published posts for the publication. Requires
+        authentication and a publication-scoped host.
+      operationId: getPublishedPosts
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: offset
+          schema: { type: integer, minimum: 0, default: 0 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+        - in: query
+          name: order_by
+          schema: { type: string, default: post_date }
+          description: Sort field (e.g. `post_date`).
+        - in: query
+          name: order_direction
+          schema: { type: string, enum: [asc, desc], default: desc }
+      responses:
+        '200':
+          description: Paginated list of published posts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostManagementResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/post_management/drafts:
+    get:
+      tags: [post-management]
+      summary: List drafts (publisher dashboard)
+      description: |
+        Paginated list of draft posts for the publication. Requires
+        authentication and a publication-scoped host.
+      operationId: getDrafts
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: offset
+          schema: { type: integer, minimum: 0, default: 0 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+        - in: query
+          name: order_by
+          schema: { type: string, default: draft_updated_at }
+        - in: query
+          name: order_direction
+          schema: { type: string, enum: [asc, desc], default: desc }
+      responses:
+        '200':
+          description: Paginated list of drafts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostManagementResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/post_management/scheduled:
+    get:
+      tags: [post-management]
+      summary: List scheduled posts (publisher dashboard)
+      description: |
+        Paginated list of scheduled posts. Requires authentication and a
+        publication-scoped host.
+      operationId: getScheduledPosts
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: offset
+          schema: { type: integer, minimum: 0, default: 0 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+        - in: query
+          name: order_by
+          schema: { type: string, default: trigger_at }
+        - in: query
+          name: order_direction
+          schema: { type: string, enum: [asc, desc], default: asc }
+      responses:
+        '200':
+          description: Paginated list of scheduled posts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostManagementResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/post_management/counts:
+    get:
+      tags: [post-management]
+      summary: Get post counts by status
+      description: |
+        Returns counts of posts grouped by status (published, draft, scheduled,
+        etc.) for the publication. Requires authentication and a
+        publication-scoped host.
+      operationId: getPostCounts
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: query
+          schema: { type: string, default: '' }
+          description: Optional search filter for counting.
+      responses:
+        '200':
+          description: Post count summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostManagementCounts'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/drafts/{id}:
+    get:
+      tags: [post-management]
+      summary: Get a single draft by ID
+      description: Fetches a draft post by its numeric ID. Requires authentication.
+      operationId: getDraft
+      security:
+        - substackSession: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, minimum: 1 }
+          description: Draft ID.
+      responses:
+        '200':
+          description: Draft payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftPost'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [post-management]
+      summary: Update a draft
+      description: |
+        Updates a draft's title, body, or other fields. Requires authentication
+        and a publication-scoped host.
+      operationId: updateDraft
+      security:
+        - substackSession: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, minimum: 1 }
+          description: Draft ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                draft_title:
+                  type: string
+                  description: Updated title.
+                draft_body:
+                  type: string
+                  description: Updated HTML body.
+              additionalProperties: true
+      responses:
+        '200':
+          description: Updated draft.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftPost'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [post-management]
+      summary: Delete a draft
+      description: Permanently deletes a draft post. Requires authentication.
+      operationId: deleteDraft
+      security:
+        - substackSession: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, minimum: 1 }
+          description: Draft ID.
+      responses:
+        '200':
+          description: Deletion confirmed.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/drafts:
+    post:
+      tags: [post-management]
+      summary: Create a new draft
+      description: |
+        Creates a new draft post for the publication. Requires authentication
+        and a publication-scoped host.
+      operationId: createDraft
+      security:
+        - substackSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [draft_title]
+              properties:
+                draft_title:
+                  type: string
+                  description: Draft title.
+                draft_body:
+                  type: string
+                  description: HTML body content.
+                type:
+                  type: string
+                  default: newsletter
+                  description: Post type (e.g. `newsletter`).
+                audience:
+                  type: string
+                  default: everyone
+                  description: Audience visibility.
+                draft_bylines:
+                  type: array
+                  items:
+                    type: object
+                  description: Byline entries with user IDs.
+      responses:
+        '200':
+          description: Created draft.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftPost'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/drafts/{id}/publish:
+    post:
+      tags: [post-management]
+      summary: Publish a draft
+      description: |
+        Publishes an existing draft immediately. Requires authentication and a
+        publication-scoped host.
+      operationId: publishDraft
+      security:
+        - substackSession: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, minimum: 1 }
+          description: Draft ID to publish.
+      responses:
+        '200':
+          description: Published post.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftPost'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Publication Details ───────────────────────────────────────────────
+
+  /api/v1/publication:
+    get:
+      tags: [publication]
+      summary: Get publication details
+      description: |
+        Returns metadata about the publication (name, subdomain, description,
+        etc.). Works on the publication-scoped host.
+      operationId: getPublicationDetails
+      responses:
+        '200':
+          description: Publication metadata.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/publication/post-tag:
+    get:
+      tags: [publication]
+      summary: Get publication post tags
+      description: Returns the set of tags configured for the publication. Works on the publication-scoped host.
+      operationId: getPostTags
+      responses:
+        '200':
+          description: Array of tag objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostTag'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Subscriptions ─────────────────────────────────────────────────────
+
+  /api/v1/subscription:
+    get:
+      tags: [subscription]
+      summary: Get current subscription to a publication
+      description: |
+        Returns the authenticated user's subscription status for the
+        publication-scoped host. Requires authentication.
+      operationId: getCurrentSubscription
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Subscription record.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/subscriptions/page_v2:
+    get:
+      tags: [subscription]
+      summary: List all subscriptions (global)
+      description: |
+        Paginated list of all subscriptions for the authenticated user across
+        all publications. Uses the global `substack.com` host. Requires
+        authentication but no publication scope.
+      operationId: getAllSubscriptions
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: offset
+          schema: { type: integer, minimum: 0, default: 0 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+      responses:
+        '200':
+          description: Paginated subscription list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Settings ──────────────────────────────────────────────────────────
+
+  /api/v1/settings:
+    get:
+      tags: [settings]
+      summary: Get publisher settings
+      description: |
+        Returns the publication's publisher settings (publication name, author
+        details, etc.). Requires authentication and a publication-scoped host.
+      operationId: getPublisherSettings
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Publisher settings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublisherSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Comment Write Operations ──────────────────────────────────────────
+
+  /api/v1/post/{postId}/comment:
+    post:
+      tags: [comment]
+      summary: Create a comment on a post
+      description: |
+        Posts a new comment on the specified post. Requires authentication and
+        a publication-scoped host.
+      operationId: createComment
+      security:
+        - substackSession: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema: { type: integer, minimum: 1 }
+          description: Post ID to comment on.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body, post_id]
+              properties:
+                body:
+                  type: string
+                  description: Comment body text.
+                post_id:
+                  type: integer
+                  description: Post ID (repeated in body).
+      responses:
+        '200':
+          description: Created comment.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/comment/{commentId}:
+    delete:
+      tags: [comment]
+      summary: Delete a comment
+      description: |
+        Permanently deletes a comment. Requires authentication and a
+        publication-scoped host.
+      operationId: deleteComment
+      security:
+        - substackSession: []
+      parameters:
+        - in: path
+          name: commentId
+          required: true
+          schema: { type: integer, minimum: 1 }
+          description: Comment ID to delete.
+      responses:
+        '200':
+          description: Deletion confirmed.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Live Streams (extended) ───────────────────────────────────────────
+
+  /api/v1/live_streams:
+    get:
+      tags: [publication]
+      summary: List live streams
+      description: |
+        Returns live streams for the publication, optionally filtered by
+        status. Uses the publication-scoped host.
+      operationId: getLiveStreams
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, default: scheduled }
+          description: Filter by stream status (e.g. `scheduled`, `active`, `ended`).
+      responses:
+        '200':
+          description: Live stream list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveStreamList'
+
+  /api/v1/live_stream/eligible_hosts:
+    get:
+      tags: [publication]
+      summary: Get eligible live stream hosts
+      description: |
+        Returns users eligible to host a live stream for the given publication.
+        Uses the publication-scoped host.
+      operationId: getEligibleHosts
+      parameters:
+        - in: query
+          name: publication_id
+          required: true
+          schema: { type: integer, minimum: 1 }
+          description: Publication ID.
+      responses:
+        '200':
+          description: Array of eligible host user objects.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
 components:
   parameters:
     PostIdPath:
@@ -745,6 +1287,12 @@ components:
             $ref: '#/components/schemas/ApiError'
     BadRequest:
       description: Malformed request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    Forbidden:
+      description: Insufficient permissions (e.g. accessing another user's resource).
       content:
         application/json:
           schema:
@@ -796,7 +1344,7 @@ components:
         photo_url: { type: string, format: uri }
         bio: { type: string }
         is_admin: { type: boolean }
-      required: [id, name]
+      required: [id, name, handle, photo_url]
       additionalProperties: true
 
     User:
@@ -832,14 +1380,28 @@ components:
         reactions:
           $ref: '#/components/schemas/Reactions'
         comment_count: { type: integer }
+      examples:
+        - id: 123456
+          title: 'The Future of Remote Work'
+          slug: 'the-future-of-remote-work'
+          post_date: '2024-01-15T09:00:00Z'
+          canonical_url: 'https://example.substack.com/p/the-future-of-remote-work'
+          type: 'newsletter'
+          cover_image: 'https://example.substack.com/p/image.jpg'
+          audience: 'everyone'
+          publication_id: 98765
+          reactions:
+            '❤': 42
+            '🔥': 7
+          comment_count: 12
       required: [id, title]
       additionalProperties: true
 
     FullPost:
+      description: Full post payload as returned by `GET /api/v1/posts/by-id/{id}`.
       allOf:
         - $ref: '#/components/schemas/PreviewPost'
         - type: object
-          description: Full post payload as returned by `GET /api/v1/posts/by-id/{id}`.
           properties:
             body_html:
               type: string
@@ -847,26 +1409,16 @@ components:
             htmlBody: { type: string }
             description: { type: string }
             wordcount: { type: integer }
-            audience: { type: string }
             podcast_url: { type: string, format: uri }
             publishedBylines:
               type: array
               items: { $ref: '#/components/schemas/Byline' }
-            reactions:
-              $ref: '#/components/schemas/Reactions'
             reaction_count: { type: integer }
             restacks: { type: integer }
-            comment_count: { type: integer }
             child_comment_count: { type: integer }
             postTags:
               type: array
               items: { type: string }
-            subtitle: { type: string }
-            slug: { type: string }
-            canonical_url: { type: string, format: uri }
-            type: { type: string }
-            truncated_body_text: { type: string }
-            cover_image: { type: string, format: uri }
           additionalProperties: true
 
     PublicationPost:
@@ -895,7 +1447,7 @@ components:
         publishedBylines:
           type: array
           items: { $ref: '#/components/schemas/Byline' }
-      required: [id, title]
+      required: [id, title, slug, post_date, canonical_url]
       additionalProperties: true
 
     Post:
@@ -990,8 +1542,12 @@ components:
         profile_set_up_at: { type: string, format: date-time }
         reader_installed_at: { type: string, format: date-time }
         bestseller_tier: { type: string }
-        status: {}
-        primary_publication: {}
+        status:
+          type: object
+          additionalProperties: true
+        primary_publication:
+          type: object
+          additionalProperties: true
       required: [id, name, handle, photo_url]
       additionalProperties: true
 
@@ -1017,7 +1573,10 @@ components:
           additionalProperties: true
         publication_id: { type: integer }
         post_id: { type: integer }
-        edited_at: { type: string, format: date-time }
+        edited_at:
+          oneOf:
+            - { type: string, format: date-time }
+            - { type: 'null' }
         ancestor_path: { type: string }
         reply_minimum_role: { type: string }
         media_clip_id: { type: string }
@@ -1028,12 +1587,31 @@ components:
         attachments:
           type: array
           items: { $ref: '#/components/schemas/NoteAttachment' }
-        userStatus: {}
-        user_primary_publication: {}
+        userStatus:
+          type: object
+          additionalProperties: true
+        user_primary_publication:
+          type: object
+          additionalProperties: true
         autotranslate_to: { type: string }
         tracking_parameters:
           type: object
           additionalProperties: true
+      examples:
+        - id: 987654
+          body: 'Great insights on remote work!'
+          user_id: 12345
+          type: 'comment'
+          date: '2024-01-15T10:30:00Z'
+          name: 'Jane Doe'
+          reaction_count: 5
+          reactions:
+            '❤': 3
+            '👏': 2
+          restacks: 1
+          children_count: 2
+          photo_url: 'https://substackcdn.com/image.jpg'
+          handle: 'janedoe'
       required: [id, body]
       additionalProperties: true
 
@@ -1061,8 +1639,12 @@ components:
             page: { type: string }
             page_rank: { type: integer }
           additionalProperties: true
-        publication: {}
-        post: {}
+        publication:
+          type: object
+          additionalProperties: true
+        post:
+          type: object
+          additionalProperties: true
         comment:
           $ref: '#/components/schemas/NoteComment'
         parentComments:
@@ -1073,6 +1655,29 @@ components:
         trackingParameters:
           type: object
           additionalProperties: true
+      examples:
+        - entity_key: 'note-abc123'
+          type: 'note'
+          context:
+            type: 'recent'
+            timestamp: '2024-01-15T12:00:00Z'
+            users:
+              - id: 12345
+                name: 'Jane Doe'
+                handle: 'janedoe'
+                photo_url: 'https://substackcdn.com/image.jpg'
+          comment:
+            id: 987654
+            body: 'Excited to share my latest post!'
+            user_id: 12345
+            type: 'comment'
+            date: '2024-01-15T12:00:00Z'
+            name: 'Jane Doe'
+            reaction_count: 8
+            reactions:
+              '❤': 5
+              '🔥': 3
+            children_count: 2
       required: [entity_key, type]
       additionalProperties: true
 
@@ -1111,8 +1716,12 @@ components:
         attachments:
           type: array
           items: { $ref: '#/components/schemas/NoteAttachment' }
-        userStatus: {}
-        user_primary_publication: {}
+        userStatus:
+          type: object
+          additionalProperties: true
+        user_primary_publication:
+          type: object
+          additionalProperties: true
         language: { type: string }
         autotranslate_to: { type: string }
         tracking_parameters:
@@ -1160,39 +1769,54 @@ components:
             properties:
               comment:
                 $ref: '#/components/schemas/Comment'
-              replies:
+              descendantComments:
                 type: array
-                items: { $ref: '#/components/schemas/Comment' }
+                items:
+                  type: object
+                  properties:
+                    type: { type: string }
+                    comment:
+                      $ref: '#/components/schemas/Comment'
+                  required: [type, comment]
+                  additionalProperties: true
+            required: [comment, descendantComments]
             additionalProperties: true
+        moreBranches: { type: integer }
         nextCursor:
           oneOf:
             - { type: string }
             - { type: 'null' }
+      required: [commentBranches, moreBranches, nextCursor]
       additionalProperties: true
 
     PotentialHandles:
       type: object
       description: Handle options for the authenticated user.
       properties:
-        handles:
+        potentialHandles:
           type: array
           items:
             type: object
             properties:
+              id: { type: string }
+              handle: { type: string }
               type:
                 type: string
                 description: Handle type discriminator (e.g. `user`, `publication`).
-              handle: { type: string }
-              id: { type: integer }
-              name: { type: string }
+            required: [id, handle, type]
             additionalProperties: true
+      required: [potentialHandles]
       additionalProperties: true
 
     UserProfile:
       type: object
       description: |
-        Lightweight profile record returned when calling
-        `/api/v1/reader/feed/profile/{profileId}` with no parameters.
+        Lightweight profile fields extracted from the no-parameters call to
+        `/api/v1/reader/feed/profile/{profileId}`. The raw endpoint returns a
+        feed wrapper; the client extracts `id` and `handle` from the first
+        `context.users` entry and then resolves the full profile via
+        `getProfileBySlug`. This schema documents the conceptual profile
+        record, not the raw wire format.
       properties:
         id: { type: integer }
         name: { type: string }
@@ -1222,148 +1846,136 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PublicationUser'
-      required: [id]
+      required: [id, name, handle]
       additionalProperties: true
 
     FullProfile:
-      type: object
       description: |
         Full profile with extra fields exposed by
         `GET /api/v1/user/{slug}/public_profile`.
-      properties:
-        id: { type: integer }
-        name: { type: string }
-        handle: { type: string }
-        photo_url: { type: string, format: uri }
-        bio: { type: string }
-        slug: { type: string }
-        cover_photo_url: { type: string, format: uri }
-        url: { type: string, format: uri }
-        twitter_screen_name: { type: string }
-        publicationUsers:
-          type: array
-          items:
-            $ref: '#/components/schemas/PublicationUser'
-        tos_accepted_at:
-          oneOf:
-            - { type: string, format: date-time }
-            - { type: 'null' }
-        profile_disabled:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        userLinks:
-          type: array
-          items:
-            type: object
-            properties:
-              id: { type: integer }
-              user_id: { type: integer }
-              url: { type: string, format: uri }
-              title: { type: string }
-            additionalProperties: true
-        subscriptions:
-          type: array
-          items:
-            type: object
-            properties:
-              publication_id: { type: integer }
-              user_id: { type: integer }
-              created_at: { type: string, format: date-time }
-              type: { type: string }
-            additionalProperties: true
-        subscriptionsTruncated:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        hasGuestPost:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        primaryPublication:
-          oneOf:
-            - { $ref: '#/components/schemas/PrimaryPublication' }
-            - { type: 'null' }
-        max_pub_tier:
-          oneOf:
-            - { type: integer }
-            - { type: 'null' }
-        hasActivity:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        hasLikes:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        lists:
-          type: array
-          items: { type: object }
-        rough_num_free_subscribers_int:
-          oneOf:
-            - { type: integer }
-            - { type: 'null' }
-        rough_num_free_subscribers:
-          oneOf:
-            - { type: string }
-            - { type: 'null' }
-        bestseller_badge_disabled:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        subscriberCountString:
-          oneOf:
-            - { type: string }
-            - { type: 'null' }
-        subscriberCount:
-          oneOf:
-            - { type: string }
-            - { type: 'null' }
-        subscriberCountNumber:
-          oneOf:
-            - { type: integer }
-            - { type: 'null' }
-        hasHiddenPublicationUsers:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        visibleSubscriptionsCount:
-          oneOf:
-            - { type: integer }
-            - { type: 'null' }
-        previousSlug:
-          oneOf:
-            - { type: string }
-            - { type: 'null' }
-        primaryPublicationIsPledged:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        primaryPublicationSubscriptionState:
-          oneOf:
-            - { type: string }
-            - { type: 'null' }
-        isSubscribed:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        isFollowing:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        followsViewer:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        can_dm:
-          oneOf:
-            - { type: boolean }
-            - { type: 'null' }
-        dm_upgrade_options:
-          type: array
-          items: { type: string }
-      required: [id, name, handle, photo_url]
-      additionalProperties: true
+      allOf:
+        - $ref: '#/components/schemas/Profile'
+        - type: object
+          properties:
+            tos_accepted_at:
+              oneOf:
+                - { type: string, format: date-time }
+                - { type: 'null' }
+            profile_disabled:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            userLinks:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: integer }
+                  user_id: { type: integer }
+                  url: { type: string, format: uri }
+                  title: { type: string }
+                additionalProperties: true
+            subscriptions:
+              type: array
+              items:
+                type: object
+                properties:
+                  publication_id: { type: integer }
+                  user_id: { type: integer }
+                  created_at: { type: string, format: date-time }
+                  type: { type: string }
+                additionalProperties: true
+            subscriptionsTruncated:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            hasGuestPost:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            primaryPublication:
+              oneOf:
+                - { $ref: '#/components/schemas/PrimaryPublication' }
+                - { type: 'null' }
+            max_pub_tier:
+              oneOf:
+                - { type: integer }
+                - { type: 'null' }
+            hasActivity:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            hasLikes:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            lists:
+              type: array
+              items: { type: object }
+            rough_num_free_subscribers_int:
+              oneOf:
+                - { type: integer }
+                - { type: 'null' }
+            rough_num_free_subscribers:
+              oneOf:
+                - { type: string }
+                - { type: 'null' }
+            bestseller_badge_disabled:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            subscriberCountString:
+              oneOf:
+                - { type: string }
+                - { type: 'null' }
+            subscriberCount:
+              oneOf:
+                - { type: string }
+                - { type: 'null' }
+            subscriberCountNumber:
+              oneOf:
+                - { type: integer }
+                - { type: 'null' }
+            hasHiddenPublicationUsers:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            visibleSubscriptionsCount:
+              oneOf:
+                - { type: integer }
+                - { type: 'null' }
+            previousSlug:
+              oneOf:
+                - { type: string }
+                - { type: 'null' }
+            primaryPublicationIsPledged:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            primaryPublicationSubscriptionState:
+              oneOf:
+                - { type: string }
+                - { type: 'null' }
+            isSubscribed:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            isFollowing:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            followsViewer:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            can_dm:
+              oneOf:
+                - { type: boolean }
+                - { type: 'null' }
+            dm_upgrade_options:
+              type: array
+              items: { type: string }
+          additionalProperties: true
 
     ProfileSearchResult:
       type: object
@@ -1374,7 +1986,7 @@ components:
         handle: { type: string }
         photo_url: { type: string, format: uri }
         bio: { type: string }
-      required: [id]
+      required: [id, name, handle]
       additionalProperties: true
 
     ProfileSearchResponse:
@@ -1421,7 +2033,9 @@ components:
         role: { type: string }
         public: { type: boolean }
         is_primary: { type: boolean }
-        publication: {}
+        publication:
+          type: object
+          additionalProperties: true
       additionalProperties: true
 
     PrimaryPublication:
@@ -1447,6 +2061,7 @@ components:
           oneOf:
             - { type: boolean }
             - { type: 'null' }
+      required: [id, name, subdomain]
       additionalProperties: true
 
     Category:
@@ -1458,20 +2073,84 @@ components:
             - { type: integer }
             - { type: string }
         name: { type: string }
+        canonical_name: { type: string }
+        active: { type: boolean }
+        rank: { type: number }
         slug: { type: string }
         subcategories:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                oneOf:
-                  - { type: integer }
-                  - { type: string }
-              name: { type: string }
-              slug: { type: string }
-            additionalProperties: true
-      required: [name]
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/Subcategory'
+            - { type: 'null' }
+          description: |
+            May be `null` when a category has no subcategories.
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        parent_tag_id:
+          oneOf:
+            - { type: integer }
+            - { type: 'null' }
+        emoji:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        leaderboard_description:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        deprecated: { type: boolean }
+      required: [id, name, canonical_name, active, rank, slug, subcategories]
+      additionalProperties: true
+
+    Subcategory:
+      type: object
+      description: A subcategory within a content category.
+      properties:
+        id:
+          oneOf:
+            - { type: integer }
+            - { type: string }
+        name: { type: string }
+        canonical_name: { type: string }
+        active: { type: boolean }
+        rank: { type: number }
+        parent_tag_id:
+          oneOf:
+            - { type: integer }
+            - { type: 'null' }
+        slug: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        emoji:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        leaderboard_description:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+        deprecated: { type: boolean }
+      required: [id, name, canonical_name, active, rank, parent_tag_id, slug]
+      additionalProperties: true
+
+    CategoryPublication:
+      type: object
+      description: |
+        A publication listed under a category. Distinct from the general
+        `Publication` schema — category listings expose fewer fields.
+      properties:
+        author_id: { type: integer }
+        name: { type: string }
+        subdomain: { type: string }
+        logo_url: { type: string, format: uri }
+        cover_photo_url: { type: string, format: uri }
+        created_at: { type: string, format: date-time }
+        custom_domain:
+          oneOf:
+            - { type: string }
+            - { type: 'null' }
+      required: [author_id, name, subdomain]
       additionalProperties: true
 
     CategoryPublications:
@@ -1481,12 +2160,7 @@ components:
         publications:
           type: array
           items:
-            allOf:
-              - $ref: '#/components/schemas/Publication'
-              - type: object
-                properties:
-                  base_url: { type: string, format: uri }
-                additionalProperties: true
+            $ref: '#/components/schemas/CategoryPublication'
         more:
           type: boolean
       additionalProperties: true
@@ -1523,7 +2197,9 @@ components:
           oneOf:
             - { type: integer }
             - { type: 'null' }
-        status: {}
+        status:
+          type: object
+          additionalProperties: true
       required: [id, name, handle, photo_url]
       additionalProperties: true
 
@@ -1627,7 +2303,9 @@ components:
         is_saved: { type: boolean }
         created_at: { type: string, format: date-time }
         uuid: { type: string }
-        coverImagePalette: {}
+        coverImagePalette:
+          type: object
+          additionalProperties: true
         duration_metadata:
           oneOf:
             - type: object
@@ -1647,9 +2325,10 @@ components:
     PaginatedFeed:
       type: object
       description: |
-        Paginated feed envelope returned by inbox/top, reader/feed, and other
-        cursor-paginated discovery endpoints. The TypeScript client normalises
-        this into `{ items: FeedItem[], nextCursor: string | null }`.
+        Paginated feed envelope returned by cursor-paginated discovery
+        endpoints such as `/reader/feed`, `/top/search`, and
+        `/search/explore/web`. The TypeScript client normalises this into
+        `{ items: FeedItem[], nextCursor: string | null }`.
       properties:
         items:
           type: array
@@ -1660,14 +2339,34 @@ components:
             - { type: 'null' }
       additionalProperties: true
 
+    TopInboxFeed:
+      type: object
+      description: |
+        Raw response from `GET /api/v1/inbox/top`. Returns an `inboxItems`
+        array rather than the `items`/`nextCursor` shape used by other
+        feed endpoints.
+      properties:
+        inboxItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/InboxItem'
+      additionalProperties: true
+
     Facepile:
       type: object
       description: Reactor list for a post.
       properties:
-        users:
+        reactors:
           type: array
-          items: { $ref: '#/components/schemas/User' }
-        total_count: { type: integer }
+          items:
+            type: object
+            properties:
+              id: { type: integer }
+              name: { type: string }
+              photo_url: { type: string, format: uri }
+            required: [id, name]
+            additionalProperties: true
+      required: [reactors]
       additionalProperties: true
 
     LiveStream:
@@ -1692,7 +2391,7 @@ components:
         Active live-stream payload. Returns an empty object when no live
         stream is active.
       properties:
-        liveStream:
+        activeLiveStream:
           oneOf:
             - $ref: '#/components/schemas/LiveStream'
             - { type: 'null' }
@@ -1701,19 +2400,35 @@ components:
     SubscriberLists:
       type: object
       description: |
-        Subscriber-list payload. `following` lists the publications/users the
-        authenticated user follows.
+        Subscriber-list payload. `subscriberLists` groups the publications/users
+        the authenticated user follows.
       properties:
-        following:
+        subscriberLists:
           type: array
           items:
             type: object
             properties:
-              id: { type: integer }
+              id: { type: string }
               name: { type: string }
-              handle: { type: string }
-              photo_url: { type: string, format: uri }
+              groups:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    users:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id: { type: integer }
+                          handle: { type: string }
+                        required: [id, handle]
+                        additionalProperties: true
+                  required: [users]
+                  additionalProperties: true
+            required: [id, name, groups]
             additionalProperties: true
+      required: [subscriberLists]
       additionalProperties: true
 
     UserSettingRequest:
@@ -1726,6 +2441,8 @@ components:
         last_home_tab:
           type: string
           description: Last home-tab key (e.g. `home`, `discover`).
+      examples:
+        - last_home_tab: 'home'
       required: [last_home_tab]
       additionalProperties: true
 
@@ -1762,6 +2479,17 @@ components:
           enum: [everyone]
           description: |
             Who can reply to the note. Currently only `everyone` is supported.
+      examples:
+        - bodyJson:
+            type: doc
+            content:
+              - type: paragraph
+                content:
+                  - type: text
+                    text: 'Hello from the Substack API!'
+          tabId: 'tab-abc123'
+          surface: 'feed'
+          replyMinimumRole: 'everyone'
       required: [bodyJson, tabId, surface]
       additionalProperties: true
 
@@ -1807,3 +2535,241 @@ components:
         host: { type: string }
       required: [id, type]
       additionalProperties: true
+
+    # ── Post Management schemas ──────────────────────────────────────────
+
+    DraftPost:
+      type: object
+      description: A draft or published post from the post management endpoints.
+      required: [id]
+      properties:
+        id:
+          type: integer
+        uuid:
+          type: string
+        editor_v2:
+          type: boolean
+        publication_id:
+          type: integer
+        type:
+          type: string
+          description: Post type (e.g. `newsletter`).
+        post_date:
+          type: string
+          format: date-time
+        draft_created_at:
+          type: string
+          format: date-time
+        draft_updated_at:
+          type: string
+          format: date-time
+        email_sent_at:
+          type: string
+          format: date-time
+        is_published:
+          type: boolean
+        title:
+          type: string
+        draft_title:
+          type: string
+        draft_body:
+          type: string
+          description: HTML body content.
+        body:
+          type: string
+        subtitle:
+          type: string
+        draft_subtitle:
+          type: string
+        slug:
+          type: string
+        audience:
+          type: string
+          description: Audience visibility (e.g. `everyone`, `only_paid`).
+        cover_image:
+          type: string
+          format: uri
+        should_send_email:
+          type: boolean
+        should_send_free_preview:
+          type: boolean
+        write_comment_permissions:
+          type: string
+        default_comment_sort:
+          type: string
+        meter_type:
+          type: string
+        section_id:
+          type: integer
+        section_slug:
+          type: string
+        section_name:
+          type: string
+        draft_section_name:
+          type: string
+        is_draft_hidden:
+          type: boolean
+        reaction_count:
+          type: integer
+        comment_count:
+          type: integer
+        child_comment_count:
+          type: integer
+        reactions:
+          type: object
+          additionalProperties:
+            type: integer
+        free_unlock_required:
+          type: boolean
+        word_count:
+          type: integer
+      additionalProperties: true
+
+    PostManagementResponse:
+      type: object
+      description: Paginated response from post management list endpoints.
+      required: [posts, offset, limit, total]
+      properties:
+        posts:
+          type: array
+          items:
+            $ref: '#/components/schemas/DraftPost'
+        offset:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+
+    PostManagementCounts:
+      type: object
+      description: Post counts by status.
+      required: [published, drafts, scheduled]
+      properties:
+        published:
+          type: integer
+        drafts:
+          type: integer
+        scheduled:
+          type: integer
+
+    PublicationDetail:
+      type: object
+      description: Publication metadata from GET /publication.
+      properties:
+        subdomain:
+          type: string
+        name:
+          type: string
+        is_personal_mode:
+          type: boolean
+        custom_domain:
+          type: string
+        logo_url:
+          type: string
+          format: uri
+        cover_photo_url:
+          type: string
+          format: uri
+        email_from_name:
+          type: string
+        language:
+          type: string
+        tags:
+          type: array
+          items:
+            type: object
+        has_paid_subs:
+          type: boolean
+        community_enabled:
+          type: boolean
+        podcast_enabled:
+          type: boolean
+        bylines_enabled:
+          type: boolean
+        invite_only:
+          type: boolean
+        founding_plan_enabled:
+          type: boolean
+        boost_enabled:
+          type: boolean
+        tts_enabled:
+          type: boolean
+      additionalProperties: true
+
+    PostTag:
+      type: object
+      description: A publication post tag.
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    Subscription:
+      type: object
+      description: A user's subscription to a publication.
+      required: [id, user_id, publication_id]
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        publication_id:
+          type: integer
+        email_disabled:
+          type: boolean
+        membership_state:
+          type: string
+        type:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        visibility:
+          type: string
+        is_founding:
+          type: boolean
+        is_favorite:
+          type: boolean
+
+    SubscriptionsResponse:
+      type: object
+      description: Paginated list of subscriptions.
+      required: [subscriptions]
+      properties:
+        subscriptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subscription'
+        more:
+          type: boolean
+
+    PublisherSettings:
+      type: object
+      description: Publisher settings from GET /settings.
+      required: [settings]
+      properties:
+        settings:
+          type: object
+          additionalProperties: true
+        twitterAccount:
+          type: object
+          additionalProperties: true
+        userInboxView:
+          type: object
+          additionalProperties: true
+        hasActiveSubscriptionSection:
+          type: boolean
+      additionalProperties: true
+
+    LiveStreamList:
+      type: object
+      description: Live stream list response.
+      properties:
+        liveStreams:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiveStream'
+        hasMore:
+          type: boolean
