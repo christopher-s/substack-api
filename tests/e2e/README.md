@@ -136,7 +136,7 @@ When creating new E2E tests:
 - Use `console.log()` statements for debugging (they'll show in test output)
 - Check the test setup in `setup.ts` if tests aren't running as expected
 - Verify your `.env` file is properly configured
-- Ensure your API key has the necessary permissions
+- Ensure your Substack session cookie (substack.sid) is valid and not expired
 
 ## Security
 
