@@ -114,7 +114,7 @@ describe('NoteBuilder - Coverage Tests', () => {
         {
           type: 'text',
           text: 'this link',
-          marks: [{ type: 'link', attrs: { href: 'https://example.com' } }]
+          marks: [{ type: 'link', attrs: { href: 'https://example.com', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
         },
         { type: 'text', text: '!' }
       ])
@@ -183,7 +183,7 @@ describe('NoteBuilder - Coverage Tests', () => {
         {
           type: 'text',
           text: 'link',
-          marks: [{ type: 'link', attrs: { href: 'https://test.com' } }]
+          marks: [{ type: 'link', attrs: { href: 'https://test.com', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
         }
       ])
     })
@@ -218,7 +218,7 @@ describe('NoteBuilder - Coverage Tests', () => {
         {
           type: 'text',
           text: 'our website',
-          marks: [{ type: 'link', attrs: { href: 'https://example.com' } }]
+          marks: [{ type: 'link', attrs: { href: 'https://example.com', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
         },
         { type: 'text', text: ' for more info.' }
       ])
@@ -469,7 +469,7 @@ describe('NoteBuilder - Coverage Tests', () => {
       expect(content[8]).toEqual({
         type: 'text',
         text: 'link',
-        marks: [{ type: 'link', attrs: { href: 'https://example.com' } }]
+        marks: [{ type: 'link', attrs: { href: 'https://example.com', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
       })
     })
   })

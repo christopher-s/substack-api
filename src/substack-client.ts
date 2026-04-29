@@ -29,6 +29,7 @@ import {
   SubscriptionService
 } from '@substack-api/internal/services'
 import { NoteBuilderFactory } from '@substack-api/domain'
+import { markdownToHtml } from '@substack-api/internal/markdown-to-html'
 import type { FeedTab, ProfileFeedTab } from '@substack-api/internal/services/discovery-service'
 import type {
   FeedItem,
@@ -605,6 +606,42 @@ export class SubstackClient {
     this.requireAuth('createDraft')
     this.requirePublication('createDraft')
     return await this.postManagementService.createDraft(data)
+  }
+
+  /**
+   * Create a draft post from markdown content
+   * Converts markdown to HTML and creates a draft on the publication
+   * @param markdown - Markdown content for the draft body
+   * @param options - Optional draft metadata (title, type, audience, bylineUserId)
+   * @returns Promise with the created draft data (includes id)
+   * @throws {Error} When no token/publication configured, markdown is empty, or API fails
+   */
+  async createDraftFromMarkdown(
+    markdown: string,
+    options?: {
+      title?: string
+      type?: string
+      audience?: string
+      bylineUserId?: number
+    }
+  ): Promise<unknown> {
+    this.requireAuth('createDraftFromMarkdown')
+    this.requirePublication('createDraftFromMarkdown')
+    try {
+      const html = markdownToHtml(markdown)
+      return await this.postManagementService.createDraft({
+        title: options?.title ?? '',
+        body: html,
+        type: options?.type,
+        audience: options?.audience,
+        bylineUserId: options?.bylineUserId
+      })
+    } catch (error) {
+      throw new Error(
+        `Failed to create draft from markdown: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error }
+      )
+    }
   }
 
   async updateDraft(

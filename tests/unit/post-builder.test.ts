@@ -113,7 +113,7 @@ describe('NoteBuilder', () => {
           {
             type: 'text',
             text: 'Google',
-            marks: [{ type: 'link', attrs: { href: 'https://google.com' } }]
+            marks: [{ type: 'link', attrs: { href: 'https://google.com', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
           },
           { type: 'text', text: ' for search.' }
         ]
@@ -202,6 +202,7 @@ describe('NoteBuilder', () => {
 
       expect(result.bodyJson.content[1]).toEqual({
         type: 'orderedList',
+        attrs: { start: 1 },
         content: [
           {
             type: 'listItem',
@@ -252,7 +253,7 @@ describe('NoteBuilder', () => {
         {
           type: 'text',
           text: 'Link',
-          marks: [{ type: 'link', attrs: { href: 'https://example.com' } }]
+          marks: [{ type: 'link', attrs: { href: 'https://example.com', target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
         }
       ])
     })
