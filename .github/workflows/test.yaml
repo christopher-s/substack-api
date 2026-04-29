@@ -1,8 +1,5 @@
 name: Build & Test
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 on:
     workflow_dispatch:
     schedule:
@@ -19,11 +16,11 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
+              uses: actions/checkout@v6
+            - uses: pnpm/action-setup@v5
               with:
                   version: 10
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v6
               with:
                   node-version: 20
                   cache: 'pnpm'
@@ -36,11 +33,11 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
+              uses: actions/checkout@v6
+            - uses: pnpm/action-setup@v5
               with:
                   version: 10
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v6
               with:
                   node-version: 20
                   cache: 'pnpm'
@@ -50,7 +47,7 @@ jobs:
               run: pnpm test:unit
             - name: Upload test results
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                 name: unit-test-results
                 path: |
@@ -58,7 +55,7 @@ jobs:
                   junit.xml
 
             - name: Upload coverage to Codecov
-              uses: codecov/codecov-action@v4
+              uses: codecov/codecov-action@v6
               with:
                 token: ${{ secrets.CODECOV_TOKEN }}
                 files: ./coverage/lcov.info
@@ -71,11 +68,11 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
+              uses: actions/checkout@v6
+            - uses: pnpm/action-setup@v5
               with:
                   version: 10
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v6
               with:
                   node-version: 20
                   cache: 'pnpm'
@@ -85,7 +82,7 @@ jobs:
               run: pnpm test:integration
             - name: Upload integration test results
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                 name: integration-test-results
                 path: |
@@ -95,11 +92,11 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
+              uses: actions/checkout@v6
+            - uses: pnpm/action-setup@v5
               with:
                   version: 10
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v6
               with:
                   node-version: 20
                   cache: 'pnpm'
@@ -115,11 +112,11 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
-            - uses: pnpm/action-setup@v4
+              uses: actions/checkout@v6
+            - uses: pnpm/action-setup@v5
               with:
                   version: 10
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v6
               with:
                   node-version: 20
                   cache: 'pnpm'
@@ -143,7 +140,7 @@ jobs:
                 SUBSTACK_HOSTNAME: ${{ secrets.SUBSTACK_HOSTNAME }}
             - name: Upload E2E test results
               if: always() && steps.credentials.outputs.has_credentials == 'true'
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                 name: e2e-test-results
                 path: |
