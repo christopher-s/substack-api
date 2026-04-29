@@ -38,3 +38,6 @@ export type { SubstackInboxItem } from '@substack-api/internal/types'
 export type { FeedItem } from '@substack-api/internal/types'
 export type { SubstackFacepile } from '@substack-api/internal/types'
 export type { SubstackPublicationPost } from '@substack-api/internal/types'
+
+export { markdownToNoteBody } from '@substack-api/internal/markdown-to-prosemirror'
+export { markdownToHtml } from '@substack-api/internal/markdown-to-html'

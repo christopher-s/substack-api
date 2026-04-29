@@ -12,18 +12,24 @@ import type { EntityDeps } from '@substack-api/domain/entity-deps'
 import {
   CommentService,
   ConnectivityService,
+  DashboardService,
   DiscoveryService,
   FollowingService,
+  GrowthStatsService,
   NoteService,
   PostManagementService,
   PostService,
   ProfileService,
   PublicationDetailService,
   PublicationService,
+  PublicationStatsService,
+  RecommendationService,
   SettingsService,
+  SubscriberStatsService,
   SubscriptionService
 } from '@substack-api/internal/services'
 import { NoteBuilderFactory } from '@substack-api/domain'
+import { markdownToHtml } from '@substack-api/internal/markdown-to-html'
 import type { FeedTab, ProfileFeedTab } from '@substack-api/internal/services/discovery-service'
 import type {
   FeedItem,
@@ -64,6 +70,11 @@ export class SubstackClient {
   private readonly publicationDetailService: PublicationDetailService
   private readonly subscriptionService: SubscriptionService
   private readonly settingsService: SettingsService
+  private readonly subscriberStatsService: SubscriberStatsService
+  private readonly growthStatsService: GrowthStatsService
+  private readonly publicationStatsService: PublicationStatsService
+  private readonly dashboardService: DashboardService
+  private readonly recommendationService: RecommendationService
   private readonly perPage: number
   private readonly token: string | undefined
   private readonly hasPublication: boolean
@@ -124,6 +135,14 @@ export class SubstackClient {
     this.publicationDetailService = new PublicationDetailService(this.publicationClient)
     this.subscriptionService = new SubscriptionService(this.publicationClient, this.substackClient)
     this.settingsService = new SettingsService(this.publicationClient)
+    this.subscriberStatsService = new SubscriberStatsService(
+      this.publicationClient,
+      this.substackClient
+    )
+    this.growthStatsService = new GrowthStatsService(this.publicationClient)
+    this.publicationStatsService = new PublicationStatsService(this.publicationClient)
+    this.dashboardService = new DashboardService(this.publicationClient)
+    this.recommendationService = new RecommendationService(this.publicationClient)
   }
 
   /** Throw a clear error when an authenticated method is called without a token */
@@ -589,6 +608,42 @@ export class SubstackClient {
     return await this.postManagementService.createDraft(data)
   }
 
+  /**
+   * Create a draft post from markdown content
+   * Converts markdown to HTML and creates a draft on the publication
+   * @param markdown - Markdown content for the draft body
+   * @param options - Optional draft metadata (title, type, audience, bylineUserId)
+   * @returns Promise with the created draft data (includes id)
+   * @throws {Error} When no token/publication configured, markdown is empty, or API fails
+   */
+  async createDraftFromMarkdown(
+    markdown: string,
+    options?: {
+      title?: string
+      type?: string
+      audience?: string
+      bylineUserId?: number
+    }
+  ): Promise<unknown> {
+    this.requireAuth('createDraftFromMarkdown')
+    this.requirePublication('createDraftFromMarkdown')
+    try {
+      const html = markdownToHtml(markdown)
+      return await this.postManagementService.createDraft({
+        title: options?.title ?? '',
+        body: html,
+        type: options?.type,
+        audience: options?.audience,
+        bylineUserId: options?.bylineUserId
+      })
+    } catch (error) {
+      throw new Error(
+        `Failed to create draft from markdown: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error }
+      )
+    }
+  }
+
   async updateDraft(
     id: number,
     data: { title?: string; body?: string; [key: string]: unknown }
@@ -685,6 +740,296 @@ export class SubstackClient {
     this.requireAuth('publisherSettings')
     this.requirePublication('publisherSettings')
     return await this.settingsService.getPublisherSettings()
+  }
+
+  async publicationUser(): Promise<unknown> {
+    this.requireAuth('publicationUser')
+    this.requirePublication('publicationUser')
+    return await this.settingsService.getPublicationUser()
+  }
+
+  async sections(): Promise<unknown> {
+    this.requireAuth('sections')
+    this.requirePublication('sections')
+    return await this.settingsService.getSections()
+  }
+
+  async subscriptionSettings(): Promise<unknown> {
+    this.requireAuth('subscriptionSettings')
+    this.requirePublication('subscriptionSettings')
+    return await this.settingsService.getSubscription()
+  }
+
+  async boostSettings(): Promise<unknown> {
+    this.requireAuth('boostSettings')
+    this.requirePublication('boostSettings')
+    return await this.settingsService.getBoostSettings()
+  }
+
+  // ── Subscriber stats methods (require auth) ──────────────────────────
+
+  async subscriberStats(): Promise<unknown> {
+    this.requireAuth('subscriberStats')
+    this.requirePublication('subscriberStats')
+    return await this.subscriberStatsService.getSubscriberStats()
+  }
+
+  async subscriptionsPage(options?: { cursor?: string }): Promise<unknown> {
+    this.requireAuth('subscriptionsPage')
+    this.requirePublication('subscriptionsPage')
+    return await this.subscriberStatsService.getSubscriptionsPage(options)
+  }
+
+  // ── Growth stats methods (require auth) ───────────────────────────────
+
+  async growthSources(options: {
+    fromDate: string
+    toDate: string
+    orderBy?: string
+    orderDirection?: string
+  }): Promise<unknown> {
+    this.requireAuth('growthSources')
+    this.requirePublication('growthSources')
+    return await this.growthStatsService.getGrowthSources(options)
+  }
+
+  async growthTimeseries(data: {
+    sources: unknown[]
+    orderBy: string
+    orderDirection: string
+    fromDate?: string
+    toDate?: string
+  }): Promise<unknown> {
+    this.requireAuth('growthTimeseries')
+    this.requirePublication('growthTimeseries')
+    return await this.growthStatsService.getGrowthTimeseries(data)
+  }
+
+  async growthEvents(options: { fromDate: string; toDate: string }): Promise<unknown> {
+    this.requireAuth('growthEvents')
+    this.requirePublication('growthEvents')
+    return await this.growthStatsService.getGrowthEvents(options)
+  }
+
+  // ── Publication stats methods (require auth) ─────────────────────────
+
+  async networkAttribution(options?: {
+    timeWindow?: string
+    isSubscribed?: boolean
+  }): Promise<unknown> {
+    this.requireAuth('networkAttribution')
+    this.requirePublication('networkAttribution')
+    return await this.publicationStatsService.getNetworkAttribution(options)
+  }
+
+  async followerTimeseries(options: { from: string }): Promise<unknown> {
+    this.requireAuth('followerTimeseries')
+    this.requirePublication('followerTimeseries')
+    return await this.publicationStatsService.getFollowerTimeseries(options)
+  }
+
+  async audienceLocation(options?: { metric?: string; granularity?: string }): Promise<unknown> {
+    this.requireAuth('audienceLocation')
+    this.requirePublication('audienceLocation')
+    return await this.publicationStatsService.getAudienceLocation(options)
+  }
+
+  async audienceLocationTotal(): Promise<unknown> {
+    this.requireAuth('audienceLocationTotal')
+    this.requirePublication('audienceLocationTotal')
+    return await this.publicationStatsService.getAudienceLocationTotal()
+  }
+
+  async audienceOverlap(options?: { limit?: number }): Promise<unknown> {
+    this.requireAuth('audienceOverlap')
+    this.requirePublication('audienceOverlap')
+    return await this.publicationStatsService.getAudienceOverlap(options)
+  }
+
+  async traffic30dViews(): Promise<unknown> {
+    this.requireAuth('traffic30dViews')
+    this.requirePublication('traffic30dViews')
+    return await this.publicationStatsService.getTraffic30dViews()
+  }
+
+  async visitorSources(options: {
+    fromDate: string
+    toDate: string
+    offset?: number
+    limit?: number
+    orderBy?: string
+    orderDirection?: string
+  }): Promise<unknown> {
+    this.requireAuth('visitorSources')
+    this.requirePublication('visitorSources')
+    return await this.publicationStatsService.getVisitorSources(options)
+  }
+
+  async trafficTimeseries(options: {
+    from: string
+    to: string
+    category?: string
+  }): Promise<unknown> {
+    this.requireAuth('trafficTimeseries')
+    this.requirePublication('trafficTimeseries')
+    return await this.publicationStatsService.getTrafficTimeseries(options)
+  }
+
+  async email30dOpenRate(): Promise<unknown> {
+    this.requireAuth('email30dOpenRate')
+    this.requirePublication('email30dOpenRate')
+    return await this.publicationStatsService.getEmail30dOpenRate()
+  }
+
+  async emailStats(options?: {
+    offset?: number
+    limit?: number
+    orderBy?: string
+    orderDirection?: string
+  }): Promise<unknown> {
+    this.requireAuth('emailStats')
+    this.requirePublication('emailStats')
+    return await this.publicationStatsService.getEmailStats(options)
+  }
+
+  async pledgeSummary(): Promise<unknown> {
+    this.requireAuth('pledgeSummary')
+    this.requirePublication('pledgeSummary')
+    return await this.publicationStatsService.getPledgeSummary()
+  }
+
+  async pledges(options?: { limit?: number }): Promise<unknown> {
+    this.requireAuth('pledges')
+    this.requirePublication('pledges')
+    return await this.publicationStatsService.getPledges(options)
+  }
+
+  async readerReferrals(options: {
+    to: string
+    offset?: number
+    limit?: number
+    orderBy?: string
+    orderDirection?: string
+  }): Promise<unknown> {
+    this.requireAuth('readerReferrals')
+    this.requirePublication('readerReferrals')
+    return await this.publicationStatsService.getReaderReferrals(options)
+  }
+
+  async pledgePlans(): Promise<unknown> {
+    this.requireAuth('pledgePlans')
+    this.requirePublication('pledgePlans')
+    return await this.publicationStatsService.getPledgePlans()
+  }
+
+  async pledgePlansSummary(): Promise<unknown> {
+    this.requireAuth('pledgePlansSummary')
+    this.requirePublication('pledgePlansSummary')
+    return await this.publicationStatsService.getPledgePlansSummary()
+  }
+
+  async publicationSettings(): Promise<unknown> {
+    this.requireAuth('publicationSettings')
+    this.requirePublication('publicationSettings')
+    return await this.publicationStatsService.getPublicationSettings()
+  }
+
+  async bestsellerTier(): Promise<unknown> {
+    this.requireAuth('bestsellerTier')
+    this.requirePublication('bestsellerTier')
+    return await this.publicationStatsService.getBestsellerTier()
+  }
+
+  // ── Dashboard methods (require auth) ────────────────────────────────
+
+  async dashboardSummary(options?: { range?: number }): Promise<unknown> {
+    this.requireAuth('dashboardSummary')
+    this.requirePublication('dashboardSummary')
+    return await this.dashboardService.getDashboardSummary(options)
+  }
+
+  async emailsTimeseries(options: { from: string }): Promise<unknown> {
+    this.requireAuth('emailsTimeseries')
+    this.requirePublication('emailsTimeseries')
+    return await this.dashboardService.getEmailsTimeseries(options)
+  }
+
+  async unreadActivity(): Promise<unknown> {
+    this.requireAuth('unreadActivity')
+    this.requirePublication('unreadActivity')
+    return await this.dashboardService.getUnreadActivity()
+  }
+
+  async unreadMessageCount(): Promise<unknown> {
+    this.requireAuth('unreadMessageCount')
+    this.requirePublication('unreadMessageCount')
+    return await this.dashboardService.getUnreadMessageCount()
+  }
+
+  async growthSuggestion(): Promise<unknown> {
+    this.requireAuth('growthSuggestion')
+    this.requirePublication('growthSuggestion')
+    return await this.dashboardService.getGrowthSuggestion()
+  }
+
+  async dashboardSummaryV1(): Promise<unknown> {
+    this.requireAuth('dashboardSummaryV1')
+    this.requirePublication('dashboardSummaryV1')
+    return await this.dashboardService.getDashboardSummaryV1()
+  }
+
+  // ── Recommendation methods (require auth) ───────────────────────────
+
+  async outgoingRecommendations(publicationId: number): Promise<unknown> {
+    this.requireAuth('outgoingRecommendations')
+    this.requirePublication('outgoingRecommendations')
+    return await this.recommendationService.getOutgoingRecommendations(publicationId)
+  }
+
+  async outgoingRecommendationsPaginated(
+    publicationId: number,
+    options?: { offset?: number; limit?: number; paginate?: boolean }
+  ): Promise<unknown> {
+    this.requireAuth('outgoingRecommendationsPaginated')
+    this.requirePublication('outgoingRecommendationsPaginated')
+    return await this.recommendationService.getOutgoingRecommendationsPaginated(
+      publicationId,
+      options
+    )
+  }
+
+  async outgoingRecommendationStats(options?: {
+    offset?: number
+    limit?: number
+    orderBy?: string
+    orderDirection?: string
+  }): Promise<unknown> {
+    this.requireAuth('outgoingRecommendationStats')
+    this.requirePublication('outgoingRecommendationStats')
+    return await this.recommendationService.getOutgoingRecommendationStats(options)
+  }
+
+  async incomingRecommendationStats(options?: {
+    offset?: number
+    limit?: number
+    orderBy?: string
+    orderDirection?: string
+  }): Promise<unknown> {
+    this.requireAuth('incomingRecommendationStats')
+    this.requirePublication('incomingRecommendationStats')
+    return await this.recommendationService.getIncomingRecommendationStats(options)
+  }
+
+  async recommendationsExist(): Promise<unknown> {
+    this.requireAuth('recommendationsExist')
+    this.requirePublication('recommendationsExist')
+    return await this.recommendationService.recommendationsExist()
+  }
+
+  async suggestedRecommendations(publicationId: number): Promise<unknown> {
+    this.requireAuth('suggestedRecommendations')
+    this.requirePublication('suggestedRecommendations')
+    return await this.recommendationService.getSuggestedRecommendations(publicationId)
   }
 
   // ── Private helpers ────────────────────────────────────────────────

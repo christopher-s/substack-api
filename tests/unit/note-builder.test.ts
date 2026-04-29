@@ -314,6 +314,49 @@ describe('NoteBuilder (Legacy Test Suite)', () => {
     })
   })
 
+  describe('Strikethrough formatting', () => {
+    it('should support strikethrough via fluent API', async () => {
+      const builder = new NoteBuilder(mockPublicationClient)
+      const result = await builder
+        .paragraph()
+        .text('Hello ')
+        .strikethrough('world')
+        .text('!')
+        .publish()
+
+      expect(mockPublicationClient.post).toHaveBeenCalledWith('/comment/feed/', {
+        bodyJson: {
+          type: 'doc',
+          attrs: { schemaVersion: 'v1' },
+          content: [
+            {
+              type: 'paragraph',
+              content: [
+                {
+                  type: 'text',
+                  text: 'Hello '
+                },
+                {
+                  type: 'text',
+                  text: 'world',
+                  marks: [{ type: 'strike' }]
+                },
+                {
+                  type: 'text',
+                  text: '!'
+                }
+              ]
+            }
+          ]
+        },
+        tabId: 'for-you',
+        surface: 'feed',
+        replyMinimumRole: 'everyone'
+      })
+      expect(result).toBe(mockPublishResponse)
+    })
+  })
+
   describe('ParagraphBuilder', () => {
     it('When requesting ParagraphBuilder instance for rich formatting', () => {
       const builder = new NoteBuilder(mockPublicationClient)
@@ -394,6 +437,60 @@ describe('NoteBuilder (Legacy Test Suite)', () => {
     it('When when trying to publish empty note', () => {
       const builder = new NoteBuilder(mockPublicationClient)
       expect(() => builder.build()).toThrow('Note must contain at least one paragraph')
+    })
+  })
+
+  describe('Markdown input', () => {
+    it('When building note from simple markdown', () => {
+      const builder = new NoteBuilder(mockPublicationClient)
+      const request = builder.markdown('Hello **world**!').build()
+
+      expect(request.bodyJson.type).toBe('doc')
+      expect(request.bodyJson.content).toHaveLength(1)
+      const para = request.bodyJson.content[0]
+      expect(para.type).toBe('paragraph')
+    })
+
+    it('When building note from markdown with lists', () => {
+      const builder = new NoteBuilder(mockPublicationClient)
+      const request = builder.markdown('- item1\n- item2').build()
+
+      expect(request.bodyJson.content).toHaveLength(1)
+      expect(request.bodyJson.content[0].type).toBe('bulletList')
+    })
+
+    it('When publishing note from markdown', async () => {
+      const builder = new NoteBuilder(mockPublicationClient)
+      const result = await builder.markdown('Hello world').publish()
+
+      expect(mockPublicationClient.post).toHaveBeenCalledWith('/comment/feed/', expect.objectContaining({
+        bodyJson: expect.objectContaining({ type: 'doc' })
+      }))
+      expect(result).toEqual(mockPublishResponse)
+    })
+
+    it('When markdown produces valid ProseMirror for links', () => {
+      const builder = new NoteBuilder(mockPublicationClient)
+      const request = builder.markdown('[click here](https://example.com)').build()
+
+      const para = request.bodyJson.content[0]
+      expect(para.type).toBe('paragraph')
+    })
+
+    it('When markdown with strikethrough produces strike segments', () => {
+      const builder = new NoteBuilder(mockPublicationClient)
+      const request = builder.markdown('Hello ~~world~~').build()
+
+      const para = request.bodyJson.content[0]
+      expect(para.type).toBe('paragraph')
+      const textNodes = para.content
+      expect(textNodes).toHaveLength(2)
+      expect(textNodes[0]).toEqual({ type: 'text', text: 'Hello ' })
+      expect(textNodes[1]).toEqual({
+        type: 'text',
+        text: 'world',
+        marks: [{ type: 'strike' }]
+      })
     })
   })
 })

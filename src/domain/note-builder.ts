@@ -6,11 +6,12 @@ import {
   PublishNoteResponseCodec
 } from '@substack-api/internal'
 import { HttpClient } from '@substack-api/internal/http-client'
+import { markdownToNoteBody } from '@substack-api/internal/markdown-to-prosemirror'
 import { decodeOrThrow } from '@substack-api/internal/validation'
 
 interface TextSegment {
   text: string
-  type: 'bold' | 'italic' | 'code' | 'underline' | 'link' | 'simple'
+  type: 'bold' | 'italic' | 'code' | 'underline' | 'link' | 'strike' | 'simple'
   url?: string // For link segments
 }
 
@@ -109,6 +110,15 @@ export class ListItemBuilder {
   link(text: string, url: string): ListItemBuilder {
     return new ListItemBuilder(this.listBuilder, {
       segments: [...this.state.segments, { text, type: 'link', url }]
+    })
+  }
+
+  /**
+   * Add strikethrough text to the current list item
+   */
+  strikethrough(text: string): ListItemBuilder {
+    return new ListItemBuilder(this.listBuilder, {
+      segments: [...this.state.segments, { text, type: 'strike' }]
     })
   }
 
@@ -250,6 +260,16 @@ export class ParagraphBuilder {
   }
 
   /**
+   * Add strikethrough text to the current paragraph
+   */
+  strikethrough(text: string): ParagraphBuilder {
+    return new ParagraphBuilder(this.noteBuilder, {
+      segments: [...this.state.segments, { text, type: 'strike' }],
+      lists: [...this.state.lists]
+    })
+  }
+
+  /**
    * Start a bullet list in the current paragraph
    */
   bulletList(): ListBuilder {
@@ -333,6 +353,79 @@ export class NoteBuilder {
   }
 
   /**
+   * Add content from markdown text.
+   * Supports: bold, italic, code, links, strikethrough, underline, bullet lists, ordered lists.
+   *
+   * All paragraphs and lists from the markdown are committed to the builder.
+   * The returned ParagraphBuilder holds the last paragraph's content for
+   * further chaining (e.g., `.publish()`). Call `.markdown()` as the
+   * final step in most cases.
+   */
+  markdown(md: string): ParagraphBuilder {
+    const bodyJson = markdownToNoteBody(md)
+    const paragraphs = bodyJson.content.map((node) => {
+      if (node.type === 'paragraph') {
+        const segments = (node.content || []).map((textNode) => {
+          const segment: TextSegment = { text: textNode.text, type: 'simple' }
+          if (textNode.marks) {
+            for (const mark of textNode.marks) {
+              if (mark.type === 'bold') segment.type = 'bold'
+              else if (mark.type === 'italic') segment.type = 'italic'
+              else if (mark.type === 'code') segment.type = 'code'
+              else if (mark.type === 'underline') segment.type = 'underline'
+              else if (mark.type === 'strike') segment.type = 'strike'
+              else if (mark.type === 'link' && mark.attrs) {
+                segment.type = 'link'
+                segment.url = mark.attrs.href
+              }
+            }
+          }
+          return segment
+        })
+        return { segments, lists: [] }
+      }
+      // List nodes
+      const listType: 'bullet' | 'numbered' = node.type === 'bulletList' ? 'bullet' : 'numbered'
+      const items: ListItem[] = (node.content || []).map((listItem) => {
+        const para = listItem.content?.[0]
+        const segments = (para?.content || []).map((textNode) => {
+          const segment: TextSegment = { text: textNode.text, type: 'simple' }
+          if (textNode.marks) {
+            for (const mark of textNode.marks) {
+              if (mark.type === 'bold') segment.type = 'bold'
+              else if (mark.type === 'italic') segment.type = 'italic'
+              else if (mark.type === 'code') segment.type = 'code'
+              else if (mark.type === 'underline') segment.type = 'underline'
+              else if (mark.type === 'strike') segment.type = 'strike'
+              else if (mark.type === 'link' && mark.attrs) {
+                segment.type = 'link'
+                segment.url = mark.attrs.href
+              }
+            }
+          }
+          return segment
+        })
+        return { segments }
+      })
+      return { segments: [], lists: [{ type: listType, items }] }
+    })
+
+    // Add all paragraphs except the last to the builder state
+    // The last paragraph is held by the returned ParagraphBuilder,
+    // which commits it on build/publish (matching the existing builder pattern)
+    const allButLast = paragraphs.slice(0, -1)
+    const lastParagraph = paragraphs[paragraphs.length - 1]
+    const builder: NoteBuilder = new NoteBuilder(this.substackClient, {
+      paragraphs: [...this.state.paragraphs, ...allButLast],
+      attachmentIds: this.state.attachmentIds
+    })
+    return new ParagraphBuilder(builder, {
+      segments: lastParagraph?.segments || [],
+      lists: lastParagraph?.lists || []
+    })
+  }
+
+  /**
    * Convert the builder's content to Substack's note format
    */
   protected toNoteRequest(state: NoteBuilderState = this.state): PublishNoteRequest {
@@ -361,18 +454,34 @@ export class NoteBuilder {
 
       // Add list content
       for (const list of paragraph.lists) {
-        elements.push({
-          type: list.type === 'bullet' ? ('bulletList' as const) : ('orderedList' as const),
-          content: list.items.map((item) => ({
-            type: 'listItem' as const,
-            content: [
-              {
-                type: 'paragraph' as const,
-                content: item.segments.map((segment) => this.segmentToContent(segment))
-              }
-            ]
-          }))
-        })
+        if (list.type === 'bullet') {
+          elements.push({
+            type: 'bulletList' as const,
+            content: list.items.map((item) => ({
+              type: 'listItem' as const,
+              content: [
+                {
+                  type: 'paragraph' as const,
+                  content: item.segments.map((segment) => this.segmentToContent(segment))
+                }
+              ]
+            }))
+          })
+        } else {
+          elements.push({
+            type: 'orderedList' as const,
+            attrs: { start: 1 },
+            content: list.items.map((item) => ({
+              type: 'listItem' as const,
+              content: [
+                {
+                  type: 'paragraph' as const,
+                  content: item.segments.map((segment) => this.segmentToContent(segment))
+                }
+              ]
+            }))
+          })
+        }
       }
 
       return elements
@@ -417,7 +526,14 @@ export class NoteBuilder {
       }
       return {
         ...base,
-        marks: [{ type: 'link' as const, attrs: { href: segment.url } }]
+        marks: [{ type: 'link' as const, attrs: { href: segment.url, target: '_blank', class: 'note-link', rel: 'nofollow ugc noopener' } }]
+      }
+    }
+
+    if (segment.type === 'strike') {
+      return {
+        ...base,
+        marks: [{ type: 'strike' as const }]
       }
     }
 
