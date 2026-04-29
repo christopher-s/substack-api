@@ -37,10 +37,3 @@ reconsider.
 
 This applies to project spaces on GitHub and any official project channels.
 What contributors do elsewhere is their own business.
-
-## No Ideological Tests
-
-Contributors will never be asked to affirm, denounce, or participate in
-any political, social, or ideological position as a condition of
-participation. Technical merit and professional conduct are the only
-criteria.
