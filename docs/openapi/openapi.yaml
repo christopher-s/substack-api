@@ -2428,13 +2428,62 @@ paths:
                 $ref: '#/components/schemas/BestsellerTier'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /api/v1/recommendations/{publicationId}:
+  /api/v1/recommendations/from/{publicationId}:
     get:
       tags:
         - recommendations
       summary: Outgoing recommendations for a publication
       description: |
-        Returns the list of publications that the given publication recommends.
+        Returns the list of publications that the given publication recommends
+        (outgoing). Supports paginated mode via query parameters. Requires
+        authentication.
+      operationId: getOutgoingRecommendations
+      security:
+        - substackSession: []
+      parameters:
+        - in: path
+          name: publicationId
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Publication ID to get outgoing recommendations for.
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+          description: Pagination offset.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+          description: Maximum number of results to return.
+        - in: query
+          name: paginate
+          schema:
+            type: boolean
+            default: false
+          description: Set to `true` for paginated results.
+      responses:
+        '200':
+          description: List of recommended publications.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/recommendations/{publicationId}:
+    get:
+      tags:
+        - recommendations
+      summary: Recommendations for a publication
+      description: |
+        Returns recommendations associated with the given publication.
         Supports paginated mode via `paginate=true` query parameter. Requires
         authentication.
       operationId: getRecommendations
