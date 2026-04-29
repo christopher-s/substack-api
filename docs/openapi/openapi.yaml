@@ -3329,6 +3329,7 @@ components:
         status:
           type: object
           additionalProperties: true
+          description: Author status metadata. Structure varies; typically null or absent.
       required:
         - id
         - name
@@ -3397,6 +3398,7 @@ components:
           type: array
           items:
             type: object
+          description: Additional view entries for cross-posted or section-level content. Typically empty.
         subtitle:
           oneOf:
             - type: string
@@ -3443,6 +3445,7 @@ components:
           type: array
           items:
             type: string
+          description: Authors of the feed item.
         published_bylines:
           type: array
           items:
@@ -3796,6 +3799,9 @@ components:
           type: string
           enum:
             - link
+            - post
+            - image
+          description: 'Type of the resolved attachment content: `link` for URL links, `post` for Substack posts, `image` for images.'
         url:
           type: string
           format: uri
@@ -4006,6 +4012,7 @@ components:
           type: array
           items:
             type: object
+          description: Publication tags (topics/categories). Each tag has `id` (UUID), `name`, `slug`, and `hidden` fields.
         has_paid_subs:
           type: boolean
           description: Whether the publication has any paid subscribers.
@@ -4063,6 +4070,7 @@ components:
           description: Subscription tier. `free_signup` for free, `subscribed` for paid.
         type:
           type: string
+          description: Legacy/reserved field. Always null in observed responses. Use `membership_state` to determine subscription tier.
         created_at:
           type: string
           format: date-time
@@ -4316,10 +4324,10 @@ components:
           type: integer
         tier:
           type: string
-          description: Bestseller tier level.
+          description: Bestseller tier level (e.g. `top_10`).
         category:
           type: string
-          description: Bestseller category.
+          description: Bestseller category name (e.g. `technology`).
         rank:
           type: integer
           description: Current rank within category.
