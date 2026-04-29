@@ -65,19 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 For the latest releases and detailed release notes, please visit our [GitHub Releases](https://github.com/christopher-s/substack-api/releases) page.
 
-## Migration Guide
-
-### From v0.3.x to v0.4.x
-
-This version includes breaking changes:
-
-- `postForId`, `noteForId`, `commentForId` now accept `number` IDs instead of `string`
-- `publicationUrl` is required when using publication-scoped methods (archive, posts, homepage, reactors, live stream, mark seen)
-- `SearchService` has been removed; search methods now live on `DiscoveryService`
-- `decodeEither` helper has been removed; use `decodeOrThrow` instead
-- `publicationUrl` is now optional for anonymous read-only access — omit both `token` and `publicationUrl` to browse public content
-
-### Contributing to Changelog
+## Contributing to Changelog
 
 When adding new features or making changes:
 
