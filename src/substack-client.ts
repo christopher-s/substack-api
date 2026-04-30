@@ -178,13 +178,33 @@ export class SubstackClient {
     const publicationBaseUrl = urlPrefix
       ? `${normalizedPublicationUrl}/${urlPrefix}`
       : normalizedPublicationUrl
-    this.publicationClient = new HttpClient(publicationBaseUrl, config.token, maxRequestsPerSecond)
+    this.publicationClient = new HttpClient({
+      baseUrl: publicationBaseUrl,
+      token: config.token,
+      maxRequestsPerSecond,
+      jitter: config.jitter,
+      maxRetries: config.maxRetries,
+      baseDelayMs: config.baseDelayMs,
+      maxDelayMs: config.maxDelayMs,
+      headerMode: config.headerMode,
+      onRateLimit: config.onRateLimit
+    })
 
     // Construct full base URL for global Substack endpoints
     const substackBaseUrl = urlPrefix
       ? `${normalizedSubstackUrl}/${urlPrefix}`
       : normalizedSubstackUrl
-    this.substackClient = new HttpClient(substackBaseUrl, config.token, maxRequestsPerSecond)
+    this.substackClient = new HttpClient({
+      baseUrl: substackBaseUrl,
+      token: config.token,
+      maxRequestsPerSecond,
+      jitter: config.jitter,
+      maxRetries: config.maxRetries,
+      baseDelayMs: config.baseDelayMs,
+      maxDelayMs: config.maxDelayMs,
+      headerMode: config.headerMode,
+      onRateLimit: config.onRateLimit
+    })
 
     // Initialize services
     this.postService = new PostService(this.substackClient)

@@ -3,7 +3,6 @@ import axios from 'axios'
 import type { AxiosInstance } from 'axios'
 
 jest.mock('axios')
-jest.mock('axios-rate-limit', () => (instance: AxiosInstance) => instance)
 
 const mockedAxios = axios as jest.Mocked<typeof axios>
 
@@ -16,7 +15,13 @@ describe('HttpClient', () => {
     mockAxiosInstance = {
       get: jest.fn(),
       post: jest.fn(),
-      put: jest.fn()
+      put: jest.fn(),
+      delete: jest.fn(),
+      request: jest.fn(),
+      interceptors: {
+        request: { use: jest.fn() },
+        response: { use: jest.fn() }
+      }
     } as unknown as jest.Mocked<AxiosInstance>
 
     mockedAxios.create.mockReturnValue(mockAxiosInstance)
@@ -24,19 +29,24 @@ describe('HttpClient', () => {
 
   describe('constructor', () => {
     it('When client without token (anonymous mode)', () => {
-      expect(() => new HttpClient('https://test.com')).not.toThrow()
+      expect(() => new HttpClient({ baseUrl: 'https://test.com' })).not.toThrow()
     })
 
     it('When client with empty string token (anonymous mode)', () => {
-      expect(() => new HttpClient('https://test.com', '')).not.toThrow()
+      expect(() => new HttpClient({ baseUrl: 'https://test.com', token: '' })).not.toThrow()
     })
 
     it('When client with whitespace-only token (anonymous mode)', () => {
-      expect(() => new HttpClient('https://test.substack.com', '   ')).not.toThrow()
+      expect(
+        () => new HttpClient({ baseUrl: 'https://test.substack.com', token: '   ' })
+      ).not.toThrow()
     })
 
     it('When axios instance with correct base URL and headers', () => {
-      const client = new HttpClient('https://test.substack.com', 'test-api-key')
+      const client = new HttpClient({
+        baseUrl: 'https://test.substack.com',
+        token: 'test-api-key'
+      })
 
       expect(mockedAxios.create).toHaveBeenCalledWith({
         baseURL: 'https://test.substack.com',
@@ -46,18 +56,25 @@ describe('HttpClient', () => {
           'Content-Type': 'application/json',
           'User-Agent':
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15',
-          'Accept-Encoding': 'gzip, deflate, br'
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Accept-Language': 'en-US,en;q=0.9'
         }
       })
       expect(client).toBeDefined()
     })
 
     it('should not set Cookie header when no token provided (anonymous)', () => {
-      new HttpClient('https://test.substack.com')
+      new HttpClient({ baseUrl: 'https://test.substack.com' })
 
       const createCall = mockedAxios.create.mock.calls[0][0] as { headers: Record<string, string> }
       expect(createCall.headers).not.toHaveProperty('Cookie')
       expect(createCall.headers).toHaveProperty('Accept')
+    })
+
+    it('should support deprecated positional constructor [smoke]', () => {
+      expect(() => new HttpClient('https://test.com')).not.toThrow()
+      expect(() => new HttpClient('https://test.com', 'token')).not.toThrow()
+      expect(() => new HttpClient('https://test.com', 'token', 10)).not.toThrow()
     })
   })
 
@@ -69,7 +86,10 @@ describe('HttpClient', () => {
         data: mockResponse
       })
 
-      const client = new HttpClient('https://test.substack.com', 'test-api-key')
+      const client = new HttpClient({
+        baseUrl: 'https://test.substack.com',
+        token: 'test-api-key'
+      })
 
       const result = await client.get('/test')
 
@@ -80,7 +100,10 @@ describe('HttpClient', () => {
     it('When axios errors', async () => {
       mockAxiosInstance.get.mockRejectedValue(new Error('Network Error'))
 
-      const client = new HttpClient('https://test.substack.com', 'test-api-key')
+      const client = new HttpClient({
+        baseUrl: 'https://test.substack.com',
+        token: 'test-api-key'
+      })
 
       await expect(client.get('/test')).rejects.toThrow('Network Error')
     })
@@ -96,7 +119,10 @@ describe('HttpClient', () => {
         data: mockResponse
       })
 
-      const client = new HttpClient('https://test.substack.com', 'test-api-key')
+      const client = new HttpClient({
+        baseUrl: 'https://test.substack.com',
+        token: 'test-api-key'
+      })
 
       const result = await client.post('/test', postData)
 
@@ -112,7 +138,10 @@ describe('HttpClient', () => {
         data: mockResponse
       })
 
-      const client = new HttpClient('https://test.substack.com', 'test-api-key')
+      const client = new HttpClient({
+        baseUrl: 'https://test.substack.com',
+        token: 'test-api-key'
+      })
 
       const result = await client.post('/test')
 
@@ -123,7 +152,10 @@ describe('HttpClient', () => {
     it('When axios errors', async () => {
       mockAxiosInstance.post.mockRejectedValue(new Error('Server Error'))
 
-      const client = new HttpClient('https://test.substack.com', 'test-api-key')
+      const client = new HttpClient({
+        baseUrl: 'https://test.substack.com',
+        token: 'test-api-key'
+      })
 
       await expect(client.post('/test', {})).rejects.toThrow('Server Error')
     })
@@ -139,7 +171,10 @@ describe('HttpClient', () => {
         data: mockResponse
       })
 
-      const client = new HttpClient('https://test.substack.com', 'test-api-key')
+      const client = new HttpClient({
+        baseUrl: 'https://test.substack.com',
+        token: 'test-api-key'
+      })
 
       const result = await client.put('/test', putData)
 
@@ -155,7 +190,10 @@ describe('HttpClient', () => {
         data: mockResponse
       })
 
-      const client = new HttpClient('https://test.substack.com', 'test-api-key')
+      const client = new HttpClient({
+        baseUrl: 'https://test.substack.com',
+        token: 'test-api-key'
+      })
 
       const result = await client.put('/test')
 
@@ -166,7 +204,10 @@ describe('HttpClient', () => {
     it('When axios errors', async () => {
       mockAxiosInstance.put.mockRejectedValue(new Error('Forbidden'))
 
-      const client = new HttpClient('https://test.substack.com', 'test-api-key')
+      const client = new HttpClient({
+        baseUrl: 'https://test.substack.com',
+        token: 'test-api-key'
+      })
 
       await expect(client.put('/test', {})).rejects.toThrow('Forbidden')
     })

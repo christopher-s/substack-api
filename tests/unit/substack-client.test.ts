@@ -348,8 +348,12 @@ describe('SubstackClient', () => {
 
       // Verify HttpClient was constructed with normalized URLs
       const httpClientCalls = (HttpClient as jest.MockedClass<typeof HttpClient>).mock.calls
-      expect(httpClientCalls[0][0]).toBe('https://iam.slys.dev/api/v1') // publicationClient
-      expect(httpClientCalls[1][0]).toBe('https://substack.com/api/v1') // substackClient (default)
+      expect((httpClientCalls[0][0] as unknown as { baseUrl: string }).baseUrl).toBe(
+        'https://iam.slys.dev/api/v1'
+      ) // publicationClient
+      expect((httpClientCalls[1][0] as unknown as { baseUrl: string }).baseUrl).toBe(
+        'https://substack.com/api/v1'
+      ) // substackClient (default)
     })
 
     it('should preserve https:// protocol in publicationUrl', () => {
@@ -360,7 +364,9 @@ describe('SubstackClient', () => {
       })
 
       const httpClientCalls = (HttpClient as jest.MockedClass<typeof HttpClient>).mock.calls
-      expect(httpClientCalls[0][0]).toBe('https://iam.slys.dev/api/v1')
+      expect((httpClientCalls[0][0] as unknown as { baseUrl: string }).baseUrl).toBe(
+        'https://iam.slys.dev/api/v1'
+      )
     })
 
     it('should preserve http:// protocol in publicationUrl', () => {
@@ -371,7 +377,9 @@ describe('SubstackClient', () => {
       })
 
       const httpClientCalls = (HttpClient as jest.MockedClass<typeof HttpClient>).mock.calls
-      expect(httpClientCalls[0][0]).toBe('http://localhost:3000/api/v1')
+      expect((httpClientCalls[0][0] as unknown as { baseUrl: string }).baseUrl).toBe(
+        'http://localhost:3000/api/v1'
+      )
     })
 
     it('should prepend https:// to substackUrl without protocol', () => {
@@ -383,7 +391,9 @@ describe('SubstackClient', () => {
       })
 
       const httpClientCalls = (HttpClient as jest.MockedClass<typeof HttpClient>).mock.calls
-      expect(httpClientCalls[1][0]).toBe('https://custom.substack.com/api/v1') // substackClient
+      expect((httpClientCalls[1][0] as unknown as { baseUrl: string }).baseUrl).toBe(
+        'https://custom.substack.com/api/v1'
+      ) // substackClient
     })
 
     it('should preserve https:// protocol in substackUrl', () => {
@@ -395,7 +405,9 @@ describe('SubstackClient', () => {
       })
 
       const httpClientCalls = (HttpClient as jest.MockedClass<typeof HttpClient>).mock.calls
-      expect(httpClientCalls[1][0]).toBe('https://custom.substack.com/api/v1')
+      expect((httpClientCalls[1][0] as unknown as { baseUrl: string }).baseUrl).toBe(
+        'https://custom.substack.com/api/v1'
+      )
     })
 
     it('should preserve http:// protocol in substackUrl', () => {
@@ -407,7 +419,9 @@ describe('SubstackClient', () => {
       })
 
       const httpClientCalls = (HttpClient as jest.MockedClass<typeof HttpClient>).mock.calls
-      expect(httpClientCalls[1][0]).toBe('http://localhost:4000/api/v1')
+      expect((httpClientCalls[1][0] as unknown as { baseUrl: string }).baseUrl).toBe(
+        'http://localhost:4000/api/v1'
+      )
     })
 
     it('When both URLs without protocol', () => {
@@ -419,8 +433,12 @@ describe('SubstackClient', () => {
       })
 
       const httpClientCalls = (HttpClient as jest.MockedClass<typeof HttpClient>).mock.calls
-      expect(httpClientCalls[0][0]).toBe('https://iam.slys.dev/api/v1') // publicationClient
-      expect(httpClientCalls[1][0]).toBe('https://substack.com/api/v1') // substackClient
+      expect((httpClientCalls[0][0] as unknown as { baseUrl: string }).baseUrl).toBe(
+        'https://iam.slys.dev/api/v1'
+      ) // publicationClient
+      expect((httpClientCalls[1][0] as unknown as { baseUrl: string }).baseUrl).toBe(
+        'https://substack.com/api/v1'
+      ) // substackClient
     })
 
     it('should normalize default substackUrl when not provided', () => {
@@ -431,7 +449,9 @@ describe('SubstackClient', () => {
       })
 
       const httpClientCalls = (HttpClient as jest.MockedClass<typeof HttpClient>).mock.calls
-      expect(httpClientCalls[1][0]).toBe('https://substack.com/api/v1')
+      expect((httpClientCalls[1][0] as unknown as { baseUrl: string }).baseUrl).toBe(
+        'https://substack.com/api/v1'
+      )
     })
   })
 })

@@ -4,7 +4,6 @@ import axios from 'axios'
 import type { AxiosInstance } from 'axios'
 
 jest.mock('axios')
-jest.mock('axios-rate-limit', () => (instance: AxiosInstance) => instance)
 
 const mockedAxios = axios as jest.Mocked<typeof axios>
 
@@ -18,7 +17,12 @@ describe('SubstackClient - Global Post Endpoint', () => {
     mockAxiosInstance = {
       get: jest.fn(),
       post: jest.fn(),
-      put: jest.fn()
+      put: jest.fn(),
+      request: jest.fn(),
+      interceptors: {
+        request: { use: jest.fn() },
+        response: { use: jest.fn() }
+      }
     } as unknown as jest.Mocked<AxiosInstance>
 
     mockedAxios.create.mockReturnValue(mockAxiosInstance)
