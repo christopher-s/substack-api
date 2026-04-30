@@ -19,7 +19,7 @@ This project started as a fork of [`jakub-k-slys/substack-api`](https://github.c
 - **Discovery & Search** — Trending posts, category browsing, profile search, and explore feeds
 - **Chat API** — Direct messages, inbox management, and publication chat rooms
 - **Runtime Type Safety** — io-ts codecs validate every API response beyond TypeScript's compile-time checks
-- **Rate Limiting** — Configurable client-side request throttling
+- **Rate Limiting & Retry** — Token bucket with jitter, exponential backoff, and Chrome browser fingerprinting
 - **Full TypeScript** — Complete type definitions exported for consumers
 
 ## Installation
@@ -150,7 +150,9 @@ The client follows a service-oriented architecture with domain models:
 SubstackClient
 ├── services/          # HTTP business logic (posts, notes, profiles, comments, discovery, publications)
 ├── domain/            # Entity classes with methods (Profile, Post, Note, Comment, OwnProfile)
-├── internal/http-client.ts   # HTTP abstraction with auth, rate limiting, and error handling
+├── internal/http-client.ts   # HTTP abstraction with auth, rate limiting, retry, and browser fingerprinting
+├── internal/rate-limiter.ts  # Token bucket with jitter and FIFO queue
+├── internal/retry.ts         # Exponential backoff with Retry-After support
 └── internal/types/    # io-ts codecs for runtime validation
 ```
 
@@ -241,9 +243,47 @@ Substack uses session cookies for authentication. To obtain your token:
 | `substackUrl` | `string` | No | `substack.com` | Base URL for global Substack endpoints |
 | `urlPrefix` | `string` | No | `api/v1` | URL prefix for API endpoints |
 | `perPage` | `number` | No | `25` | Default items per page for pagination |
-| `maxRequestsPerSecond` | `number` | No | `25` | Client-side rate limit |
+| `maxRequestsPerSecond` | `number` | No | `25` | Client-side request rate limit |
+| `jitter` | `boolean` | No | `true` | Randomize request timing to avoid predictable cadence |
+| `maxRetries` | `number` | No | `3` | Max retry attempts on 429/5xx responses |
+| `baseDelayMs` | `number` | No | `1000` | Base delay (ms) for exponential backoff |
+| `maxDelayMs` | `number` | No | `30000` | Maximum backoff delay (ms) |
+| `headerMode` | `'browser' \| 'api' \| 'minimal'` | No | `'api'` | HTTP header profile (see below) |
+| `onRateLimit` | `(info) => void` | No | — | Callback fired on every retry attempt |
 
 \* Required when using publication-scoped methods like `publicationArchive()`, `publicationPosts()`, `publicationHomepage()`, `postReactors()`, `activeLiveStream()`, `markPostSeen()`, etc. `ownProfile()` only requires a `token`.
+
+## Rate Limiting & Browser Fingerprinting
+
+The client includes built-in protection against rate limiting and detection:
+
+- **Token bucket** — Requests are throttled to `maxRequestsPerSecond` (default 25) with a FIFO queue that prevents burst patterns
+- **Jitter** — Each request is randomly delayed by up to 50% of the base interval, producing a natural, non-deterministic cadence
+- **Exponential backoff** — 429 and 5xx responses trigger retries with full-jitter backoff (`random(0, min(base * 2^attempt, maxDelay))`)
+- **Retry-After** — When Substack returns a `Retry-After` header, the client waits exactly that duration with no additional jitter
+- **Browser fingerprint** — Requests include realistic Chrome 136 headers (Sec-Ch-Ua, Sec-Fetch-*, Accept-Language, etc.)
+
+### Header Modes
+
+| Mode | Use case | Headers sent |
+|---|---|---|
+| `'api'` (default) | JSON API requests | Chrome UA, `Accept: application/json`, Sec-Ch-Ua, Sec-Fetch-* (cors/empty/same-origin) |
+| `'browser'` | Full browser emulation | Complete Chrome fingerprint with document/navigate Sec-Fetch headers |
+| `'minimal'` | Bare minimum | `Accept: application/json` only, no User-Agent |
+
+### Observability
+
+Pass an `onRateLimit` callback to monitor retry activity:
+
+```typescript
+const client = new SubstackClient({
+  publicationUrl: 'https://yourpub.substack.com',
+  token: process.env.SUBSTACK_API_KEY!,
+  onRateLimit: (info) => {
+    console.log(`Retry #${info.attempt} after ${info.retryAfter ?? 'backoff'}s (HTTP ${info.statusCode})`);
+  },
+});
+```
 
 ## API Reference
 
