@@ -25,3 +25,4 @@ export { SubscriberStatsService } from '@substack-api/internal/services/subscrib
 export { PublicationStatsService } from '@substack-api/internal/services/publication-stats-service'
 export { DashboardService } from '@substack-api/internal/services/dashboard-service'
 export { RecommendationService } from '@substack-api/internal/services/recommendation-service'
+export { ChatService } from '@substack-api/internal/services/chat-service'

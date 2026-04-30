@@ -26,7 +26,8 @@ import {
   RecommendationService,
   SettingsService,
   SubscriberStatsService,
-  SubscriptionService
+  SubscriptionService,
+  ChatService
 } from '@substack-api/internal/services'
 import { NoteBuilderFactory } from '@substack-api/domain'
 import { markdownToHtml } from '@substack-api/internal/markdown-to-html'
@@ -47,6 +48,17 @@ import type {
   SubstackProfileSearchResult
 } from '@substack-api/internal/types'
 import type { SubstackConfig } from '@substack-api/types'
+import type {
+  UnreadCount,
+  InboxResponse,
+  DmResponse,
+  SendMessageResponse,
+  InvitesResponse,
+  ReactionsResponse,
+  RealtimeTokenResponse,
+  ChatThread,
+  ChatMessage
+} from '@substack-api/internal/types/chat'
 
 const DEFAULT_PER_PAGE = 25
 const DEFAULT_MAX_RPS = 25
@@ -79,6 +91,7 @@ export class SubstackClient {
   private readonly publicationStatsService: PublicationStatsService
   private readonly dashboardService: DashboardService
   private readonly recommendationService: RecommendationService
+  private readonly chatService: ChatService
   private readonly perPage: number
   private readonly token: string | undefined
   private readonly hasPublication: boolean
@@ -147,6 +160,7 @@ export class SubstackClient {
     this.publicationStatsService = new PublicationStatsService(this.publicationClient)
     this.dashboardService = new DashboardService(this.publicationClient)
     this.recommendationService = new RecommendationService(this.publicationClient)
+    this.chatService = new ChatService(this.substackClient)
   }
 
   /** Throw a clear error when an authenticated method is called without a token */
@@ -1050,6 +1064,77 @@ export class SubstackClient {
     this.requireAuth('suggestedRecommendations')
     this.requirePublication('suggestedRecommendations')
     return await this.recommendationService.getSuggestedRecommendations(publicationId)
+  }
+
+  // ── Chat methods (require auth) ────────────────────────────────────
+
+  async chatUnreadCount(): Promise<UnreadCount> {
+    this.requireAuth('chatUnreadCount')
+    return await this.chatService.getUnreadCount()
+  }
+
+  async chatInbox(options?: { tab?: 'all' | 'people' }): Promise<InboxResponse> {
+    this.requireAuth('chatInbox')
+    return await this.chatService.getInbox(options)
+  }
+
+  async chatMarkInboxSeen(): Promise<{ ok: boolean }> {
+    this.requireAuth('chatMarkInboxSeen')
+    return await this.chatService.markInboxSeen()
+  }
+
+  async chatDm(uuid: string, options?: { cursor?: string }): Promise<DmResponse> {
+    this.requireAuth('chatDm')
+    return await this.chatService.getDm(uuid, options)
+  }
+
+  async chatSendMessage(
+    uuid: string,
+    body: string,
+    options?: { clientId?: string }
+  ): Promise<SendMessageResponse> {
+    this.requireAuth('chatSendMessage')
+    return await this.chatService.sendMessage(uuid, body, options)
+  }
+
+  async chatMarkDmSeen(uuid: string): Promise<{ ok: boolean }> {
+    this.requireAuth('chatMarkDmSeen')
+    return await this.chatService.markDmSeen(uuid)
+  }
+
+  async chatInvites(): Promise<InvitesResponse> {
+    this.requireAuth('chatInvites')
+    return await this.chatService.getInvites()
+  }
+
+  async chatMarkInvitesSeen(): Promise<{ ok: boolean }> {
+    this.requireAuth('chatMarkInvitesSeen')
+    return await this.chatService.markInvitesSeen()
+  }
+
+  async chatReactions(): Promise<ReactionsResponse> {
+    this.requireAuth('chatReactions')
+    return await this.chatService.getReactions()
+  }
+
+  async chatRealtimeToken(channel: string): Promise<RealtimeTokenResponse> {
+    this.requireAuth('chatRealtimeToken')
+    return await this.chatService.getRealtimeToken(channel)
+  }
+
+  async *chatInboxThreads(
+    options: { tab?: 'all' | 'people'; limit?: number } = {}
+  ): AsyncGenerator<ChatThread> {
+    this.requireAuth('chatInboxThreads')
+    yield* this.chatService.inboxThreads(options)
+  }
+
+  async *chatDmMessages(
+    uuid: string,
+    options: { limit?: number } = {}
+  ): AsyncGenerator<ChatMessage> {
+    this.requireAuth('chatDmMessages')
+    yield* this.chatService.dmMessages(uuid, options)
   }
 
   // ── Private helpers ────────────────────────────────────────────────

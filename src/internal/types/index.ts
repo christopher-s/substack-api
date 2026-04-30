@@ -152,3 +152,31 @@ export { SubstackLiveStreamListCodec } from '@substack-api/internal/types/substa
 
 export type { SubstackPostTag } from '@substack-api/internal/types/substack-post-management'
 export { SubstackPostTagCodec } from '@substack-api/internal/types/substack-post-management'
+
+// Chat types
+export type {
+  ChatUser,
+  ChatMessage,
+  ChatThread,
+  UnreadCount,
+  InboxResponse,
+  DmThreadDetail,
+  DmResponse,
+  SendMessageResponse,
+  InvitesResponse,
+  ReactionsResponse,
+  RealtimeTokenResponse
+} from '@substack-api/internal/types/chat'
+export {
+  ChatUserCodec,
+  ChatMessageCodec,
+  ChatThreadCodec,
+  UnreadCountCodec,
+  InboxResponseCodec,
+  DmThreadDetailCodec,
+  DmResponseCodec,
+  SendMessageResponseCodec,
+  InvitesResponseCodec,
+  ReactionsResponseCodec,
+  RealtimeTokenResponseCodec
+} from '@substack-api/internal/types/chat'

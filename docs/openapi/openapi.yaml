@@ -98,6 +98,8 @@ tags:
     description: Publisher dashboard, stats, activity, and growth suggestions.
   - name: recommendations
     description: Publication recommendations and recommendation stats.
+  - name: chat
+    description: Direct messages (DMs), publication chat rooms, invites, and realtime messaging.
 security: []
 paths:
   /api/v1/posts/by-id/{id}:
@@ -2257,26 +2259,6 @@ paths:
                 $ref: '#/components/schemas/UnreadActivity'
         '401':
           $ref: '#/components/responses/Unauthorized'
-  /api/v1/messages/unread-count:
-    get:
-      tags:
-        - dashboard
-      summary: Unread messages count
-      description: |
-        Returns the count of unread messages for the authenticated user.
-        Requires authentication.
-      operationId: getUnreadMessagesCount
-      security:
-        - substackSession: []
-      responses:
-        '200':
-          description: Unread messages count.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UnreadMessagesCount'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
   /api/v1/publication_user:
     get:
       tags:
@@ -2605,6 +2587,333 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+  /api/v1/messages/unread-count:
+    get:
+      tags:
+        - chat
+      summary: Get unread message counts
+      description: |
+        Returns unread counts for DMs, publication chat rooms, and pending chat
+        invites. Displayed as a badge in the Substack sidebar. Requires
+        authentication.
+      operationId: getUnreadMessageCount
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Unread message counts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnreadMessageCount'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/messages/inbox:
+    get:
+      tags:
+        - chat
+      summary: List chat inbox threads
+      description: |
+        Returns the authenticated user's chat inbox — a paginated list of
+        conversation threads (direct messages and publication chat rooms).
+        Supports filtering by tab.
+      operationId: getChatInbox
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: tab
+          schema:
+            type: string
+            enum:
+              - all
+              - people
+            default: all
+          description: |
+            Inbox tab filter. `all` returns every thread type (DMs + publication
+            chat rooms). `people` returns only direct-message threads.
+      responses:
+        '200':
+          description: Paginated inbox thread list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatInbox'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/messages/inbox/seen:
+    post:
+      tags:
+        - chat
+      summary: Mark inbox as seen
+      description: |
+        Marks the authenticated user's chat inbox as seen, clearing the
+        unread indicator. Called automatically when the user opens the chat page.
+      operationId: markInboxSeen
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Inbox marked as seen.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/messages/dm/{conversationId}:
+    get:
+      tags:
+        - chat
+      summary: Get direct message conversation
+      description: |
+        Retrieves messages in a DM conversation. The `conversationId` is a UUID
+        (e.g. `d2f49720-3ce0-4ce8-99fc-4cf7439698ca`). Supports cursor-based
+        pagination for loading older messages. Publication chat rooms use a
+        different ID format (`chat-{publicationId}`) and are not accessible via
+        this endpoint.
+      operationId: getDmMessages
+      security:
+        - substackSession: []
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the DM conversation.
+        - in: query
+          name: cursor
+          schema:
+            type: string
+          description: Opaque pagination cursor for loading older messages.
+      responses:
+        '200':
+          description: DM conversation with messages and participant info.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DmConversation'
+        '400':
+          description: Invalid conversation ID (e.g. non-UUID format).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags:
+        - chat
+      summary: Send a DM message
+      description: |
+        Sends a message in a DM conversation. Returns the created message with
+        thread metadata and participant info. The `client_id` must be a UUID
+        (used for idempotency / deduplication).
+      operationId: sendDmMessage
+      security:
+        - substackSession: []
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the DM conversation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendDmMessageRequest'
+      responses:
+        '200':
+          description: Message sent successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendDmMessageResponse'
+        '400':
+          description: Invalid request body or non-UUID client_id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/messages/dm/{conversationId}/seen:
+    post:
+      tags:
+        - chat
+      summary: Mark DM conversation as seen
+      description: |
+        Marks all messages in a DM conversation as seen by the authenticated
+        user. Called when the user opens a conversation.
+      operationId: markDmSeen
+      security:
+        - substackSession: []
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the DM conversation.
+      responses:
+        '200':
+          description: Conversation marked as seen.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/messages/dm/invites:
+    get:
+      tags:
+        - chat
+      summary: List pending chat invites
+      description: |
+        Returns pending DM invitations (chat requests) received by the
+        authenticated user. Includes both regular threads and subscriber-initiated
+        threads, grouped separately.
+      operationId: getDmInvites
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: paginate
+          schema:
+            type: boolean
+            default: true
+          description: Enable paginated results.
+      responses:
+        '200':
+          description: Pending chat invites with thread details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DmInvites'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/messages/inbox/invites/seen:
+    post:
+      tags:
+        - chat
+      summary: Mark invite inbox as seen
+      description: |
+        Marks the chat invite/requests inbox as seen, clearing the invite
+        notification badge.
+      operationId: markInviteInboxSeen
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Invite inbox marked as seen.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/threads/reactions:
+    get:
+      tags:
+        - chat
+      summary: Get available reaction types
+      description: |
+        Returns the catalog of emoji reaction types available for chat messages,
+        organized by category. Includes suggested reactions and a full emoji map.
+      operationId: getThreadReactions
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Reaction type catalog.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThreadReactions'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/realtime/token:
+    get:
+      tags:
+        - chat
+      summary: Get realtime WebSocket auth token
+      description: |
+        Returns a JWT token and WebSocket endpoint for realtime message delivery.
+        The token is scoped to the requested channels (typically
+        `user:{userId}`). Connect to the returned `endpoint` URL via WebSocket
+        using the token for authentication to receive push notifications for new
+        messages.
+      operationId: getRealtimeToken
+      security:
+        - substackSession: []
+      parameters:
+        - in: query
+          name: channels
+          required: true
+          schema:
+            type: string
+          description: |
+            Comma-separated channel subscriptions. Typically `user:{userId}` for
+            per-user realtime events.
+      responses:
+        '200':
+          description: WebSocket auth token and endpoint.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RealtimeToken'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/blocks/ids:
+    get:
+      tags:
+        - profile
+      summary: Get blocked user IDs
+      description: |
+        Returns the list of user IDs that the authenticated user has blocked.
+        Used by the chat UI and profile surfaces to filter blocked users.
+      operationId: getBlockedUserIds
+      security:
+        - substackSession: []
+      responses:
+        '200':
+          description: Array of blocked user IDs.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 components:
   parameters:
     PostIdPath:
@@ -4907,14 +5216,6 @@ components:
           type: integer
           description: Number of unread activity items.
       additionalProperties: true
-    UnreadMessagesCount:
-      type: object
-      description: Unread messages count response.
-      properties:
-        count:
-          type: integer
-          description: Number of unread messages.
-      additionalProperties: true
     PublicationUsersResponse:
       type: object
       description: Response from GET /publication_user.
@@ -5202,4 +5503,455 @@ components:
         slug:
           type: string
           description: URL slug for category tabs.
+      additionalProperties: true
+    UnreadMessageCount:
+      type: object
+      description: Unread counts for the chat messaging system.
+      required: [unreadCount, pendingInviteCount, pendingInviteUnreadCount, newPendingInviteUnreadCount, pubChatUnreadCount]
+      properties:
+        unreadCount:
+          type: integer
+          description: Total unread DM count.
+        pendingInviteCount:
+          type: integer
+          description: Number of pending chat invitations.
+        pendingInviteUnreadCount:
+          type: integer
+          description: Unread count among pending invitations.
+        newPendingInviteUnreadCount:
+          type: integer
+          description: New (since last seen) pending invitation count.
+        pubChatUnreadCount:
+          type: integer
+          description: Unread count in publication chat rooms.
+    ChatInbox:
+      type: object
+      description: Paginated inbox of chat threads (DMs and publication chat rooms).
+      required: [threads, more]
+      properties:
+        threads:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatThread'
+        more:
+          type: boolean
+          description: Whether more threads exist beyond this page.
+        pendingInviteCount:
+          type: integer
+          description: Number of pending chat invitations.
+        pendingInviteUnreadCount:
+          type: integer
+          description: Unread count among pending invitations.
+        newPendingInviteUnreadCount:
+          type: integer
+          description: New pending invitation count since last seen.
+        directMessagesUnreadCount:
+          type: integer
+          description: Unread direct message count.
+        totalDirectMessagesUnreadCount:
+          type: integer
+          description: Total unread direct messages across all threads.
+        pubChatUnreadCount:
+          type: integer
+          description: Unread count in publication chat rooms.
+        mostRecentChatTimestamp:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of the most recent chat activity.
+    ChatThread:
+      type: object
+      description: |
+        A single thread in the chat inbox. Can be a direct message (`type:
+        direct-message`) or a publication chat room (`type: chat`).
+      required: [type, id, timestamp]
+      properties:
+        type:
+          type: string
+          enum:
+            - direct-message
+            - chat
+          description: Thread type — direct message or publication chat room.
+        id:
+          type: string
+          description: |
+            Thread identifier. DMs use a UUID format. Publication chats use
+            `chat-{publicationId}`.
+        communityPost:
+          type: object
+          nullable: true
+          description: Community post metadata (present for publication chat rooms).
+        user:
+          type: object
+          nullable: true
+          description: Other user in the conversation (DMs only).
+        publication:
+          type: object
+          nullable: true
+          description: Publication metadata (present for publication chat rooms).
+        muteStatus:
+          type: string
+          nullable: true
+        paywallStatus:
+          type: string
+          nullable: true
+        isPinned:
+          type: boolean
+        lastViewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        avatarURLs:
+          type: array
+          items:
+            type: string
+          description: Avatar image URLs for the thread participants.
+        title:
+          type: string
+          description: Display title of the thread.
+        accessoryImageURL:
+          type: string
+          nullable: true
+        heroImageURLs:
+          type: array
+          items:
+            type: string
+          nullable: true
+        subtitleBody:
+          type: string
+          nullable: true
+          description: Preview text (last message or description).
+        timestamp:
+          type: string
+          format: date-time
+        messageThread:
+          type: object
+          nullable: true
+          description: Full thread metadata with members (present in invite listings).
+        recentMessage:
+          type: object
+          nullable: true
+          description: Most recent message preview.
+        unreadCount:
+          type: integer
+          nullable: true
+        bestsellerTier:
+          type: integer
+          nullable: true
+        subscriberContext:
+          type: object
+          nullable: true
+      additionalProperties: true
+    DmConversation:
+      type: object
+      description: A DM conversation with messages and participant details.
+      required: [messages, more]
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        user:
+          $ref: '#/components/schemas/ChatUser'
+        more:
+          type: boolean
+          description: Whether more (older) messages exist.
+        cursor:
+          type: string
+          nullable: true
+          description: Pagination cursor for loading older messages.
+      additionalProperties: true
+    ChatMessage:
+      type: object
+      description: A single message in a DM or chat conversation.
+      required: [id, created_at, updated_at, user_id, conversation_id, body, status]
+      properties:
+        id:
+          type: string
+          description: |
+            Composite message ID. Format: `{conversationId}-{ISO timestamp}`
+            (e.g. `d2f49720-3ce0-4ce8-99fc-4cf7439698ca-2025-09-16T23:16:13.436Z`).
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        user_id:
+          type: integer
+          description: ID of the message author.
+        conversation_id:
+          type: string
+          description: UUID of the parent conversation.
+        post_id:
+          type: string
+          description: Post/conversation ID the message belongs to.
+        body:
+          type: string
+          description: Rendered message body (HTML).
+        raw_body:
+          type: string
+          description: Raw message body (plain text).
+        media_uploads:
+          type: array
+          nullable: true
+          items:
+            type: object
+          description: Attached media files.
+        parent_id:
+          type: string
+          nullable: true
+          description: Parent message ID for threaded replies.
+        is_locked:
+          type: boolean
+          description: Whether the message is locked (moderated).
+        status:
+          type: string
+          enum:
+            - published
+            - deleted
+        quote_id:
+          type: string
+          nullable: true
+        reactions:
+          type: object
+          description: Map of reaction type to reaction details.
+          additionalProperties: true
+      additionalProperties: true
+    ChatUser:
+      type: object
+      description: User profile in a chat context.
+      required: [id, name, handle]
+      properties:
+        id:
+          type: string
+          description: User identifier (UUID or numeric string).
+        name:
+          type: string
+        bio:
+          type: string
+        photo_url:
+          type: string
+          format: uri
+        link:
+          type: string
+          format: uri
+        bestseller_tier:
+          type: integer
+        status:
+          type: object
+          additionalProperties: true
+        primary_publication_id:
+          type: integer
+          nullable: true
+        primary_publication_iap_enabled:
+          type: boolean
+        writes:
+          type: string
+          description: Name of the user's primary publication.
+        is_subscribed:
+          type: boolean
+        is_blocking:
+          type: boolean
+        is_muting:
+          type: boolean
+        is_following:
+          type: boolean
+        can_follow:
+          type: boolean
+        handle:
+          type: string
+        can_dm:
+          type: boolean
+        reader_installed_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+      additionalProperties: true
+    DmInvites:
+      type: object
+      description: Pending chat invitations / DM requests.
+      required: [threads, spamThreads, subscriberThreads, more]
+      properties:
+        threads:
+          type: array
+          description: Regular pending invite threads.
+          items:
+            $ref: '#/components/schemas/ChatThread'
+        spamThreads:
+          type: array
+          description: Spam-flagged invite threads.
+          items:
+            $ref: '#/components/schemas/ChatThread'
+        subscriberThreads:
+          type: array
+          description: Invite threads from subscribers.
+          items:
+            $ref: '#/components/schemas/ChatThread'
+        more:
+          type: boolean
+        pendingInviteCount:
+          type: integer
+        pendingInviteUnreadCount:
+          type: integer
+        newPendingInviteUnreadCount:
+          type: integer
+        directMessagesUnreadCount:
+          type: integer
+      additionalProperties: true
+    ThreadReactions:
+      type: object
+      description: Catalog of available emoji reactions for chat messages.
+      required: [suggestedReactionTypes, categories, reactionTypes]
+      properties:
+        suggestedReactionTypes:
+          type: array
+          items:
+            type: string
+          description: Short list of suggested reaction emoji names.
+        categories:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                description: Category display name (e.g. "Frequently used").
+              reactionTypes:
+                type: array
+                items:
+                  type: string
+                description: Emoji names in this category.
+        reactionTypes:
+          type: object
+          description: Map of emoji name to unicode character.
+          additionalProperties:
+            type: string
+      additionalProperties: true
+    RealtimeToken:
+      type: object
+      description: JWT token and endpoint for realtime WebSocket connections.
+      required: [token, expiry, permissions, endpoint]
+      properties:
+        token:
+          type: string
+          description: JWT token for WebSocket authentication.
+        expiry:
+          type: string
+          format: date-time
+          description: Token expiration timestamp.
+        permissions:
+          type: array
+          items:
+            type: string
+          description: |
+            Permission strings (e.g. `subscribe|user:{id}`,
+            `unsubscribe|user:{id}`).
+        endpoint:
+          type: string
+          description: WebSocket URL for realtime connections.
+          example: wss://zyncrealtime.substack.com
+    SendDmMessageRequest:
+      type: object
+      required: [body, client_id]
+      properties:
+        body:
+          type: string
+          description: Message body (plain text).
+        client_id:
+          type: string
+          format: uuid
+          description: Client-generated UUID for idempotency / deduplication.
+    SendDmMessageResponse:
+      type: object
+      required: [thread, reply]
+      properties:
+        thread:
+          $ref: '#/components/schemas/DmThreadDetail'
+        reply:
+          type: object
+          required: [comment, user]
+          properties:
+            comment:
+              $ref: '#/components/schemas/ChatMessage'
+            user:
+              $ref: '#/components/schemas/ChatUser'
+            client_id:
+              type: string
+              format: uuid
+              description: Echo of the client-provided idempotency key.
+        publications:
+          type: array
+          description: Publication objects referenced in the message.
+          items:
+            type: object
+        comments:
+          type: array
+          description: Additional comment context (e.g. quoted messages).
+          items:
+            type: object
+    DmThreadDetail:
+      type: object
+      description: Full DM thread metadata with member details.
+      required: [id, created_at, updated_at, members]
+      properties:
+        id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        first_message_created_at:
+          type: string
+          format: date-time
+          nullable: true
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/DmThreadMember'
+        is_one_on_one:
+          type: boolean
+          description: Whether this is a 1:1 DM (vs group).
+        is_pinned:
+          type: boolean
+        createdBy:
+          type: integer
+          description: User ID of the thread creator.
+      additionalProperties: true
+    DmThreadMember:
+      type: object
+      description: A member in a DM thread with their state.
+      required: [user_id, membership_state]
+      properties:
+        user_id:
+          type: integer
+        membership_state:
+          type: string
+          enum: [accepted, pending]
+          description: Whether the member has accepted the conversation.
+        history_start_at:
+          type: string
+          format: date-time
+          nullable: true
+        unmute_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_viewed_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_emailed_at:
+          type: string
+          format: date-time
+          nullable: true
+        user:
+          $ref: '#/components/schemas/ChatUser'
       additionalProperties: true
