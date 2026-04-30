@@ -1,5 +1,9 @@
-import type { SubstackNote, PaginatedSubstackNotes } from '@substack-api/internal/types'
-import { SubstackCommentResponseCodec } from '@substack-api/internal/types'
+import type {
+  SubstackNote,
+  PaginatedSubstackNotes,
+  SubstackNoteStats
+} from '@substack-api/internal/types'
+import { SubstackCommentResponseCodec, SubstackNoteStatsCodec } from '@substack-api/internal/types'
 import { decodeOrThrow } from '@substack-api/internal/validation'
 import type { HttpClient } from '@substack-api/internal/http-client'
 
@@ -144,7 +148,8 @@ export class NoteService {
   }
 
   /** Get analytics stats for a note (impressions, surfaces, audience, interactions). */
-  async getNoteStats(entityKey: string): Promise<unknown> {
-    return await this.publicationClient.get<unknown>(`/note_stats/${entityKey}`)
+  async getNoteStats(entityKey: string): Promise<SubstackNoteStats> {
+    const response = await this.publicationClient.get<unknown>(`/note_stats/${entityKey}`)
+    return decodeOrThrow(SubstackNoteStatsCodec, response, 'Note stats')
   }
 }

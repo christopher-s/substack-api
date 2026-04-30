@@ -3,13 +3,21 @@ import type {
   SubstackPublicationPost,
   SubstackPublicationFullPost,
   SubstackFacepile,
-  SubstackLiveStreamResponse
+  SubstackLiveStreamResponse,
+  SubstackPublicationExport,
+  SubstackPublicationSearchResponse,
+  SubstackLiveStreamList,
+  SubstackEligibleHosts
 } from '@substack-api/internal/types'
 import {
   SubstackPublicationPostCodec,
   SubstackPublicationFullPostCodec,
   SubstackFacepileCodec,
-  SubstackLiveStreamResponseCodec
+  SubstackLiveStreamResponseCodec,
+  SubstackPublicationExportCodec,
+  SubstackPublicationSearchResponseCodec,
+  SubstackLiveStreamListCodec,
+  SubstackEligibleHostsCodec
 } from '@substack-api/internal/types'
 import { decodeOrThrow } from '@substack-api/internal/validation'
 
@@ -128,14 +136,45 @@ export class PublicationService {
     await this.publicationClient.post(`/posts/${encodeURIComponent(String(postId))}/seen`)
   }
 
-  async getLiveStreams(status?: string): Promise<unknown> {
-    const params = status ? `?status=${status}` : '?status=scheduled'
-    return await this.publicationClient.get<unknown>(`/live_streams${params}`)
+  /**
+   * Get publication export status/history
+   * GET {pub}/api/v1/publication_export (requires auth)
+   */
+  async getPublicationExport(): Promise<SubstackPublicationExport[]> {
+    const response = await this.publicationClient.get<unknown[]>('/publication_export')
+    return response.map((item, i) =>
+      decodeOrThrow(SubstackPublicationExportCodec, item, `Publication export ${i}`)
+    )
   }
 
-  async getEligibleHosts(publicationId: number): Promise<unknown> {
-    return await this.publicationClient.get<unknown>(
+  /**
+   * Search for publications
+   * GET /api/v1/publication/search?query=...&limit=... (anonymous)
+   */
+  async searchPublications(
+    query: string,
+    options?: { limit?: number }
+  ): Promise<SubstackPublicationSearchResponse> {
+    const params = new URLSearchParams({ query })
+    if (options?.limit !== undefined) {
+      params.set('limit', String(options.limit))
+    }
+    const response = await this.publicationClient.get<unknown>(
+      `/publication/search?${params.toString()}`
+    )
+    return decodeOrThrow(SubstackPublicationSearchResponseCodec, response, 'Publication search')
+  }
+
+  async getLiveStreams(status?: string): Promise<SubstackLiveStreamList> {
+    const params = status ? `?status=${status}` : '?status=scheduled'
+    const response = await this.publicationClient.get<unknown>(`/live_streams${params}`)
+    return decodeOrThrow(SubstackLiveStreamListCodec, response, 'Live streams')
+  }
+
+  async getEligibleHosts(publicationId: number): Promise<SubstackEligibleHosts> {
+    const response = await this.publicationClient.get<unknown>(
       `/live_stream/eligible_hosts?publication_id=${publicationId}`
     )
+    return decodeOrThrow(SubstackEligibleHostsCodec, response, 'Eligible hosts')
   }
 }

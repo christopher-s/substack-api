@@ -153,6 +153,140 @@ export { SubstackLiveStreamListCodec } from '@substack-api/internal/types/substa
 export type { SubstackPostTag } from '@substack-api/internal/types/substack-post-management'
 export { SubstackPostTagCodec } from '@substack-api/internal/types/substack-post-management'
 
+export type { SubstackNoteStats } from '@substack-api/internal/types/substack-post-management'
+export { SubstackNoteStatsCodec } from '@substack-api/internal/types/substack-post-management'
+
+export type { SubstackEligibleHosts } from '@substack-api/internal/types/substack-post-management'
+export { SubstackEligibleHostsCodec } from '@substack-api/internal/types/substack-post-management'
+
+export type { SubstackCreatedComment } from '@substack-api/internal/types/substack-post-management'
+export { SubstackCreatedCommentCodec } from '@substack-api/internal/types/substack-post-management'
+
+export type { SubstackDeleteResponse } from '@substack-api/internal/types/substack-post-management'
+export { SubstackDeleteResponseCodec } from '@substack-api/internal/types/substack-post-management'
+
+// Dashboard types
+export type {
+  DashboardSummary,
+  EmailsTimeseries,
+  UnreadActivity,
+  UnreadMessageCount
+} from '@substack-api/internal/types/dashboard'
+export {
+  DashboardSummaryCodec,
+  EmailsTimeseriesCodec,
+  UnreadActivityCodec,
+  UnreadMessageCountCodec
+} from '@substack-api/internal/types/dashboard'
+
+// Growth stats types
+export type {
+  GrowthSources,
+  GrowthTimeseries,
+  GrowthEvents
+} from '@substack-api/internal/types/growth-stats'
+export {
+  GrowthSourcesCodec,
+  GrowthTimeseriesCodec,
+  GrowthEventsCodec
+} from '@substack-api/internal/types/growth-stats'
+
+// Publication stats types
+export type {
+  NetworkAttribution,
+  FollowerTimeseries,
+  AudienceLocation,
+  AudienceLocationTotal,
+  AudienceOverlap,
+  Traffic30dViews,
+  VisitorSources,
+  TrafficTimeseries,
+  Email30dOpenRate,
+  EmailStats,
+  PledgeSummary,
+  Pledges,
+  ReaderReferrals,
+  PledgePlans,
+  PledgePlansSummary,
+  PublicationSettings,
+  BestsellerTier
+} from '@substack-api/internal/types/publication-stats'
+export {
+  NetworkAttributionCodec,
+  FollowerTimeseriesCodec,
+  AudienceLocationCodec,
+  AudienceLocationTotalCodec,
+  AudienceOverlapCodec,
+  Traffic30dViewsCodec,
+  VisitorSourcesCodec,
+  TrafficTimeseriesCodec,
+  Email30dOpenRateCodec,
+  EmailStatsCodec,
+  PledgeSummaryCodec,
+  PledgesCodec,
+  ReaderReferralsCodec,
+  PledgePlansCodec,
+  PledgePlansSummaryCodec,
+  PublicationSettingsCodec,
+  BestsellerTierCodec
+} from '@substack-api/internal/types/publication-stats'
+
+// Subscriber stats types
+export type {
+  SubscriberStats,
+  SubscriptionsPage
+} from '@substack-api/internal/types/subscriber-stats'
+export {
+  SubscriberStatsCodec,
+  SubscriptionsPageCodec
+} from '@substack-api/internal/types/subscriber-stats'
+
+// Recommendation types
+export type {
+  SubstackRecommendation,
+  SubstackRecommendationStats,
+  SubstackRecommendationsExist,
+  SubstackSuggestedRecommendation
+} from '@substack-api/internal/types/recommendation'
+export {
+  SubstackRecommendationCodec,
+  SubstackRecommendationStatsCodec,
+  SubstackRecommendationsExistCodec,
+  SubstackSuggestedRecommendationCodec
+} from '@substack-api/internal/types/recommendation'
+
+// Settings types
+export type {
+  PublisherSettingsDetail,
+  SubstackPublicationUserRole,
+  SubstackPublicationSection,
+  SubstackSubscriptionSettings,
+  SubstackBoostSettings
+} from '@substack-api/internal/types/settings'
+export {
+  PublisherSettingsDetailCodec,
+  SubstackPublicationUserRoleCodec,
+  SubstackPublicationSectionCodec,
+  SubstackSubscriptionSettingsCodec,
+  SubstackBoostSettingsCodec
+} from '@substack-api/internal/types/settings'
+
+// Re-export PublisherSettingsDetail as SettingsPublisherSettings for backward compatibility
+export type { PublisherSettingsDetail as SettingsPublisherSettings } from '@substack-api/internal/types/settings'
+export { PublisherSettingsDetailCodec as SettingsPublisherSettingsCodec } from '@substack-api/internal/types/settings'
+
+// Publication export and search types
+export type {
+  SubstackPublicationExport,
+  SubstackPublicationSearchResult,
+  SubstackPublicationSearchResponse
+} from '@substack-api/internal/types/publication-export'
+export {
+  SubstackPublicationExportCodec,
+  SubstackPublicationSearchResultCodec,
+  SubstackPublicationSearchResponseCodec
+} from '@substack-api/internal/types/publication-export'
+
 // Chat types
 export type {
   ChatUser,

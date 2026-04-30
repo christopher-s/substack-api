@@ -177,3 +177,84 @@ export const SubstackPostTagCodec = t.partial({
 })
 
 export type SubstackPostTag = t.TypeOf<typeof SubstackPostTagCodec>
+
+/**
+ * Note stats from GET /note_stats/{entityKey}
+ * Analytics data: impressions, surfaces, audience breakdown, interactions
+ */
+export const SubstackNoteStatsCodec = t.intersection([
+  t.type({}),
+  t.partial({
+    impressions: maybe(t.number),
+    surfaces: maybe(t.record(t.string, t.number)),
+    audience: maybe(t.record(t.string, t.number)),
+    interactions: maybe(t.record(t.string, t.number)),
+    likes: maybe(t.number),
+    restacks: maybe(t.number),
+    comments: maybe(t.number),
+    shares: maybe(t.number),
+    entity_key: maybe(t.string)
+  })
+])
+
+export type SubstackNoteStats = t.TypeOf<typeof SubstackNoteStatsCodec>
+
+/**
+ * Eligible hosts from GET /live_stream/eligible_hosts
+ */
+export const SubstackEligibleHostsCodec = t.intersection([
+  t.type({}),
+  t.partial({
+    hosts: maybe(
+      t.array(
+        t.intersection([
+          t.type({}),
+          t.partial({
+            id: maybe(t.number),
+            name: maybe(t.string),
+            handle: maybe(t.string),
+            photo_url: maybe(t.string),
+            email: maybe(t.string),
+            role: maybe(t.string),
+            user_id: maybe(t.number),
+            publication_id: maybe(t.number)
+          })
+        ])
+      )
+    )
+  })
+])
+
+export type SubstackEligibleHosts = t.TypeOf<typeof SubstackEligibleHostsCodec>
+
+/**
+ * Response from POST /post/{id}/comment (create comment)
+ */
+export const SubstackCreatedCommentCodec = t.intersection([
+  t.type({}),
+  t.partial({
+    id: maybe(t.number),
+    body: maybe(t.string),
+    user_id: maybe(t.number),
+    post_id: maybe(t.number),
+    date: maybe(t.string),
+    name: maybe(t.string),
+    type: maybe(t.string)
+  })
+])
+
+export type SubstackCreatedComment = t.TypeOf<typeof SubstackCreatedCommentCodec>
+
+/**
+ * Response from DELETE /comment/{id} or DELETE /drafts/{id}
+ */
+export const SubstackDeleteResponseCodec = t.intersection([
+  t.type({}),
+  t.partial({
+    success: maybe(t.boolean),
+    deleted: maybe(t.boolean),
+    id: maybe(t.number)
+  })
+])
+
+export type SubstackDeleteResponse = t.TypeOf<typeof SubstackDeleteResponseCodec>

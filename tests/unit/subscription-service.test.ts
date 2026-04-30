@@ -18,7 +18,7 @@ describe('SubscriptionService', () => {
 
   describe('getCurrentSubscription', () => {
     it('should fetch subscription from publication client', async () => {
-      const mockResponse = { id: 1, publication_id: 42, type: 'premium' }
+      const mockResponse = { id: 1, user_id: 10, publication_id: 42, type: 'premium' }
       mockPublicationClient.get.mockResolvedValue(mockResponse)
 
       const result = await service.getCurrentSubscription()

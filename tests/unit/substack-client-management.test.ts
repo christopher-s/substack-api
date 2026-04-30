@@ -42,7 +42,7 @@ describe('SubstackClient post management methods', () => {
 
   describe('publishedPosts', () => {
     it('should delegate to postManagementService', async () => {
-      const mockResponse = [{ id: 1, title: 'Post' }]
+      const mockResponse = { posts: [{ id: 1, title: 'Post' }], offset: 0, limit: 25, total: 1 }
       mockPostManagementService.getPublishedPosts.mockResolvedValue(mockResponse)
 
       const result = await client.publishedPosts()
@@ -51,7 +51,12 @@ describe('SubstackClient post management methods', () => {
     })
 
     it('should pass options to service', async () => {
-      mockPostManagementService.getPublishedPosts.mockResolvedValue([])
+      mockPostManagementService.getPublishedPosts.mockResolvedValue({
+        posts: [],
+        offset: 10,
+        limit: 5,
+        total: 0
+      })
       await client.publishedPosts({ offset: 10, limit: 5 })
       expect(mockPostManagementService.getPublishedPosts).toHaveBeenCalledWith({
         offset: 10,
@@ -76,7 +81,12 @@ describe('SubstackClient post management methods', () => {
 
   describe('drafts', () => {
     it('should delegate to postManagementService', async () => {
-      const mockResponse = [{ id: 2, draft_title: 'Draft' }]
+      const mockResponse = {
+        posts: [{ id: 2, draft_title: 'Draft' }],
+        offset: 0,
+        limit: 25,
+        total: 1
+      }
       mockPostManagementService.getDrafts.mockResolvedValue(mockResponse)
 
       const result = await client.drafts()
@@ -85,7 +95,12 @@ describe('SubstackClient post management methods', () => {
     })
 
     it('should pass options to service', async () => {
-      mockPostManagementService.getDrafts.mockResolvedValue([])
+      mockPostManagementService.getDrafts.mockResolvedValue({
+        posts: [],
+        offset: 5,
+        limit: 10,
+        total: 0
+      })
       await client.drafts({ offset: 5, limit: 10 })
       expect(mockPostManagementService.getDrafts).toHaveBeenCalledWith({ offset: 5, limit: 10 })
     })
@@ -107,7 +122,12 @@ describe('SubstackClient post management methods', () => {
 
   describe('scheduledPosts', () => {
     it('should delegate to postManagementService', async () => {
-      const mockResponse = [{ id: 3, draft_title: 'Scheduled' }]
+      const mockResponse = {
+        posts: [{ id: 3, draft_title: 'Scheduled' }],
+        offset: 0,
+        limit: 25,
+        total: 1
+      }
       mockPostManagementService.getScheduledPosts.mockResolvedValue(mockResponse)
 
       const result = await client.scheduledPosts()
@@ -116,7 +136,12 @@ describe('SubstackClient post management methods', () => {
     })
 
     it('should pass options to service', async () => {
-      mockPostManagementService.getScheduledPosts.mockResolvedValue([])
+      mockPostManagementService.getScheduledPosts.mockResolvedValue({
+        posts: [],
+        offset: 0,
+        limit: 50,
+        total: 0
+      })
       await client.scheduledPosts({ offset: 0, limit: 50 })
       expect(mockPostManagementService.getScheduledPosts).toHaveBeenCalledWith({
         offset: 0,
@@ -141,7 +166,7 @@ describe('SubstackClient post management methods', () => {
 
   describe('postCounts', () => {
     it('should delegate to postManagementService', async () => {
-      const mockResponse = { total: 42, published: 30, draft: 12 }
+      const mockResponse = { published: 30, drafts: 12, scheduled: 0 }
       mockPostManagementService.getPostCounts.mockResolvedValue(mockResponse)
 
       const result = await client.postCounts()
@@ -200,7 +225,7 @@ describe('SubstackClient post management methods', () => {
     })
 
     it('should pass all fields to service', async () => {
-      mockPostManagementService.createDraft.mockResolvedValue({})
+      mockPostManagementService.createDraft.mockResolvedValue({ id: 789 })
       await client.createDraft({
         title: 'Full Draft',
         body: '<p>Content</p>',

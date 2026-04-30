@@ -1,4 +1,17 @@
 import type { HttpClient } from '@substack-api/internal/http-client'
+import type {
+  SubstackPostManagementResponse,
+  SubstackPostManagementCounts,
+  SubstackDraftPost,
+  SubstackDeleteResponse
+} from '@substack-api/internal/types'
+import {
+  SubstackPostManagementResponseCodec,
+  SubstackPostManagementCountsCodec,
+  SubstackDraftPostCodec,
+  SubstackDeleteResponseCodec
+} from '@substack-api/internal/types'
+import { decodeOrThrow } from '@substack-api/internal/validation'
 
 export class PostManagementService {
   constructor(private readonly publicationClient: HttpClient) {}
@@ -8,14 +21,15 @@ export class PostManagementService {
     limit?: number
     orderBy?: string
     orderDirection?: string
-  }): Promise<unknown> {
+  }): Promise<SubstackPostManagementResponse> {
     const offset = options?.offset ?? 0
     const limit = options?.limit ?? 25
     const orderBy = options?.orderBy ?? 'post_date'
     const orderDirection = options?.orderDirection ?? 'desc'
-    return await this.publicationClient.get<unknown>(
+    const response = await this.publicationClient.get<unknown>(
       `/post_management/published?offset=${offset}&limit=${limit}&order_by=${orderBy}&order_direction=${orderDirection}`
     )
+    return decodeOrThrow(SubstackPostManagementResponseCodec, response, 'Published posts')
   }
 
   async getDrafts(options?: {
@@ -23,14 +37,15 @@ export class PostManagementService {
     limit?: number
     orderBy?: string
     orderDirection?: string
-  }): Promise<unknown> {
+  }): Promise<SubstackPostManagementResponse> {
     const offset = options?.offset ?? 0
     const limit = options?.limit ?? 25
     const orderBy = options?.orderBy ?? 'draft_updated_at'
     const orderDirection = options?.orderDirection ?? 'desc'
-    return await this.publicationClient.get<unknown>(
+    const response = await this.publicationClient.get<unknown>(
       `/post_management/drafts?offset=${offset}&limit=${limit}&order_by=${orderBy}&order_direction=${orderDirection}`
     )
+    return decodeOrThrow(SubstackPostManagementResponseCodec, response, 'Drafts')
   }
 
   async getScheduledPosts(options?: {
@@ -38,22 +53,27 @@ export class PostManagementService {
     limit?: number
     orderBy?: string
     orderDirection?: string
-  }): Promise<unknown> {
+  }): Promise<SubstackPostManagementResponse> {
     const offset = options?.offset ?? 0
     const limit = options?.limit ?? 25
     const orderBy = options?.orderBy ?? 'trigger_at'
     const orderDirection = options?.orderDirection ?? 'asc'
-    return await this.publicationClient.get<unknown>(
+    const response = await this.publicationClient.get<unknown>(
       `/post_management/scheduled?offset=${offset}&limit=${limit}&order_by=${orderBy}&order_direction=${orderDirection}`
     )
+    return decodeOrThrow(SubstackPostManagementResponseCodec, response, 'Scheduled posts')
   }
 
-  async getPostCounts(query?: string): Promise<unknown> {
-    return await this.publicationClient.get<unknown>(`/post_management/counts?query=${query ?? ''}`)
+  async getPostCounts(query?: string): Promise<SubstackPostManagementCounts> {
+    const response = await this.publicationClient.get<unknown>(
+      `/post_management/counts?query=${query ?? ''}`
+    )
+    return decodeOrThrow(SubstackPostManagementCountsCodec, response, 'Post counts')
   }
 
-  async getDraft(id: number): Promise<unknown> {
-    return await this.publicationClient.get<unknown>(`/drafts/${id}`)
+  async getDraft(id: number): Promise<SubstackDraftPost> {
+    const response = await this.publicationClient.get<unknown>(`/drafts/${id}`)
+    return decodeOrThrow(SubstackDraftPostCodec, response, 'Draft')
   }
 
   async createDraft(data: {
@@ -62,7 +82,7 @@ export class PostManagementService {
     type?: string
     audience?: string
     bylineUserId?: number
-  }): Promise<unknown> {
+  }): Promise<SubstackDraftPost> {
     const request = {
       draft_title: data.title,
       draft_body: data.body,
@@ -72,13 +92,14 @@ export class PostManagementService {
         ? [{ id: data.bylineUserId, is_draft: true, is_guest: false }]
         : undefined
     }
-    return await this.publicationClient.post<unknown>('/drafts', request)
+    const response = await this.publicationClient.post<unknown>('/drafts', request)
+    return decodeOrThrow(SubstackDraftPostCodec, response, 'Created draft')
   }
 
   async updateDraft(
     id: number,
     data: { title?: string; body?: string; [key: string]: unknown }
-  ): Promise<unknown> {
+  ): Promise<SubstackDraftPost> {
     const request: Record<string, unknown> = {}
     if (data.title !== undefined) request.draft_title = data.title
     if (data.body !== undefined) request.draft_body = data.body
@@ -87,14 +108,17 @@ export class PostManagementService {
         request[key] = value
       }
     }
-    return await this.publicationClient.put<unknown>(`/drafts/${id}`, request)
+    const response = await this.publicationClient.put<unknown>(`/drafts/${id}`, request)
+    return decodeOrThrow(SubstackDraftPostCodec, response, 'Updated draft')
   }
 
-  async publishDraft(id: number): Promise<unknown> {
-    return await this.publicationClient.post<unknown>(`/drafts/${id}/publish`, {})
+  async publishDraft(id: number): Promise<SubstackDraftPost> {
+    const response = await this.publicationClient.post<unknown>(`/drafts/${id}/publish`, {})
+    return decodeOrThrow(SubstackDraftPostCodec, response, 'Published draft')
   }
 
-  async deleteDraft(id: number): Promise<unknown> {
-    return await this.publicationClient.delete<unknown>(`/drafts/${id}`)
+  async deleteDraft(id: number): Promise<SubstackDeleteResponse> {
+    const response = await this.publicationClient.delete<unknown>(`/drafts/${id}`)
+    return decodeOrThrow(SubstackDeleteResponseCodec, response, 'Delete draft')
   }
 }

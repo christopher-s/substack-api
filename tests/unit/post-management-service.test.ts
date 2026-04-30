@@ -17,7 +17,12 @@ describe('PostManagementService', () => {
 
   describe('getPublishedPosts', () => {
     it('should fetch published posts with default parameters', async () => {
-      const mockResponse = [{ id: 1, title: 'Published Post' }]
+      const mockResponse = {
+        posts: [{ id: 1, title: 'Published Post' }],
+        offset: 0,
+        limit: 25,
+        total: 1
+      }
       mockClient.get.mockResolvedValue(mockResponse)
 
       const result = await service.getPublishedPosts()
@@ -28,7 +33,7 @@ describe('PostManagementService', () => {
     })
 
     it('should pass custom offset, limit, orderBy, and orderDirection', async () => {
-      mockClient.get.mockResolvedValue([])
+      mockClient.get.mockResolvedValue({ posts: [], offset: 10, limit: 5, total: 0 })
       await service.getPublishedPosts({
         offset: 10,
         limit: 5,
@@ -48,7 +53,12 @@ describe('PostManagementService', () => {
 
   describe('getDrafts', () => {
     it('should fetch drafts with default parameters', async () => {
-      const mockResponse = [{ id: 2, draft_title: 'Draft Post' }]
+      const mockResponse = {
+        posts: [{ id: 2, draft_title: 'Draft Post' }],
+        offset: 0,
+        limit: 25,
+        total: 1
+      }
       mockClient.get.mockResolvedValue(mockResponse)
 
       const result = await service.getDrafts()
@@ -59,7 +69,7 @@ describe('PostManagementService', () => {
     })
 
     it('should pass custom parameters', async () => {
-      mockClient.get.mockResolvedValue([])
+      mockClient.get.mockResolvedValue({ posts: [], offset: 5, limit: 10, total: 0 })
       await service.getDrafts({ offset: 5, limit: 10, orderBy: 'title', orderDirection: 'asc' })
       expect(mockClient.get).toHaveBeenCalledWith(
         '/post_management/drafts?offset=5&limit=10&order_by=title&order_direction=asc'
@@ -74,7 +84,12 @@ describe('PostManagementService', () => {
 
   describe('getScheduledPosts', () => {
     it('should fetch scheduled posts with default parameters', async () => {
-      const mockResponse = [{ id: 3, draft_title: 'Scheduled Post' }]
+      const mockResponse = {
+        posts: [{ id: 3, draft_title: 'Scheduled Post' }],
+        offset: 0,
+        limit: 25,
+        total: 1
+      }
       mockClient.get.mockResolvedValue(mockResponse)
 
       const result = await service.getScheduledPosts()
@@ -85,7 +100,7 @@ describe('PostManagementService', () => {
     })
 
     it('should pass custom parameters', async () => {
-      mockClient.get.mockResolvedValue([])
+      mockClient.get.mockResolvedValue({ posts: [], offset: 20, limit: 50, total: 0 })
       await service.getScheduledPosts({
         offset: 20,
         limit: 50,
@@ -105,7 +120,7 @@ describe('PostManagementService', () => {
 
   describe('getPostCounts', () => {
     it('should fetch post counts without query', async () => {
-      const mockResponse = { total: 42, published: 30, draft: 12 }
+      const mockResponse = { published: 30, drafts: 12, scheduled: 0 }
       mockClient.get.mockResolvedValue(mockResponse)
 
       const result = await service.getPostCounts()
@@ -114,7 +129,7 @@ describe('PostManagementService', () => {
     })
 
     it('should pass query parameter', async () => {
-      mockClient.get.mockResolvedValue({ total: 5 })
+      mockClient.get.mockResolvedValue({ published: 5, drafts: 0, scheduled: 0 })
       await service.getPostCounts('test search')
       expect(mockClient.get).toHaveBeenCalledWith('/post_management/counts?query=test search')
     })
@@ -200,7 +215,7 @@ describe('PostManagementService', () => {
     })
 
     it('should include extra fields beyond title and body', async () => {
-      mockClient.put.mockResolvedValue({})
+      mockClient.put.mockResolvedValue({ id: 200 })
       await service.updateDraft(200, {
         title: 'Title',
         custom_field: 'value',
@@ -214,7 +229,7 @@ describe('PostManagementService', () => {
     })
 
     it('should send empty body when no fields match title/body', async () => {
-      mockClient.put.mockResolvedValue({})
+      mockClient.put.mockResolvedValue({ id: 300 })
       await service.updateDraft(300, { metadata: 'test' })
       expect(mockClient.put).toHaveBeenCalledWith('/drafts/300', {
         metadata: 'test'

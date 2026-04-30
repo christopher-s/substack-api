@@ -1,5 +1,6 @@
 import { SubstackClient } from '@substack-api/substack-client'
 import { HttpClient } from '@substack-api/internal/http-client'
+import type { PublisherSettingsDetail } from '@substack-api/internal/types'
 import {
   PublicationDetailService,
   SubscriptionService,
@@ -127,7 +128,7 @@ describe('SubstackClient new service methods', () => {
 
   describe('subscription', () => {
     it('should delegate to subscriptionService', async () => {
-      const mockResponse = { id: 1, type: 'premium' }
+      const mockResponse = { id: 1, user_id: 10, publication_id: 42, type: 'premium' }
       mockSubscriptionService.getCurrentSubscription.mockResolvedValue(mockResponse)
 
       const result = await client.subscription()
@@ -172,7 +173,9 @@ describe('SubstackClient new service methods', () => {
   describe('publisherSettings', () => {
     it('should delegate to settingsService', async () => {
       const mockResponse = { publication_name: 'Test' }
-      mockSettingsService.getPublisherSettings.mockResolvedValue(mockResponse)
+      mockSettingsService.getPublisherSettings.mockResolvedValue(
+        mockResponse as PublisherSettingsDetail
+      )
 
       const result = await client.publisherSettings()
       expect(result).toEqual(mockResponse)
@@ -299,14 +302,15 @@ describe('SubstackClient new service methods', () => {
 
   describe('liveStreams', () => {
     it('should delegate to publicationService', async () => {
-      mockPublicationService.getLiveStreams.mockResolvedValue([])
+      const mockResponse = { liveStreams: [], hasMore: false }
+      mockPublicationService.getLiveStreams.mockResolvedValue(mockResponse)
       const result = await client.liveStreams()
       expect(mockPublicationService.getLiveStreams).toHaveBeenCalledWith(undefined)
-      expect(result).toEqual([])
+      expect(result).toEqual(mockResponse)
     })
 
     it('should pass status option', async () => {
-      mockPublicationService.getLiveStreams.mockResolvedValue([])
+      mockPublicationService.getLiveStreams.mockResolvedValue({ liveStreams: [], hasMore: false })
       await client.liveStreams('active')
       expect(mockPublicationService.getLiveStreams).toHaveBeenCalledWith('active')
     })
@@ -319,10 +323,11 @@ describe('SubstackClient new service methods', () => {
 
   describe('eligibleHosts', () => {
     it('should delegate to publicationService', async () => {
-      mockPublicationService.getEligibleHosts.mockResolvedValue([])
+      const mockResponse = { hosts: [] }
+      mockPublicationService.getEligibleHosts.mockResolvedValue(mockResponse)
       const result = await client.eligibleHosts(42)
       expect(mockPublicationService.getEligibleHosts).toHaveBeenCalledWith(42)
-      expect(result).toEqual([])
+      expect(result).toEqual(mockResponse)
     })
 
     it('should throw when no publicationUrl', async () => {
@@ -333,10 +338,14 @@ describe('SubstackClient new service methods', () => {
 
   describe('publicationUser', () => {
     it('should delegate to settingsService', async () => {
-      mockSettingsService.getPublicationUser.mockResolvedValue({ pub_users: [] })
+      mockSettingsService.getPublicationUser.mockResolvedValue({
+        id: 1,
+        user_id: 10,
+        role: 'admin'
+      })
       const result = await client.publicationUser()
       expect(mockSettingsService.getPublicationUser).toHaveBeenCalled()
-      expect(result).toEqual({ pub_users: [] })
+      expect(result).toEqual({ id: 1, user_id: 10, role: 'admin' })
     })
 
     it('should throw when no auth', async () => {
@@ -375,10 +384,10 @@ describe('SubstackClient new service methods', () => {
 
   describe('boostSettings', () => {
     it('should delegate to settingsService', async () => {
-      mockSettingsService.getBoostSettings.mockResolvedValue({ boost_enabled: false })
+      mockSettingsService.getBoostSettings.mockResolvedValue({ enabled: false })
       const result = await client.boostSettings()
       expect(mockSettingsService.getBoostSettings).toHaveBeenCalled()
-      expect(result).toEqual({ boost_enabled: false })
+      expect(result).toEqual({ enabled: false })
     })
 
     it('should throw when no auth', async () => {

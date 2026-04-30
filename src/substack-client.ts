@@ -45,7 +45,55 @@ import type {
   SubstackTrendingResponse,
   SubstackPublicationPost,
   SubstackCommentRepliesResponse,
-  SubstackProfileSearchResult
+  SubstackProfileSearchResult,
+  SubscriberStats,
+  SubscriptionsPage,
+  GrowthSources,
+  GrowthTimeseries,
+  GrowthEvents,
+  NetworkAttribution,
+  FollowerTimeseries,
+  AudienceLocation,
+  AudienceLocationTotal,
+  AudienceOverlap,
+  Traffic30dViews,
+  VisitorSources,
+  TrafficTimeseries,
+  Email30dOpenRate,
+  EmailStats,
+  PledgeSummary,
+  Pledges,
+  ReaderReferrals,
+  PledgePlans,
+  PledgePlansSummary,
+  PublicationSettings,
+  BestsellerTier,
+  DashboardSummary,
+  EmailsTimeseries,
+  UnreadActivity,
+  UnreadMessageCount,
+  SubstackRecommendation,
+  SubstackRecommendationsExist,
+  SubstackSuggestedRecommendation,
+  SubstackPublicationExport,
+  SubstackPublicationSearchResponse,
+  PublisherSettingsDetail,
+  SubstackSubscriptionSettings,
+  SubstackBoostSettings,
+  SubstackPostManagementResponse,
+  SubstackPostManagementCounts,
+  SubstackDraftPost,
+  SubstackDeleteResponse,
+  SubstackLiveStreamList,
+  SubstackEligibleHosts,
+  SubstackPublicationDetail,
+  SubstackPostTag,
+  SubstackSubscription,
+  SubstackSubscriptionsResponse,
+  SubstackPublicationUserRole,
+  SubstackPublicationSection,
+  SubstackNoteStats,
+  SubstackCreatedComment
 } from '@substack-api/internal/types'
 import type { SubstackConfig } from '@substack-api/types'
 import type {
@@ -554,6 +602,27 @@ export class SubstackClient {
     await this.publicationService.markPostSeen(postId)
   }
 
+  /**
+   * Get publication export status/history
+   * GET {pub}/api/v1/publication_export (requires auth)
+   */
+  async publicationExport(): Promise<SubstackPublicationExport[]> {
+    this.requireAuth('publicationExport')
+    this.requirePublication('publicationExport')
+    return await this.publicationService.getPublicationExport()
+  }
+
+  /**
+   * Search for publications
+   * GET /api/v1/publication/search?query=...&limit=... (anonymous)
+   */
+  async publicationSearch(
+    query: string,
+    options?: { limit?: number }
+  ): Promise<SubstackPublicationSearchResponse> {
+    return await this.publicationService.searchPublications(query, options)
+  }
+
   // ── Profile feed methods (anonymous) ───────────────────────────────
 
   /**
@@ -606,31 +675,40 @@ export class SubstackClient {
 
   // ── Post management methods (require auth + publication) ───────────
 
-  async publishedPosts(options?: { offset?: number; limit?: number }): Promise<unknown> {
+  async publishedPosts(options?: {
+    offset?: number
+    limit?: number
+  }): Promise<SubstackPostManagementResponse> {
     this.requireAuth('publishedPosts')
     this.requirePublication('publishedPosts')
     return await this.postManagementService.getPublishedPosts(options)
   }
 
-  async drafts(options?: { offset?: number; limit?: number }): Promise<unknown> {
+  async drafts(options?: {
+    offset?: number
+    limit?: number
+  }): Promise<SubstackPostManagementResponse> {
     this.requireAuth('drafts')
     this.requirePublication('drafts')
     return await this.postManagementService.getDrafts(options)
   }
 
-  async scheduledPosts(options?: { offset?: number; limit?: number }): Promise<unknown> {
+  async scheduledPosts(options?: {
+    offset?: number
+    limit?: number
+  }): Promise<SubstackPostManagementResponse> {
     this.requireAuth('scheduledPosts')
     this.requirePublication('scheduledPosts')
     return await this.postManagementService.getScheduledPosts(options)
   }
 
-  async postCounts(query?: string): Promise<unknown> {
+  async postCounts(query?: string): Promise<SubstackPostManagementCounts> {
     this.requireAuth('postCounts')
     this.requirePublication('postCounts')
     return await this.postManagementService.getPostCounts(query)
   }
 
-  async draft(id: number): Promise<unknown> {
+  async draft(id: number): Promise<SubstackDraftPost> {
     this.requireAuth('draft')
     this.requirePublication('draft')
     return await this.postManagementService.getDraft(id)
@@ -642,7 +720,7 @@ export class SubstackClient {
     type?: string
     audience?: string
     bylineUserId?: number
-  }): Promise<unknown> {
+  }): Promise<SubstackDraftPost> {
     this.requireAuth('createDraft')
     this.requirePublication('createDraft')
     return await this.postManagementService.createDraft(data)
@@ -664,7 +742,7 @@ export class SubstackClient {
       audience?: string
       bylineUserId?: number
     }
-  ): Promise<unknown> {
+  ): Promise<SubstackDraftPost> {
     this.requireAuth('createDraftFromMarkdown')
     this.requirePublication('createDraftFromMarkdown')
     try {
@@ -687,19 +765,19 @@ export class SubstackClient {
   async updateDraft(
     id: number,
     data: { title?: string; body?: string; [key: string]: unknown }
-  ): Promise<unknown> {
+  ): Promise<SubstackDraftPost> {
     this.requireAuth('updateDraft')
     this.requirePublication('updateDraft')
     return await this.postManagementService.updateDraft(id, data)
   }
 
-  async publishDraft(id: number): Promise<unknown> {
+  async publishDraft(id: number): Promise<SubstackDraftPost> {
     this.requireAuth('publishDraft')
     this.requirePublication('publishDraft')
     return await this.postManagementService.publishDraft(id)
   }
 
-  async deleteDraft(id: number): Promise<unknown> {
+  async deleteDraft(id: number): Promise<SubstackDeleteResponse> {
     this.requireAuth('deleteDraft')
     this.requirePublication('deleteDraft')
     return await this.postManagementService.deleteDraft(id)
@@ -707,13 +785,13 @@ export class SubstackClient {
 
   // ── Comment write methods (require auth) ────────────────────────────
 
-  async createComment(postId: number, body: string): Promise<unknown> {
+  async createComment(postId: number, body: string): Promise<SubstackCreatedComment> {
     this.requireAuth('createComment')
     this.requirePublication('createComment')
     return await this.commentService.createComment(postId, body)
   }
 
-  async deleteComment(commentId: number): Promise<unknown> {
+  async deleteComment(commentId: number): Promise<SubstackDeleteResponse> {
     this.requireAuth('deleteComment')
     this.requirePublication('deleteComment')
     return await this.commentService.deleteComment(commentId)
@@ -721,35 +799,38 @@ export class SubstackClient {
 
   // ── Publication detail methods ──────────────────────────────────────
 
-  async publicationDetails(): Promise<unknown> {
+  async publicationDetails(): Promise<SubstackPublicationDetail> {
     this.requirePublication('publicationDetails')
     return await this.publicationDetailService.getPublicationDetails()
   }
 
-  async publicationTags(): Promise<unknown> {
+  async publicationTags(): Promise<SubstackPostTag[]> {
     this.requirePublication('publicationTags')
     return await this.publicationDetailService.getPostTags()
   }
 
-  async liveStreams(status?: string): Promise<unknown> {
+  async liveStreams(status?: string): Promise<SubstackLiveStreamList> {
     this.requirePublication('liveStreams')
     return await this.publicationService.getLiveStreams(status)
   }
 
-  async eligibleHosts(publicationId: number): Promise<unknown> {
+  async eligibleHosts(publicationId: number): Promise<SubstackEligibleHosts> {
     this.requirePublication('eligibleHosts')
     return await this.publicationService.getEligibleHosts(publicationId)
   }
 
   // ── Subscription methods (require auth) ─────────────────────────────
 
-  async subscription(): Promise<unknown> {
+  async subscription(): Promise<SubstackSubscription> {
     this.requireAuth('subscription')
     this.requirePublication('subscription')
     return await this.subscriptionService.getCurrentSubscription()
   }
 
-  async subscriptions(options?: { offset?: number; limit?: number }): Promise<unknown> {
+  async subscriptions(options?: {
+    offset?: number
+    limit?: number
+  }): Promise<SubstackSubscriptionsResponse> {
     this.requireAuth('subscriptions')
     return await this.subscriptionService.getAllSubscriptions(options)
   }
@@ -774,7 +855,7 @@ export class SubstackClient {
     }
   }
 
-  async noteStats(entityKey: string): Promise<unknown> {
+  async noteStats(entityKey: string): Promise<SubstackNoteStats> {
     this.requireAuth('noteStats')
     this.requirePublication('noteStats')
     return await this.noteService.getNoteStats(entityKey)
@@ -782,31 +863,31 @@ export class SubstackClient {
 
   // ── Settings methods (require auth) ─────────────────────────────────
 
-  async publisherSettings(): Promise<unknown> {
+  async publisherSettings(): Promise<PublisherSettingsDetail> {
     this.requireAuth('publisherSettings')
     this.requirePublication('publisherSettings')
     return await this.settingsService.getPublisherSettings()
   }
 
-  async publicationUser(): Promise<unknown> {
+  async publicationUser(): Promise<SubstackPublicationUserRole> {
     this.requireAuth('publicationUser')
     this.requirePublication('publicationUser')
     return await this.settingsService.getPublicationUser()
   }
 
-  async sections(): Promise<unknown> {
+  async sections(): Promise<SubstackPublicationSection[]> {
     this.requireAuth('sections')
     this.requirePublication('sections')
     return await this.settingsService.getSections()
   }
 
-  async subscriptionSettings(): Promise<unknown> {
+  async subscriptionSettings(): Promise<SubstackSubscriptionSettings> {
     this.requireAuth('subscriptionSettings')
     this.requirePublication('subscriptionSettings')
     return await this.settingsService.getSubscription()
   }
 
-  async boostSettings(): Promise<unknown> {
+  async boostSettings(): Promise<SubstackBoostSettings> {
     this.requireAuth('boostSettings')
     this.requirePublication('boostSettings')
     return await this.settingsService.getBoostSettings()
@@ -814,13 +895,13 @@ export class SubstackClient {
 
   // ── Subscriber stats methods (require auth) ──────────────────────────
 
-  async subscriberStats(): Promise<unknown> {
+  async subscriberStats(): Promise<SubscriberStats> {
     this.requireAuth('subscriberStats')
     this.requirePublication('subscriberStats')
     return await this.subscriberStatsService.getSubscriberStats()
   }
 
-  async subscriptionsPage(options?: { cursor?: string }): Promise<unknown> {
+  async subscriptionsPage(options?: { cursor?: string }): Promise<SubscriptionsPage> {
     this.requireAuth('subscriptionsPage')
     this.requirePublication('subscriptionsPage')
     return await this.subscriberStatsService.getSubscriptionsPage(options)
@@ -833,7 +914,7 @@ export class SubstackClient {
     toDate: string
     orderBy?: string
     orderDirection?: string
-  }): Promise<unknown> {
+  }): Promise<GrowthSources> {
     this.requireAuth('growthSources')
     this.requirePublication('growthSources')
     return await this.growthStatsService.getGrowthSources(options)
@@ -845,13 +926,13 @@ export class SubstackClient {
     orderDirection: string
     fromDate?: string
     toDate?: string
-  }): Promise<unknown> {
+  }): Promise<GrowthTimeseries> {
     this.requireAuth('growthTimeseries')
     this.requirePublication('growthTimeseries')
     return await this.growthStatsService.getGrowthTimeseries(data)
   }
 
-  async growthEvents(options: { fromDate: string; toDate: string }): Promise<unknown> {
+  async growthEvents(options: { fromDate: string; toDate: string }): Promise<GrowthEvents> {
     this.requireAuth('growthEvents')
     this.requirePublication('growthEvents')
     return await this.growthStatsService.getGrowthEvents(options)
@@ -862,37 +943,40 @@ export class SubstackClient {
   async networkAttribution(options?: {
     timeWindow?: string
     isSubscribed?: boolean
-  }): Promise<unknown> {
+  }): Promise<NetworkAttribution> {
     this.requireAuth('networkAttribution')
     this.requirePublication('networkAttribution')
     return await this.publicationStatsService.getNetworkAttribution(options)
   }
 
-  async followerTimeseries(options: { from: string }): Promise<unknown> {
+  async followerTimeseries(options: { from: string }): Promise<FollowerTimeseries> {
     this.requireAuth('followerTimeseries')
     this.requirePublication('followerTimeseries')
     return await this.publicationStatsService.getFollowerTimeseries(options)
   }
 
-  async audienceLocation(options?: { metric?: string; granularity?: string }): Promise<unknown> {
+  async audienceLocation(options?: {
+    metric?: string
+    granularity?: string
+  }): Promise<AudienceLocation> {
     this.requireAuth('audienceLocation')
     this.requirePublication('audienceLocation')
     return await this.publicationStatsService.getAudienceLocation(options)
   }
 
-  async audienceLocationTotal(): Promise<unknown> {
+  async audienceLocationTotal(): Promise<AudienceLocationTotal> {
     this.requireAuth('audienceLocationTotal')
     this.requirePublication('audienceLocationTotal')
     return await this.publicationStatsService.getAudienceLocationTotal()
   }
 
-  async audienceOverlap(options?: { limit?: number }): Promise<unknown> {
+  async audienceOverlap(options?: { limit?: number }): Promise<AudienceOverlap> {
     this.requireAuth('audienceOverlap')
     this.requirePublication('audienceOverlap')
     return await this.publicationStatsService.getAudienceOverlap(options)
   }
 
-  async traffic30dViews(): Promise<unknown> {
+  async traffic30dViews(): Promise<Traffic30dViews> {
     this.requireAuth('traffic30dViews')
     this.requirePublication('traffic30dViews')
     return await this.publicationStatsService.getTraffic30dViews()
@@ -905,7 +989,7 @@ export class SubstackClient {
     limit?: number
     orderBy?: string
     orderDirection?: string
-  }): Promise<unknown> {
+  }): Promise<VisitorSources> {
     this.requireAuth('visitorSources')
     this.requirePublication('visitorSources')
     return await this.publicationStatsService.getVisitorSources(options)
@@ -915,13 +999,13 @@ export class SubstackClient {
     from: string
     to: string
     category?: string
-  }): Promise<unknown> {
+  }): Promise<TrafficTimeseries> {
     this.requireAuth('trafficTimeseries')
     this.requirePublication('trafficTimeseries')
     return await this.publicationStatsService.getTrafficTimeseries(options)
   }
 
-  async email30dOpenRate(): Promise<unknown> {
+  async email30dOpenRate(): Promise<Email30dOpenRate> {
     this.requireAuth('email30dOpenRate')
     this.requirePublication('email30dOpenRate')
     return await this.publicationStatsService.getEmail30dOpenRate()
@@ -932,19 +1016,19 @@ export class SubstackClient {
     limit?: number
     orderBy?: string
     orderDirection?: string
-  }): Promise<unknown> {
+  }): Promise<EmailStats> {
     this.requireAuth('emailStats')
     this.requirePublication('emailStats')
     return await this.publicationStatsService.getEmailStats(options)
   }
 
-  async pledgeSummary(): Promise<unknown> {
+  async pledgeSummary(): Promise<PledgeSummary> {
     this.requireAuth('pledgeSummary')
     this.requirePublication('pledgeSummary')
     return await this.publicationStatsService.getPledgeSummary()
   }
 
-  async pledges(options?: { limit?: number }): Promise<unknown> {
+  async pledges(options?: { limit?: number }): Promise<Pledges> {
     this.requireAuth('pledges')
     this.requirePublication('pledges')
     return await this.publicationStatsService.getPledges(options)
@@ -956,31 +1040,31 @@ export class SubstackClient {
     limit?: number
     orderBy?: string
     orderDirection?: string
-  }): Promise<unknown> {
+  }): Promise<ReaderReferrals> {
     this.requireAuth('readerReferrals')
     this.requirePublication('readerReferrals')
     return await this.publicationStatsService.getReaderReferrals(options)
   }
 
-  async pledgePlans(): Promise<unknown> {
+  async pledgePlans(): Promise<PledgePlans> {
     this.requireAuth('pledgePlans')
     this.requirePublication('pledgePlans')
     return await this.publicationStatsService.getPledgePlans()
   }
 
-  async pledgePlansSummary(): Promise<unknown> {
+  async pledgePlansSummary(): Promise<PledgePlansSummary> {
     this.requireAuth('pledgePlansSummary')
     this.requirePublication('pledgePlansSummary')
     return await this.publicationStatsService.getPledgePlansSummary()
   }
 
-  async publicationSettings(): Promise<unknown> {
+  async publicationSettings(): Promise<PublicationSettings> {
     this.requireAuth('publicationSettings')
     this.requirePublication('publicationSettings')
     return await this.publicationStatsService.getPublicationSettings()
   }
 
-  async bestsellerTier(): Promise<unknown> {
+  async bestsellerTier(): Promise<BestsellerTier> {
     this.requireAuth('bestsellerTier')
     this.requirePublication('bestsellerTier')
     return await this.publicationStatsService.getBestsellerTier()
@@ -988,25 +1072,25 @@ export class SubstackClient {
 
   // ── Dashboard methods (require auth) ────────────────────────────────
 
-  async dashboardSummary(options?: { range?: number }): Promise<unknown> {
+  async dashboardSummary(options?: { range?: number }): Promise<DashboardSummary> {
     this.requireAuth('dashboardSummary')
     this.requirePublication('dashboardSummary')
     return await this.dashboardService.getDashboardSummary(options)
   }
 
-  async emailsTimeseries(options: { from: string }): Promise<unknown> {
+  async emailsTimeseries(options: { from: string }): Promise<EmailsTimeseries> {
     this.requireAuth('emailsTimeseries')
     this.requirePublication('emailsTimeseries')
     return await this.dashboardService.getEmailsTimeseries(options)
   }
 
-  async unreadActivity(): Promise<unknown> {
+  async unreadActivity(): Promise<UnreadActivity> {
     this.requireAuth('unreadActivity')
     this.requirePublication('unreadActivity')
     return await this.dashboardService.getUnreadActivity()
   }
 
-  async unreadMessageCount(): Promise<unknown> {
+  async unreadMessageCount(): Promise<UnreadMessageCount> {
     this.requireAuth('unreadMessageCount')
     this.requirePublication('unreadMessageCount')
     return await this.dashboardService.getUnreadMessageCount()
@@ -1014,7 +1098,7 @@ export class SubstackClient {
 
   // ── Recommendation methods (require auth) ───────────────────────────
 
-  async outgoingRecommendations(publicationId: number): Promise<unknown> {
+  async outgoingRecommendations(publicationId: number): Promise<SubstackRecommendation[]> {
     this.requireAuth('outgoingRecommendations')
     this.requirePublication('outgoingRecommendations')
     return await this.recommendationService.getOutgoingRecommendations(publicationId)
@@ -1023,7 +1107,8 @@ export class SubstackClient {
   async outgoingRecommendationsPaginated(
     publicationId: number,
     options?: { offset?: number; limit?: number; paginate?: boolean }
-  ): Promise<unknown> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any> {
     this.requireAuth('outgoingRecommendationsPaginated')
     this.requirePublication('outgoingRecommendationsPaginated')
     return await this.recommendationService.getOutgoingRecommendationsPaginated(
@@ -1037,7 +1122,8 @@ export class SubstackClient {
     limit?: number
     orderBy?: string
     orderDirection?: string
-  }): Promise<unknown> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  }): Promise<any> {
     this.requireAuth('outgoingRecommendationStats')
     this.requirePublication('outgoingRecommendationStats')
     return await this.recommendationService.getOutgoingRecommendationStats(options)
@@ -1048,19 +1134,22 @@ export class SubstackClient {
     limit?: number
     orderBy?: string
     orderDirection?: string
-  }): Promise<unknown> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  }): Promise<any> {
     this.requireAuth('incomingRecommendationStats')
     this.requirePublication('incomingRecommendationStats')
     return await this.recommendationService.getIncomingRecommendationStats(options)
   }
 
-  async recommendationsExist(): Promise<unknown> {
+  async recommendationsExist(): Promise<SubstackRecommendationsExist> {
     this.requireAuth('recommendationsExist')
     this.requirePublication('recommendationsExist')
     return await this.recommendationService.recommendationsExist()
   }
 
-  async suggestedRecommendations(publicationId: number): Promise<unknown> {
+  async suggestedRecommendations(
+    publicationId: number
+  ): Promise<SubstackSuggestedRecommendation[]> {
     this.requireAuth('suggestedRecommendations')
     this.requirePublication('suggestedRecommendations')
     return await this.recommendationService.getSuggestedRecommendations(publicationId)

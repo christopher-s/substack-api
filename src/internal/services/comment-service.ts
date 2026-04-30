@@ -1,9 +1,16 @@
 import type { HttpClient } from '@substack-api/internal/http-client'
-import type { SubstackComment, SubstackCommentRepliesResponse } from '@substack-api/internal/types'
+import type {
+  SubstackComment,
+  SubstackCommentRepliesResponse,
+  SubstackCreatedComment,
+  SubstackDeleteResponse
+} from '@substack-api/internal/types'
 import {
   SubstackCommentCodec,
   SubstackCommentResponseCodec,
-  SubstackCommentRepliesResponseCodec
+  SubstackCommentRepliesResponseCodec,
+  SubstackCreatedCommentCodec,
+  SubstackDeleteResponseCodec
 } from '@substack-api/internal/types'
 import { decodeOrThrow } from '@substack-api/internal/validation'
 
@@ -76,16 +83,18 @@ export class CommentService {
     return decodeOrThrow(SubstackCommentRepliesResponseCodec, response, 'Comment replies')
   }
 
-  async createComment(postId: number, body: string): Promise<unknown> {
-    return await this.publicationClient.post<unknown>(
+  async createComment(postId: number, body: string): Promise<SubstackCreatedComment> {
+    const response = await this.publicationClient.post<unknown>(
       `/post/${encodeURIComponent(String(postId))}/comment`,
       { body, post_id: postId }
     )
+    return decodeOrThrow(SubstackCreatedCommentCodec, response, 'Created comment')
   }
 
-  async deleteComment(commentId: number): Promise<unknown> {
-    return await this.publicationClient.delete<unknown>(
+  async deleteComment(commentId: number): Promise<SubstackDeleteResponse> {
+    const response = await this.publicationClient.delete<unknown>(
       `/comment/${encodeURIComponent(String(commentId))}`
     )
+    return decodeOrThrow(SubstackDeleteResponseCodec, response, 'Delete comment')
   }
 }

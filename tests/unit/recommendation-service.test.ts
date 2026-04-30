@@ -34,10 +34,7 @@ describe('RecommendationService', () => {
 
   describe('getOutgoingRecommendationsPaginated', () => {
     it('When fetching paginated recommendations with all options', async () => {
-      const mockResponse = {
-        recommendations: [{ id: 1, publication_id: 100 }],
-        next_offset: 50
-      }
+      const mockResponse = [{ id: 1, publication_id: 100 }]
       mockPublicationClient.get.mockResolvedValueOnce(mockResponse)
 
       const result = await recommendationService.getOutgoingRecommendationsPaginated(100, {
@@ -68,31 +65,29 @@ describe('RecommendationService', () => {
 
   describe('getOutgoingRecommendationStats', () => {
     it('When fetching outgoing stats with all options', async () => {
-      const mockResponse = {
-        stats: [
-          { publication_id: 200, xp_signups: 42, xp_views: 1000 },
-          { publication_id: 300, xp_signups: 15, xp_views: 500 }
-        ]
-      }
+      const mockResponse = [
+        { publication_id: 200, subscribers_driven: 42, clicks: 1000 },
+        { publication_id: 300, subscribers_driven: 15, clicks: 500 }
+      ]
       mockPublicationClient.get.mockResolvedValueOnce(mockResponse)
 
       const result = await recommendationService.getOutgoingRecommendationStats({
         offset: 0,
         limit: 10,
-        orderBy: 'xp_signups',
+        orderBy: 'subscribers_driven',
         orderDirection: 'desc'
       })
 
       expect(result).toEqual(mockResponse)
       expect(mockPublicationClient.get).toHaveBeenCalledWith(
-        '/recommendations/stats/from?offset=0&limit=10&order_by=xp_signups&order_direction=desc'
+        '/recommendations/stats/from?offset=0&limit=10&order_by=subscribers_driven&order_direction=desc'
       )
     })
 
     it('When fetching outgoing stats without options', async () => {
-      mockPublicationClient.get.mockResolvedValueOnce({ stats: [] })
+      mockPublicationClient.get.mockResolvedValueOnce([])
       const result = await recommendationService.getOutgoingRecommendationStats()
-      expect(result).toEqual({ stats: [] })
+      expect(result).toEqual([])
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/recommendations/stats/from')
     })
 
@@ -108,31 +103,29 @@ describe('RecommendationService', () => {
 
   describe('getIncomingRecommendationStats', () => {
     it('When fetching incoming stats with all options', async () => {
-      const mockResponse = {
-        stats: [
-          { publication_id: 400, xp_signups: 88, xp_views: 2000 },
-          { publication_id: 500, xp_signups: 30, xp_views: 800 }
-        ]
-      }
+      const mockResponse = [
+        { publication_id: 400, subscribers_driven: 88, clicks: 2000 },
+        { publication_id: 500, subscribers_driven: 30, clicks: 800 }
+      ]
       mockPublicationClient.get.mockResolvedValueOnce(mockResponse)
 
       const result = await recommendationService.getIncomingRecommendationStats({
         offset: 0,
         limit: 10,
-        orderBy: 'xp_signups',
+        orderBy: 'subscribers_driven',
         orderDirection: 'desc'
       })
 
       expect(result).toEqual(mockResponse)
       expect(mockPublicationClient.get).toHaveBeenCalledWith(
-        '/recommendations/stats/to?offset=0&limit=10&order_by=xp_signups&order_direction=desc'
+        '/recommendations/stats/to?offset=0&limit=10&order_by=subscribers_driven&order_direction=desc'
       )
     })
 
     it('When fetching incoming stats without options', async () => {
-      mockPublicationClient.get.mockResolvedValueOnce({ stats: [] })
+      mockPublicationClient.get.mockResolvedValueOnce([])
       const result = await recommendationService.getIncomingRecommendationStats()
-      expect(result).toEqual({ stats: [] })
+      expect(result).toEqual([])
       expect(mockPublicationClient.get).toHaveBeenCalledWith('/recommendations/stats/to')
     })
 
@@ -168,8 +161,8 @@ describe('RecommendationService', () => {
   describe('getSuggestedRecommendations', () => {
     it('When fetching suggested recommendations for a publication', async () => {
       const mockResponse = [
-        { publication_id: 600, name: 'Suggested Pub', score: 0.95 },
-        { publication_id: 700, name: 'Another Pub', score: 0.87 }
+        { id: 1, publication_id: 600, name: 'Suggested Pub' },
+        { id: 2, publication_id: 700, name: 'Another Pub' }
       ]
       mockPublicationClient.get.mockResolvedValueOnce(mockResponse)
 
