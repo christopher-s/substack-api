@@ -429,7 +429,7 @@ describe('SubstackClient new service methods', () => {
         tabs: mockTabs
       })
       const receivedTabs: unknown[] = []
-      for await (const item of client.activityFeed({
+      for await (const _item of client.activityFeed({
         onTabs: (tabs) => receivedTabs.push(...tabs)
       })) {
         // consume items

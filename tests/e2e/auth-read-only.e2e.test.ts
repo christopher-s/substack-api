@@ -142,9 +142,7 @@ describe('Auth Read-Only E2E', () => {
       'should get DM messages when inbox has threads',
       async () => {
         const inbox = await client.chatInbox()
-        const dmThread = inbox.threads.find(
-          (t) => t.uuid && t.type !== 'chat'
-        )
+        const dmThread = inbox.threads.find((t) => t.uuid && t.type !== 'chat')
         if (!dmThread?.uuid) {
           console.log('No DM threads found, skipping DM test')
           return

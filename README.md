@@ -17,6 +17,7 @@ This project started as a fork of [`jakub-k-slys/substack-api`](https://github.c
 - **Async Iterators** — Built-in pagination with `for await...of`, no manual cursor handling
 - **Note Builder** — Rich text notes with formatting, lists, links, and link attachments via a fluent builder API
 - **Discovery & Search** — Trending posts, category browsing, profile search, and explore feeds
+- **Chat API** — Direct messages, inbox management, and publication chat rooms
 - **Runtime Type Safety** — io-ts codecs validate every API response beyond TypeScript's compile-time checks
 - **Rate Limiting** — Configurable client-side request throttling
 - **Full TypeScript** — Complete type definitions exported for consumers
@@ -100,6 +101,47 @@ await me
   .publish();
 ```
 
+## Markdown Support
+
+The library includes built-in markdown-to-HTML and markdown-to-ProseMirror converters for publishing content:
+
+```typescript
+import { markdownToHtml, markdownToNoteBody } from 'substack-api';
+
+// Convert markdown to HTML (for posts/drafts)
+const html = markdownToHtml('**bold** and *italic*');
+
+// Convert markdown to ProseMirror JSON (for notes)
+const body = markdownToNoteBody('**bold** and *italic*');
+```
+
+Supported formatting: bold, italic, strikethrough, code, links, headings, lists (bullet and ordered, with nesting), blockquotes, code blocks, and horizontal rules.
+
+### Create a draft from markdown
+
+```typescript
+const client = new SubstackClient({
+  publicationUrl: 'https://yourpub.substack.com',
+  token: process.env.SUBSTACK_API_KEY!,
+});
+
+const result = await client.createDraftFromMarkdown(
+  '# My Post\n\nThis is **bold** text with `code`.\n\n- Item 1\n- Item 2',
+  { title: 'Draft from Markdown' }
+);
+```
+
+### Publish a note from markdown
+
+```typescript
+const me = await client.ownProfile();
+
+await me
+  .newNote()
+  .markdown('Check out this **bold** take!\n\n- Point one\n- Point two')
+  .publish();
+```
+
 ## Architecture
 
 The client follows a service-oriented architecture with domain models:
@@ -117,6 +159,7 @@ Key patterns:
 - **Entity navigation** — Domain objects expose related data as methods (`profile.posts()`, `post.comments()`)
 - **Async iterators** — Pagination is transparent; `for await...of` handles cursors automatically
 - **Builder pattern** — `NoteBuilder` constructs rich ProseMirror document trees for publishing
+- **Markdown adapters** — Convert standard markdown to HTML or ProseMirror JSON for posts and notes
 - **Functional validation** — io-ts codecs decode API responses with detailed error messages
 
 ## Examples
@@ -208,18 +251,119 @@ Substack uses session cookies for authentication. To obtain your token:
 
 The site renders the OpenAPI 3.1 specification with Scalar, allowing you to browse every endpoint, parameter, and response shape.
 
-Key client methods:
+### Browsing & Discovery (anonymous)
 
 | Method | Description |
 |---|---|
 | `client.topPosts()` | Trending posts from the homepage feed |
-| `client.profileForSlug(slug)` | Public profile with posts, comments, notes |
+| `client.profileForSlug(slug)` | Public profile by handle |
+| `client.profileForId(id)` | Public profile by user ID |
 | `client.postForId(id)` | Post details and comments |
-| `client.search(query)` | Full-text search across posts, people, publications, notes |
-| `client.ownProfile()` | Authenticated profile with write access |
-| `me.newNote()` | Publish a note via the fluent builder API |
+| `client.noteForId(id)` | Note by ID |
+| `client.commentForId(id)` | Comment by ID |
+| `client.search(query, options?)` | Full-text search (posts, people, publications, notes) |
+| `client.profileSearch(query)` | Search user profiles |
+| `client.exploreSearch(options)` | Explore feed with tab filtering |
+| `client.discoverFeed(options)` | Discovery feed with tab selection |
+| `client.activityFeed(options)` | Authenticated activity feed with tabs |
+| `client.categories()` | All content categories |
+| `client.categoryPublications(id)` | Publications in a category |
 
-See the docs site for the complete endpoint inventory.
+### Publication Content (anonymous)
+
+| Method | Description |
+|---|---|
+| `client.publicationArchive(options)` | Publication post archive (async iterator) |
+| `client.publicationPosts(options)` | Full posts with body HTML (async iterator) |
+| `client.publicationHomepage()` | Recent homepage posts |
+| `client.postReactors(postId)` | Users who reacted to a post |
+| `client.activeLiveStream(pubId)` | Active live stream for a publication |
+
+### Feed Iterators (anonymous)
+
+| Method | Description |
+|---|---|
+| `client.profileActivity(id, options)` | Profile activity feed (posts, notes, comments, likes) |
+| `client.profileLikes(id, options)` | Posts liked by a profile |
+| `client.publicationFeed(id, options)` | Publication activity feed |
+| `client.commentRepliesFeed(id, options)` | Paginated comment replies |
+
+### Authenticated — Writing
+
+| Method | Description |
+|---|---|
+| `client.ownProfile()` | Get authenticated profile with write access |
+| `me.newNote()` | Start building a note (fluent builder) |
+| `me.newNoteWithLink(url)` | Start building a note with link attachment |
+| `client.createDraft(data)` | Create a draft post |
+| `client.createDraftFromMarkdown(md, opts)` | Create a draft from markdown content |
+| `client.updateDraft(id, data)` | Update an existing draft |
+| `client.publishDraft(id)` | Publish a draft |
+| `client.deleteDraft(id)` | Delete a draft |
+| `client.createComment(postId, body)` | Post a comment |
+| `client.deleteComment(id)` | Delete a comment |
+
+### Authenticated — Account & Content
+
+| Method | Description |
+|---|---|
+| `client.testConnectivity()` | Verify API token works |
+| `client.publishedPosts(options)` | Your published posts |
+| `client.drafts(options)` | List your drafts |
+| `client.scheduledPosts(options)` | List scheduled posts |
+| `client.postCounts(query)` | Post statistics |
+| `client.draft(id)` | Get a specific draft |
+| `client.notesFeed(options)` | Your notes feed |
+| `client.noteStats(entityKey)` | Note analytics (impressions, interactions) |
+
+### Authenticated — Publication Management
+
+| Method | Description |
+|---|---|
+| `client.publicationDetails()` | Publication metadata |
+| `client.publicationTags()` | Publication tags |
+| `client.liveStreams(status)` | Live streams |
+| `client.eligibleHosts(pubId)` | Eligible chat hosts |
+| `client.subscription()` | Current subscription |
+
+### Authenticated — Dashboard & Analytics
+
+| Method | Description |
+|---|---|
+| `client.dashboardSummary(options)` | Dashboard overview stats |
+| `client.emailsTimeseries(options)` | Email timeseries data |
+| `client.unreadActivity()` | Unread activity count |
+| `client.unreadMessageCount()` | Unread message count |
+| `client.subscriberStats()` | Subscriber statistics |
+| `client.growthSources(options)` | Growth source breakdown |
+| `client.growthTimeseries(data)` | Growth over time |
+| `client.networkAttribution(options)` | Network attribution stats |
+| `client.followerTimeseries(options)` | Follower growth data |
+
+### Authenticated — Recommendations
+
+| Method | Description |
+|---|---|
+| `client.outgoingRecommendations(pubId)` | Your outgoing recommendations |
+| `client.outgoingRecommendationStats()` | Recommendation statistics |
+| `client.incomingRecommendationStats()` | Incoming recommendation stats |
+| `client.recommendationsExist()` | Check if recommendations are set up |
+| `client.suggestedRecommendations(pubId)` | Suggested publications to recommend |
+
+### Authenticated — Chat
+
+| Method | Description |
+|---|---|
+| `client.chatUnreadCount()` | Unread chat message count |
+| `client.chatInbox(options)` | Chat inbox threads |
+| `client.chatInboxThreads(options)` | Paginated inbox threads |
+| `client.chatDm(uuid, options)` | Direct message thread |
+| `client.chatDmMessages(uuid, options)` | Paginated DM messages |
+| `client.chatSendMessage(uuid, body)` | Send a chat message |
+| `client.chatInvites()` | Pending chat invites |
+| `client.chatReactions()` | Chat reactions |
+
+See the [docs site](https://christopher-s.github.io/substack-api/) for the complete OpenAPI endpoint inventory.
 
 ## Testing
 

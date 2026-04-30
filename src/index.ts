@@ -26,7 +26,11 @@ export type {
 
 export type { TextSegment, ListItem, List } from '@substack-api/domain'
 
-export type { FeedTab, ProfileFeedTab } from '@substack-api/internal/services/discovery-service'
+export type {
+  FeedTab,
+  ProfileFeedTab,
+  ActivityFeedTab
+} from '@substack-api/internal/services/discovery-service'
 
 export type { SubstackCategoryPublication } from '@substack-api/internal/types'
 export type { SubstackLiveStreamResponse } from '@substack-api/internal/types'
