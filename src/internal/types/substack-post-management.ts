@@ -172,7 +172,7 @@ export type SubstackLiveStreamList = t.TypeOf<typeof SubstackLiveStreamListCodec
  * A single post tag
  */
 export const SubstackPostTagCodec = t.partial({
-  id: maybe(t.number),
+  id: maybe(t.union([t.number, t.string])),
   name: maybe(t.string)
 })
 

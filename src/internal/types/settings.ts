@@ -94,7 +94,7 @@ export const SubstackSubscriptionSettingsCodec = t.intersection([
     is_subscribed: maybe(t.boolean),
     email_settings: maybe(t.unknown),
     created_at: maybe(t.string),
-    expiry: maybe(t.string)
+    expiry: maybe(t.union([t.string, t.number]))
   })
 ])
 
