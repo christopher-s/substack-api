@@ -5,12 +5,4 @@ export { Note } from '@substack-api/domain/note'
 export { Comment } from '@substack-api/domain/comment'
 export { Category } from '@substack-api/domain/category'
 export { PublicationPost } from '@substack-api/domain/publication-post'
-export {
-  NoteBuilder,
-  NoteWithLinkBuilder,
-  ParagraphBuilder,
-  ListBuilder,
-  ListItemBuilder
-} from '@substack-api/domain/note-builder'
-export type { TextSegment, ListItem, List } from '@substack-api/domain/note-builder'
-export { NoteBuilderFactory } from '@substack-api/domain/note-builder-factory'
+export { publishNote } from '@substack-api/domain/note-publisher'

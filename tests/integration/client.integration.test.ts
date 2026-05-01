@@ -62,9 +62,7 @@ describe('SubstackClient Integration Tests', () => {
         const largeUserId = 999999999
 
         // This should fail with our mock server, but we're testing the correct error handling
-        await expect(client.profileForId(largeUserId)).rejects.toThrow(
-          `Profile with ID ${largeUserId} not found`
-        )
+        await expect(client.profileForId(largeUserId)).rejects.toThrow('Profile not found')
       })
     })
 
@@ -143,9 +141,7 @@ describe('SubstackClient Integration Tests', () => {
     describe('profileForId', () => {
       test('should handle non-existent user ID gracefully', async () => {
         const nonExistentId = 999999999
-        await expect(client.profileForId(nonExistentId)).rejects.toThrow(
-          `Profile with ID ${nonExistentId} not found`
-        )
+        await expect(client.profileForId(nonExistentId)).rejects.toThrow('Profile not found')
       })
     })
 
@@ -232,9 +228,7 @@ describe('SubstackClient Integration Tests', () => {
 
     describe('noteForId', () => {
       test('should handle non-existent note ID', async () => {
-        await expect(client.noteForId(999999999)).rejects.toThrow(
-          'Note with ID 999999999 not found'
-        )
+        await expect(client.noteForId(999999999)).rejects.toThrow('Note not found')
       })
     })
   })

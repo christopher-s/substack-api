@@ -9,12 +9,15 @@ export { ProfileService } from '@substack-api/internal/services/profile-service'
 export { CommentService } from '@substack-api/internal/services/comment-service'
 export { FollowingService } from '@substack-api/internal/services/following-service'
 export { ConnectivityService } from '@substack-api/internal/services/connectivity-service'
-export { DiscoveryService } from '@substack-api/internal/services/discovery-service'
+export { FeedService } from '@substack-api/internal/services/feed-service'
+export { SearchService } from '@substack-api/internal/services/search-service'
+export { ProfileActivityService } from '@substack-api/internal/services/profile-activity-service'
+export { CategoryService } from '@substack-api/internal/services/category-service'
 export type {
   FeedTab,
   ProfileFeedTab,
   ActivityFeedTab
-} from '@substack-api/internal/services/discovery-service'
+} from '@substack-api/internal/services/feed-types'
 export { PublicationService } from '@substack-api/internal/services/publication-service'
 export { PostManagementService } from '@substack-api/internal/services/post-management-service'
 export { PublicationDetailService } from '@substack-api/internal/services/publication-detail-service'
@@ -27,3 +30,5 @@ export { DashboardService } from '@substack-api/internal/services/dashboard-serv
 export { RecommendationService } from '@substack-api/internal/services/recommendation-service'
 export { ChatService } from '@substack-api/internal/services/chat-service'
 export { NotificationService } from '@substack-api/internal/services/notification-service'
+// Legacy re-export for backward compatibility
+export { DiscoveryService } from '@substack-api/internal/services/discovery-service'

@@ -8,11 +8,7 @@ export {
   Comment,
   Category,
   PublicationPost,
-  NoteBuilder,
-  NoteWithLinkBuilder,
-  ParagraphBuilder,
-  ListBuilder,
-  ListItemBuilder
+  publishNote
 } from '@substack-api/domain'
 
 export type {
@@ -23,8 +19,6 @@ export type {
   CommentsIteratorOptions,
   NotesIteratorOptions
 } from '@substack-api/types'
-
-export type { TextSegment, ListItem, List } from '@substack-api/domain'
 
 export type {
   FeedTab,

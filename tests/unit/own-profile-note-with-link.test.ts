@@ -1,7 +1,5 @@
 import { OwnProfile } from '@substack-api/domain/own-profile'
-import { NoteWithLinkBuilder } from '@substack-api/domain/note-builder'
 import { HttpClient } from '@substack-api/internal/http-client'
-import { NoteBuilderFactory } from '@substack-api/domain/note-builder-factory'
 import {
   ProfileService,
   PostService,
@@ -20,16 +18,14 @@ const MockPostService = PostService as jest.MockedClass<typeof PostService>
 const MockNoteService = NoteService as jest.MockedClass<typeof NoteService>
 const MockCommentService = CommentService as jest.MockedClass<typeof CommentService>
 const MockFollowingService = FollowingService as jest.MockedClass<typeof FollowingService>
-const MockNoteBuilderFactory = NoteBuilderFactory as jest.MockedClass<typeof NoteBuilderFactory>
 
-describe('OwnProfile - newNoteWithLink', () => {
+describe('OwnProfile - publishNote', () => {
   let mockClient: jest.Mocked<HttpClient>
   let mockProfileService: jest.Mocked<ProfileService>
   let mockPostService: jest.Mocked<PostService>
   let mockNoteService: jest.Mocked<NoteService>
   let mockCommentService: jest.Mocked<CommentService>
   let mockFollowingService: jest.Mocked<FollowingService>
-  let mockNoteBuilderFactory: jest.Mocked<NoteBuilderFactory>
   let ownProfile: OwnProfile
 
   const mockProfileData = {
@@ -108,19 +104,6 @@ describe('OwnProfile - newNoteWithLink', () => {
       mockClient,
       mockClient
     ) as jest.Mocked<FollowingService>
-    mockNoteBuilderFactory = new MockNoteBuilderFactory(
-      mockClient
-    ) as jest.Mocked<NoteBuilderFactory>
-
-    // Setup mock implementations for NoteBuilderFactory methods
-    mockNoteBuilderFactory.newNote = jest.fn().mockImplementation(() => {
-      const { NoteBuilder } = jest.requireActual('@substack-api/domain/note-builder')
-      return new NoteBuilder(mockClient)
-    })
-    mockNoteBuilderFactory.newNoteWithLink = jest.fn().mockImplementation((link: string) => {
-      const { NoteWithLinkBuilder } = jest.requireActual('@substack-api/domain/note-builder')
-      return new NoteWithLinkBuilder(mockClient, link)
-    })
 
     ownProfile = new OwnProfile(
       mockProfileData,
@@ -131,7 +114,6 @@ describe('OwnProfile - newNoteWithLink', () => {
         noteService: mockNoteService,
         commentService: mockCommentService,
         followingService: mockFollowingService,
-        newNoteService: mockNoteBuilderFactory,
         perPage: 25
       },
       'testuser'
@@ -142,73 +124,47 @@ describe('OwnProfile - newNoteWithLink', () => {
     jest.clearAllMocks()
   })
 
-  describe('newNoteWithLink', () => {
-    it('When calling newNoteWithLink, then returns a NoteWithLinkBuilder instance', () => {
-      // Arrange
-      const linkUrl = 'https://example.com/article'
+  describe('publishNote with link', () => {
+    it('When publishing a note with a linkUrl, then creates attachment first', async () => {
+      const mockAttachmentResponse = { id: 'attachment-123' }
+      const mockPublishResponse = {
+        id: 789,
+        date: '2023-01-01T00:00:00Z',
+        body: 'Test note content',
+        attachments: []
+      }
 
-      // Act
-      const noteBuilder = ownProfile.newNoteWithLink(linkUrl)
+      mockClient.post
+        .mockResolvedValueOnce(mockAttachmentResponse)
+        .mockResolvedValueOnce(mockPublishResponse)
 
-      // Assert
-      expect(noteBuilder).toBeInstanceOf(NoteWithLinkBuilder)
-    })
-
-    it('When creating NoteWithLinkBuilder, then uses correct client and link', () => {
-      // Arrange
-      const linkUrl = 'https://iam.slys.dev/p/understanding-locking-contention'
-
-      // Act
-      const noteBuilder = ownProfile.newNoteWithLink(linkUrl)
-
-      // Assert
-      expect(noteBuilder).toBeInstanceOf(NoteWithLinkBuilder)
-    })
-
-    it('When passing different URL types, then creates builder for each', () => {
-      // Arrange
-      const urls = [
-        'https://example.com/test',
-        'http://blog.example.com/post/123',
-        'https://subdomain.domain.com/path/to/article?param=value',
-        'https://iam.slys.dev/p/understanding-locking-contention'
-      ]
-
-      // Act & Assert
-      urls.forEach((url) => {
-        const noteBuilder = ownProfile.newNoteWithLink(url)
-        expect(noteBuilder).toBeInstanceOf(NoteWithLinkBuilder)
+      const result = await ownProfile.publishNote('Check out this link!', {
+        linkUrl: 'https://example.com/article'
       })
+
+      expect(result.success).toBe(true)
+      expect(mockClient.post).toHaveBeenCalledTimes(2)
+      expect(mockClient.post).toHaveBeenNthCalledWith(1, '/comment/attachment/', {
+        url: 'https://example.com/article',
+        type: 'link'
+      })
+      expect(mockClient.post).toHaveBeenNthCalledWith(
+        2,
+        '/comment/feed/',
+        expect.objectContaining({
+          attachmentIds: ['attachment-123']
+        })
+      )
     })
 
-    it('When chaining builder methods, then returns defined result', () => {
-      // Arrange
-      const linkUrl = 'https://example.com/article'
-      const noteBuilder = ownProfile.newNoteWithLink(linkUrl)
+    it('When attachment creation fails, then error propagates', async () => {
+      mockClient.post.mockRejectedValueOnce(new Error('Attachment creation failed'))
 
-      // Act
-      const chained = noteBuilder
-        .paragraph()
-        .text('Check out this article!')
-        .paragraph()
-        .text('It contains great information.')
+      await expect(
+        ownProfile.publishNote('Test', { linkUrl: 'https://example.com' })
+      ).rejects.toThrow('Attachment creation failed')
 
-      // Assert
-      expect(chained).toBeDefined()
-    })
-  })
-
-  describe('integration with regular newNote', () => {
-    it('When creating both note types, then both are defined and different', () => {
-      // Act
-      const regularNote = ownProfile.newNote()
-      const noteWithLink = ownProfile.newNoteWithLink('https://example.com')
-
-      // Assert
-      expect(regularNote).toBeDefined()
-      expect(noteWithLink).toBeDefined()
-      expect(noteWithLink).not.toBe(regularNote)
-      expect(noteWithLink).toBeInstanceOf(NoteWithLinkBuilder)
+      expect(mockClient.post).toHaveBeenCalledTimes(1)
     })
   })
 })

@@ -1,8 +1,6 @@
 import { OwnProfile } from '@substack-api/domain/own-profile'
 import { Note } from '@substack-api/domain/note'
 import { Profile } from '@substack-api/domain/profile'
-import { NoteBuilder, NoteWithLinkBuilder } from '@substack-api/domain/note-builder'
-import type { NoteBuilderFactory } from '@substack-api/domain/note-builder-factory'
 import {
   ProfileService,
   PostService,
@@ -20,7 +18,6 @@ describe('OwnProfile Entity', () => {
   let mockCommentService: jest.Mocked<CommentService>
   let mockNoteService: jest.Mocked<NoteService>
   let mockFollowingService: jest.Mocked<FollowingService>
-  let mockNoteBuilderFactory: jest.Mocked<NoteBuilderFactory>
   let ownProfile: OwnProfile
 
   beforeEach(() => {
@@ -66,13 +63,6 @@ describe('OwnProfile Entity', () => {
       getFollowing: jest.fn()
     } as unknown as jest.Mocked<FollowingService>
 
-    mockNoteBuilderFactory = {
-      newNote: jest.fn().mockImplementation(() => new NoteBuilder(mockClient)),
-      newNoteWithLink: jest
-        .fn()
-        .mockImplementation((link: string) => new NoteWithLinkBuilder(mockClient, link))
-    } as unknown as jest.Mocked<NoteBuilderFactory>
-
     ownProfile = new OwnProfile(mockProfileData, {
       publicationClient: mockClient,
       profileService: mockProfileService,
@@ -80,7 +70,6 @@ describe('OwnProfile Entity', () => {
       noteService: mockNoteService,
       commentService: mockCommentService,
       followingService: mockFollowingService,
-      newNoteService: mockNoteBuilderFactory,
       perPage: 25
     })
   })
@@ -92,14 +81,30 @@ describe('OwnProfile Entity', () => {
   })
 
   it('should have additional write methods', () => {
-    expect(typeof ownProfile.newNote).toBe('function')
+    expect(typeof ownProfile.publishNote).toBe('function')
     expect(typeof ownProfile.following).toBe('function')
     expect(typeof ownProfile.notes).toBe('function')
   })
 
-  it('When a note builder without initial text', () => {
-    const builder = ownProfile.newNote()
-    expect(builder).toBeInstanceOf(NoteBuilder)
+  it('When publishing a note with markdown content', async () => {
+    const mockClient = ownProfile['deps'].publicationClient as jest.Mocked<HttpClient>
+    const mockPublishResponse = {
+      id: 789,
+      date: '2023-01-01T00:00:00Z',
+      body: 'Test',
+      attachments: []
+    }
+    mockClient.post.mockResolvedValue(mockPublishResponse)
+
+    const result = await ownProfile.publishNote('Hello **world**!')
+
+    expect(result.success).toBe(true)
+    expect(mockClient.post).toHaveBeenCalledWith(
+      '/comment/feed/',
+      expect.objectContaining({
+        bodyJson: expect.objectContaining({ type: 'doc' })
+      })
+    )
   })
 
   it('When iterating through following users using correct endpoint chain', async () => {
@@ -296,7 +301,6 @@ describe('OwnProfile Entity', () => {
         noteService: mockNoteService,
         commentService: mockCommentService,
         followingService: localFollowingService,
-        newNoteService: mockNoteBuilderFactory,
         perPage: 25
       },
       'resolved-own-slug'

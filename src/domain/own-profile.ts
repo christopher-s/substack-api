@@ -1,6 +1,6 @@
 import { Profile } from '@substack-api/domain/profile'
 import { Note } from '@substack-api/domain/note'
-import { NoteBuilder, NoteWithLinkBuilder } from '@substack-api/domain/note-builder'
+import { publishNote } from '@substack-api/domain/note-publisher'
 import type { SubstackFullProfile } from '@substack-api/internal'
 import type { EntityDeps } from '@substack-api/domain/entity-deps'
 
@@ -16,17 +16,19 @@ export class OwnProfile extends Profile {
   }
 
   /**
-   * Create a new note using the builder pattern
+   * Publish a note from markdown content.
+   * Supports bold, italic, code, links, strikethrough, underline, bullet lists,
+   * and ordered lists via standard markdown syntax.
+   *
+   * @param markdown - Markdown content to convert and publish
+   * @param options.linkUrl - Optional URL to attach as a link preview
+   * @returns Object with success status and the server response
    */
-  newNote(): NoteBuilder {
-    return this.deps.newNoteService.newNote()
-  }
-
-  /**
-   * Create a new note with a link attachment using the builder pattern
-   */
-  newNoteWithLink(link: string): NoteWithLinkBuilder {
-    return this.deps.newNoteService.newNoteWithLink(link)
+  async publishNote(
+    markdown: string,
+    options?: { linkUrl?: string }
+  ): Promise<{ success: boolean; note?: unknown }> {
+    return publishNote(this.deps.publicationClient, markdown, options)
   }
 
   /**

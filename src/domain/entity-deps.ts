@@ -6,7 +6,6 @@ import type {
   CommentService,
   FollowingService
 } from '@substack-api/internal/services'
-import type { NoteBuilderFactory } from '@substack-api/domain/note-builder-factory'
 
 /**
  * Shared dependency container for all domain entities.
@@ -19,6 +18,5 @@ export interface EntityDeps {
   noteService: NoteService
   commentService: CommentService
   followingService: FollowingService
-  newNoteService: NoteBuilderFactory
   perPage: number
 }

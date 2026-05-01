@@ -1,6 +1,5 @@
 import type { EntityDeps } from '@substack-api/domain/entity-deps'
 import type { HttpClient } from '@substack-api/internal/http-client'
-import type { NoteBuilderFactory } from '@substack-api/domain/note-builder-factory'
 import type {
   ProfileService,
   PostService,
@@ -17,7 +16,6 @@ type MockedEntityDeps = {
   noteService: jest.Mocked<NoteService>
   commentService: jest.Mocked<CommentService>
   followingService: jest.Mocked<FollowingService>
-  newNoteService: jest.Mocked<NoteBuilderFactory>
   perPage: number
 }
 
@@ -48,10 +46,6 @@ export function createMockEntityDeps(overrides?: Partial<EntityDeps>): MockedEnt
       getFollowing: jest.fn(),
       getOwnId: jest.fn()
     } as unknown as jest.Mocked<FollowingService>,
-    newNoteService: {
-      newNote: jest.fn(),
-      newNoteWithLink: jest.fn()
-    } as unknown as jest.Mocked<NoteBuilderFactory>,
     perPage: 25,
     ...overrides
   } as unknown as MockedEntityDeps

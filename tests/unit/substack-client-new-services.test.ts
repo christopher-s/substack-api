@@ -27,7 +27,7 @@ describe('SubstackClient new service methods', () => {
   let mockCommentService: jest.Mocked<CommentService>
   let mockPublicationService: jest.Mocked<PublicationService>
   let mockDashboardService: jest.Mocked<DashboardService>
-  let mockDiscoveryService: jest.Mocked<DiscoveryService>
+  let discoveryService: jest.Mocked<DiscoveryService>
   let mockPostService: jest.Mocked<PostService>
   let mockFollowingService: jest.Mocked<FollowingService>
   let mockNotificationService: jest.Mocked<NotificationService>
@@ -63,8 +63,8 @@ describe('SubstackClient new service methods', () => {
 
     mockDashboardService = new DashboardService(mockHttpClient) as jest.Mocked<DashboardService>
 
-    mockDiscoveryService = new DiscoveryService(mockHttpClient) as jest.Mocked<DiscoveryService>
-    mockDiscoveryService.getFeed = jest.fn()
+    discoveryService = new DiscoveryService(mockHttpClient) as jest.Mocked<DiscoveryService>
+    discoveryService.getFeed = jest.fn()
 
     mockNoteService = new NoteService(mockHttpClient) as jest.Mocked<NoteService>
     mockNoteService.getNotes = jest.fn()
@@ -117,7 +117,10 @@ describe('SubstackClient new service methods', () => {
     anyClient.commentService = mockCommentService
     anyClient.publicationService = mockPublicationService
     anyClient.dashboardService = mockDashboardService
-    anyClient.discoveryService = mockDiscoveryService
+    anyClient.feedService = discoveryService
+    anyClient.searchService = discoveryService
+    anyClient.profileActivityService = discoveryService
+    anyClient.categoryService = discoveryService
     anyClient.postService = mockPostService
     anyClient.followingService = mockFollowingService
     anyClient.notificationService = mockNotificationService
@@ -427,7 +430,7 @@ describe('SubstackClient new service methods', () => {
 
   describe('activityFeed', () => {
     it('should yield items from discoveryService', async () => {
-      mockDiscoveryService.getFeed.mockResolvedValueOnce({
+      discoveryService.getFeed.mockResolvedValueOnce({
         items: [{ type: 'comment', entity_key: 'c-1' }],
         nextCursor: null
       })
@@ -436,14 +439,14 @@ describe('SubstackClient new service methods', () => {
         results.push(item)
       }
       expect(results).toHaveLength(1)
-      expect(mockDiscoveryService.getFeed).toHaveBeenCalledWith({
+      expect(discoveryService.getFeed).toHaveBeenCalledWith({
         tabId: undefined,
         cursor: undefined
       })
     })
 
     it('should pass tabId to discoveryService', async () => {
-      mockDiscoveryService.getFeed.mockResolvedValueOnce({
+      discoveryService.getFeed.mockResolvedValueOnce({
         items: [],
         nextCursor: null
       })
@@ -451,7 +454,7 @@ describe('SubstackClient new service methods', () => {
       for await (const item of client.activityFeed({ tabId: 'subscribed' })) {
         results.push(item)
       }
-      expect(mockDiscoveryService.getFeed).toHaveBeenCalledWith(
+      expect(discoveryService.getFeed).toHaveBeenCalledWith(
         expect.objectContaining({ tabId: 'subscribed' })
       )
     })
@@ -461,7 +464,7 @@ describe('SubstackClient new service methods', () => {
         { id: 'for-you', name: 'For you', type: 'base' },
         { id: 'subscribed', name: 'Following', type: 'secondary' }
       ]
-      mockDiscoveryService.getFeed.mockResolvedValueOnce({
+      discoveryService.getFeed.mockResolvedValueOnce({
         items: [{ type: 'comment', entity_key: 'c-1' }],
         nextCursor: null,
         tabs: mockTabs
@@ -476,7 +479,7 @@ describe('SubstackClient new service methods', () => {
     })
 
     it('should paginate with cursor', async () => {
-      mockDiscoveryService.getFeed
+      discoveryService.getFeed
         .mockResolvedValueOnce({
           items: [{ type: 'comment', entity_key: 'c-1' }],
           nextCursor: 'page2'

@@ -1,362 +1,115 @@
-import * as t from 'io-ts'
+/**
+ * Legacy DiscoveryService — delegates to split services.
+ *
+ * This file exists for backward compatibility during the transition.
+ * New code should use FeedService, SearchService, ProfileActivityService,
+ * or CategoryService directly.
+ *
+ * @deprecated Use FeedService, SearchService, ProfileActivityService, or CategoryService
+ */
 import type { HttpClient } from '@substack-api/internal/http-client'
+import { FeedService } from '@substack-api/internal/services/feed-service'
+import { SearchService } from '@substack-api/internal/services/search-service'
+import { ProfileActivityService } from '@substack-api/internal/services/profile-activity-service'
+import { CategoryService } from '@substack-api/internal/services/category-service'
+import type {
+  FeedTab,
+  ProfileFeedTab,
+  ActivityFeedTab
+} from '@substack-api/internal/services/feed-types'
 import type {
   FeedItem,
+  SubstackInboxItem,
   SubstackCategory,
   SubstackCategoryPublication,
-  SubstackInboxItem,
   SubstackProfileSearchResult,
   SubstackTrendingResponse
 } from '@substack-api/internal/types'
-import {
-  SubstackCategoryCodec,
-  SubstackCategoryPublicationCodec,
-  SubstackInboxItemCodec,
-  SubstackProfileSearchResponseCodec
-} from '@substack-api/internal/types'
-import { decodeOrThrow } from '@substack-api/internal/validation'
+
+export type { FeedTab, ProfileFeedTab, ActivityFeedTab }
 
 /**
- * Supported tabs for the discovery feed endpoint.
- */
-export type FeedTab = 'for-you' | 'top' | 'popular' | 'catchup' | 'notes' | 'explore'
-
-/**
- * Supported tabs for the profile activity feed endpoint.
- */
-export type ProfileFeedTab = 'posts' | 'notes' | 'comments' | 'likes'
-
-/**
- * A tab descriptor from the activity feed response.
- */
-export interface ActivityFeedTab {
-  id: string
-  name: string
-  type: string
-  layout?: string
-  slug?: string
-}
-
-/**
- * Service for discovery endpoints: trending, feed, categories, profile activity.
- * Most endpoints work anonymously. `getFeed` with `tabId` is typically used with auth.
+ * @deprecated Use FeedService, SearchService, ProfileActivityService, or CategoryService
  */
 export class DiscoveryService {
-  constructor(private readonly substackClient: HttpClient) {}
+  private readonly feedService: FeedService
+  private readonly searchService: SearchService
+  private readonly profileActivityService: ProfileActivityService
+  private readonly categoryService: CategoryService
 
-  // ── Public methods ─────────────────────────────────────────────────
-
-  /**
-   * Get top/trending posts
-   * GET /api/v1/inbox/top (anonymous)
-   */
-  async getTopPosts(): Promise<{ items: SubstackInboxItem[] }> {
-    const response = await this.substackClient.get<{ inboxItems?: unknown[] }>('/inbox/top')
-    const items = response.inboxItems || []
-    return {
-      items: items.map((item, i) => decodeOrThrow(SubstackInboxItemCodec, item, `Inbox item ${i}`))
-    }
+  constructor(substackClient: HttpClient) {
+    this.feedService = new FeedService(substackClient)
+    this.searchService = new SearchService(substackClient)
+    this.profileActivityService = new ProfileActivityService(substackClient)
+    this.categoryService = new CategoryService(substackClient)
   }
 
-  /**
-   * Get trending posts with associated publications
-   *
-   * GET /api/v1/inbox/top (active endpoint)
-   *
-   * NOTE: The original /api/v1/trending endpoint has been deprecated by Substack
-   * and now returns an HTML page. This method falls back to /inbox/top
-   * and maps inbox items to the SubstackTrendingResponse shape for backward
-   * compatibility. Publications and trendingPosts arrays will be empty since
-   * the replacement endpoint does not provide them.
-   */
-  async getTrending(options?: {
-    limit?: number
-    offset?: number
-  }): Promise<SubstackTrendingResponse> {
-    const params = new URLSearchParams()
-    if (options?.limit !== undefined) {
-      params.set('limit', String(options.limit))
-    }
-    if (options?.offset !== undefined) {
-      params.set('offset', String(options.offset))
-    }
-    const query = params.toString() ? `?${params.toString()}` : ''
-
-    // Fetch from /inbox/top since /trending is deprecated
-    const response = await this.substackClient.get<{ inboxItems?: unknown[] }>(`/inbox/top${query}`)
-    const inboxItems = (response.inboxItems || []) as SubstackInboxItem[]
-
-    // Map inbox items to trending post shape for backward compatibility
-    const posts = inboxItems.map((item) => this.mapInboxItemToTrendingPost(item))
-
-    return {
-      posts,
-      publications: [],
-      trendingPosts: []
-    }
+  getTopPosts(): Promise<{ items: SubstackInboxItem[] }> {
+    return this.feedService.getTopPosts()
   }
 
-  /**
-   * Map an inbox item to the SubstackTrendingPost shape.
-   * Derives missing fields where possible.
-   */
-  private mapInboxItemToTrendingPost(item: SubstackInboxItem): {
-    id: number
-    title: string
-    slug: string
-    post_date: string
-    type: string
-    audience?: string
-    subtitle?: string
-    canonical_url?: string
-    reactions?: Record<string, number>
-    restacks?: number
-    wordcount?: number
-    comment_count?: number
-    cover_image?: string
-    publishedBylines?: Array<{
-      id: number
-      name: string
-      handle: string
-      photo_url: string
-    }>
-  } {
-    // Derive slug from web_url if available
-    let slug = ''
-    if (item.web_url) {
-      const parts = item.web_url.split('/')
-      const last = parts.pop() || ''
-      slug = last.split('?')[0]
-    }
-
-    return {
-      id: item.post_id,
-      title: item.title,
-      slug,
-      post_date: item.content_date || '',
-      type: item.postType || item.type || 'newsletter',
-      audience: item.audience || undefined,
-      subtitle: item.subtitle || undefined,
-      canonical_url: item.web_url || undefined,
-      reactions:
-        item.like_count != null ? ({ '❤': item.like_count } as Record<string, number>) : undefined,
-      restacks: undefined,
-      wordcount: item.duration_metadata?.word_count || undefined,
-      comment_count: item.comment_count || undefined,
-      cover_image: item.cover_photo_url || undefined,
-      publishedBylines: item.published_bylines
-        ? item.published_bylines
-            .filter((b) => b.handle != null)
-            .map((b) => ({
-              id: b.id,
-              name: b.name,
-              handle: b.handle as string,
-              photo_url: b.photo_url
-            }))
-        : undefined
-    }
+  getTrending(options?: { limit?: number; offset?: number }): Promise<SubstackTrendingResponse> {
+    return this.feedService.getTrending(options) as Promise<SubstackTrendingResponse>
   }
 
-  /**
-   * Get reader feed (discovery or activity).
-   * GET /api/v1/reader/feed?tab={tab}&type=base (anonymous)
-   * GET /api/v1/reader/feed?tab_id={tabId} (authenticated, includes tabs metadata)
-   */
-  async getFeed(options?: { tab?: FeedTab; tabId?: string; cursor?: string }): Promise<{
+  getFeed(options?: { tab?: FeedTab; tabId?: string; cursor?: string }): Promise<{
     items: FeedItem[]
     nextCursor: string | null
     tabs?: ActivityFeedTab[]
   }> {
-    const params = new URLSearchParams()
-    if (options?.tabId) {
-      params.set('tab_id', options.tabId)
-    } else {
-      params.set('tab', options?.tab || 'for-you')
-      params.set('type', 'base')
-    }
-    if (options?.cursor) {
-      params.set('cursor', options.cursor)
-    }
-    return this.fetchCursorFeed(`/reader/feed?${params.toString()}`)
+    return this.feedService.getFeed(options)
   }
 
-  /**
-   * Get all categories with subcategories
-   * GET /api/v1/categories (anonymous)
-   */
-  async getCategories(): Promise<SubstackCategory[]> {
-    const response = await this.substackClient.get<unknown[]>('/categories')
-    return response.map((cat, i) => decodeOrThrow(SubstackCategoryCodec, cat, `Category ${i}`))
+  getCategories(): Promise<SubstackCategory[]> {
+    return this.categoryService.getCategories()
   }
 
-  /**
-   * Get profile activity feed
-   * GET /api/v1/reader/feed/profile/{id} (anonymous, paginated)
-   */
-  async getProfileActivity(
+  getProfileActivity(
     profileId: number,
     options?: { tab?: ProfileFeedTab; cursor?: string }
   ): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
-    const params = new URLSearchParams()
-    if (options?.tab) params.set('tab', options.tab)
-    if (options?.cursor) params.set('cursor', options.cursor)
-    const query = params.toString() ? `?${params.toString()}` : ''
-    return this.fetchCursorFeed(
-      `/reader/feed/profile/${encodeURIComponent(String(profileId))}${query}`
-    )
+    return this.profileActivityService.getProfileActivity(profileId, options)
   }
 
-  /**
-   * Get publication activity feed
-   * GET /api/v1/reader/feed/publication/{id} (anonymous, paginated)
-   */
-  async getPublicationFeed(
+  getPublicationFeed(
     publicationId: number,
     options?: { tab?: string; cursor?: string }
   ): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
-    const params = new URLSearchParams()
-    if (options?.tab) params.set('tab', options.tab)
-    if (options?.cursor) params.set('cursor', options.cursor)
-    const query = params.toString() ? `?${params.toString()}` : ''
-    return this.fetchCursorFeed(
-      `/reader/feed/publication/${encodeURIComponent(String(publicationId))}${query}`
-    )
+    return this.categoryService.getPublicationFeed(publicationId, options)
   }
 
-  /**
-   * Get profile likes feed
-   * GET /api/v1/reader/feed/profile/{id}?types[]=like (anonymous, paginated)
-   */
-  async getProfileLikes(
+  getProfileLikes(
     profileId: number,
     options?: { cursor?: string }
   ): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
-    const params = new URLSearchParams()
-    params.append('types[]', 'like')
-    if (options?.cursor) params.set('cursor', options.cursor)
-    return this.fetchCursorFeed(
-      `/reader/feed/profile/${encodeURIComponent(String(profileId))}?${params.toString()}`
-    )
+    return this.profileActivityService.getProfileLikes(profileId, options)
   }
 
-  /**
-   * Get publications in a given category
-   * GET /api/v1/category/public/{category_id}/posts (anonymous)
-   */
-  async getCategoryPublications(
+  getCategoryPublications(
     categoryId: number | string,
     options?: { limit?: number; offset?: number }
   ): Promise<{ publications: SubstackCategoryPublication[]; more: boolean }> {
-    const params = new URLSearchParams()
-    if (options?.limit !== undefined) params.set('limit', String(options.limit))
-    if (options?.offset !== undefined) params.set('offset', String(options.offset))
-    const query = params.toString() ? `?${params.toString()}` : ''
-    const response = await this.substackClient.get<{
-      publications?: unknown[]
-      more?: boolean
-    }>(`/category/public/${encodeURIComponent(String(categoryId))}/posts${query}`)
-
-    const publications = (response.publications || []).map((pub, i) =>
-      decodeOrThrow(SubstackCategoryPublicationCodec, pub, `Category publication ${i}`)
-    )
-
-    return {
-      publications,
-      more: response.more || false
-    }
+    return this.categoryService.getCategoryPublications(categoryId, options)
   }
 
-  /**
-   * Search for posts, people, publications, and notes
-   * GET /api/v1/top/search?query={query} (anonymous, paginated)
-   */
-  async search(
+  search(
     query: string,
     options?: { cursor?: string }
   ): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
-    const params = new URLSearchParams({ query })
-    if (options?.cursor) {
-      params.set('cursor', options.cursor)
-    }
-    return this.fetchCursorFeed(`/top/search?${params.toString()}`)
+    return this.searchService.search(query, options)
   }
 
-  /**
-   * Search for user profiles
-   * GET /api/v1/profile/search?query={query}&page={page} (anonymous, page-paginated)
-   */
-  async searchProfiles(
+  searchProfiles(
     query: string,
     options?: { page?: number }
   ): Promise<{ results: SubstackProfileSearchResult[]; more: boolean }> {
-    const params = new URLSearchParams({ query })
-    if (options?.page !== undefined) {
-      params.set('page', String(options.page))
-    }
-    const response = await this.substackClient.get<unknown>(`/profile/search?${params.toString()}`)
-    const decoded = decodeOrThrow(SubstackProfileSearchResponseCodec, response, 'Profile search')
-    return { results: decoded.results, more: decoded.more }
+    return this.searchService.searchProfiles(query, options)
   }
 
-  /**
-   * Explore search with different tabs
-   * GET /api/v1/search/explore/web?tab={tab}&type=base (anonymous, paginated)
-   */
-  async exploreSearch(options?: {
+  exploreSearch(options?: {
     tab?: string
     cursor?: string
   }): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
-    const tab = options?.tab || 'explore'
-    // type='base' requests the base feed format (posts + notes + comments)
-    // rather than the enriched format that includes extra metadata
-    const params = new URLSearchParams({ tab, type: 'base' })
-    if (options?.cursor) {
-      params.set('cursor', options.cursor)
-    }
-    return this.fetchCursorFeed(`/search/explore/web?${params.toString()}`)
-  }
-
-  // ── Private helpers ────────────────────────────────────────────────
-
-  /**
-   * Shared cursor-feed fetcher for paginated feed endpoints.
-   * Handles the common pattern: fetch URL, normalize items/nextCursor/tabs.
-   */
-  private async fetchCursorFeed(
-    url: string
-  ): Promise<{ items: FeedItem[]; nextCursor: string | null; tabs?: ActivityFeedTab[] }> {
-    const response = await this.substackClient.get<unknown>(url)
-
-    const decoded = decodeOrThrow(
-      t.type({
-        items: t.union([t.array(t.unknown), t.null, t.undefined]),
-        nextCursor: t.union([t.string, t.null, t.undefined]),
-        tabs: t.union([t.array(t.unknown), t.null, t.undefined])
-      }),
-      response,
-      'cursor feed response'
-    )
-
-    const items = (decoded.items || []).map((item, i) => {
-      // Validate items if they have the inbox item shape; otherwise pass through
-      // since feed endpoints return heterogeneous items (posts, notes, comments)
-      if (item && typeof item === 'object' && 'post_id' in item) {
-        return decodeOrThrow(SubstackInboxItemCodec, item, `Feed item ${i}`) as unknown as FeedItem
-      }
-      return item as FeedItem
-    })
-
-    // Normalize empty string to null so consumers don't loop forever
-    const nextCursor = decoded.nextCursor && decoded.nextCursor !== '' ? decoded.nextCursor : null
-
-    const tabs: ActivityFeedTab[] | undefined = decoded.tabs
-      ? (decoded.tabs as ActivityFeedTab[])
-      : undefined
-
-    return {
-      items,
-      nextCursor,
-      ...(tabs && { tabs })
-    }
+    return this.searchService.exploreSearch(options)
   }
 }

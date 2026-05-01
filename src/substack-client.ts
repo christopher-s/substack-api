@@ -13,7 +13,10 @@ import {
   CommentService,
   ConnectivityService,
   DashboardService,
-  DiscoveryService,
+  FeedService,
+  SearchService,
+  ProfileActivityService,
+  CategoryService,
   FollowingService,
   GrowthStatsService,
   NoteService,
@@ -30,14 +33,13 @@ import {
   ChatService,
   NotificationService
 } from '@substack-api/internal/services'
-import { NoteBuilderFactory } from '@substack-api/domain'
 import { markdownToHtml } from '@substack-api/internal/markdown-to-html'
 import { getErrorMessage } from '@substack-api/internal/validation'
 import type {
   FeedTab,
   ProfileFeedTab,
   ActivityFeedTab
-} from '@substack-api/internal/services/discovery-service'
+} from '@substack-api/internal/services/feed-types'
 import type {
   FeedItem,
   SubstackInboxItem,
@@ -112,6 +114,17 @@ import type {
   ChatThread,
   ChatMessage
 } from '@substack-api/internal/types/chat'
+import {
+  ProfileClient,
+  PostClient,
+  CommentClient,
+  PublicationClient,
+  AnalyticsClient,
+  RecommendationClient,
+  ChatClient,
+  NotificationClient
+} from '@substack-api/sub-clients'
+import { publishNote } from '@substack-api/domain'
 
 const DEFAULT_PER_PAGE = 25
 const DEFAULT_MAX_RPS = 25
@@ -132,8 +145,11 @@ export class SubstackClient {
   private readonly commentService: CommentService
   private readonly followingService: FollowingService
   private readonly connectivityService: ConnectivityService
-  private readonly newNoteService: NoteBuilderFactory
-  private readonly discoveryService: DiscoveryService
+  private readonly feedService: FeedService
+  private readonly searchService: SearchService
+  private readonly profileActivityService: ProfileActivityService
+  private readonly categoryService: CategoryService
+  private readonly publishNote: typeof publishNote
   private readonly publicationService: PublicationService
   private readonly postManagementService: PostManagementService
   private readonly publicationDetailService: PublicationDetailService
@@ -147,6 +163,23 @@ export class SubstackClient {
   private readonly chatService: ChatService
   private readonly notificationService: NotificationService
   private readonly perPage: number
+
+  /** Sub-client for profile operations */
+  readonly profiles: ProfileClient
+  /** Sub-client for post and feed operations */
+  readonly posts: PostClient
+  /** Sub-client for comment operations */
+  readonly comments: CommentClient
+  /** Sub-client for publication, note, and subscription operations */
+  readonly publications: PublicationClient
+  /** Sub-client for analytics/stats operations */
+  readonly analytics: AnalyticsClient
+  /** Sub-client for recommendation operations */
+  readonly recommendations: RecommendationClient
+  /** Sub-client for chat/DM operations */
+  readonly chat: ChatClient
+  /** Sub-client for notification operations */
+  readonly notifications: NotificationClient
   private readonly token: string | undefined
   private readonly hasPublication: boolean
 
@@ -232,8 +265,11 @@ export class SubstackClient {
     this.commentService = new CommentService(this.publicationClient, this.substackClient)
     this.followingService = new FollowingService(this.publicationClient, this.substackClient)
     this.connectivityService = new ConnectivityService(this.substackClient, this.followingService)
-    this.newNoteService = new NoteBuilderFactory(this.substackClient)
-    this.discoveryService = new DiscoveryService(this.substackClient)
+    this.publishNote = publishNote
+    this.feedService = new FeedService(this.substackClient)
+    this.searchService = new SearchService(this.substackClient)
+    this.profileActivityService = new ProfileActivityService(this.substackClient)
+    this.categoryService = new CategoryService(this.substackClient)
     this.publicationService = new PublicationService(this.publicationClient)
     this.postManagementService = new PostManagementService(this.publicationClient)
     this.publicationDetailService = new PublicationDetailService(this.publicationClient)
@@ -249,6 +285,41 @@ export class SubstackClient {
     this.recommendationService = new RecommendationService(this.publicationClient)
     this.chatService = new ChatService(this.substackClient)
     this.notificationService = new NotificationService(this.substackClient)
+
+    // Initialize sub-clients
+    const entityDeps = () => this.buildEntityDeps()
+    this.profiles = new ProfileClient(
+      this.profileService,
+      this.searchService,
+      this.profileActivityService,
+      entityDeps
+    )
+    this.posts = new PostClient(
+      this.postService,
+      this.feedService,
+      this.publicationService,
+      entityDeps,
+      this.perPage
+    )
+    this.comments = new CommentClient(this.commentService, this.publicationClient)
+    this.publications = new PublicationClient(
+      this.publicationService,
+      this.categoryService,
+      this.publicationDetailService,
+      this.postManagementService,
+      this.subscriptionService,
+      this.noteService,
+      this.perPage
+    )
+    this.analytics = new AnalyticsClient(
+      this.subscriberStatsService,
+      this.growthStatsService,
+      this.publicationStatsService,
+      this.dashboardService
+    )
+    this.recommendations = new RecommendationClient(this.recommendationService)
+    this.chat = new ChatClient(this.chatService)
+    this.notifications = new NotificationClient(this.notificationService)
   }
 
   /** Throw a clear error when an authenticated method is called without a token */
@@ -417,7 +488,7 @@ export class SubstackClient {
    * Get top/trending posts from Substack's homepage feed
    */
   async topPosts(): Promise<SubstackInboxItem[]> {
-    const result = await this.discoveryService.getTopPosts()
+    const result = await this.feedService.getTopPosts()
     return result.items
   }
 
@@ -427,7 +498,7 @@ export class SubstackClient {
    * @deprecated Returns empty `publications` and `trendingPosts` arrays. Use {@link topPosts} instead.
    */
   async trending(options?: { limit?: number }): Promise<SubstackTrendingResponse> {
-    return await this.discoveryService.getTrending(options)
+    return (await this.feedService.getTrending(options)) as unknown as SubstackTrendingResponse
   }
 
   /**
@@ -444,12 +515,12 @@ export class SubstackClient {
     const batchSize = options.limit || this.perPage
 
     while (true) {
-      const response = await this.discoveryService.getTrending({
+      const response = await this.feedService.getTrending({
         limit: batchSize,
         offset
       })
 
-      yield response
+      yield response as unknown as SubstackTrendingResponse
 
       if (response.posts.length < batchSize) break
       offset += batchSize
@@ -464,7 +535,7 @@ export class SubstackClient {
    */
   async *discoverFeed(options: { tab?: FeedTab; limit?: number } = {}): AsyncGenerator<FeedItem> {
     yield* this.paginateFeed(
-      (cursor) => this.discoveryService.getFeed({ tab: options.tab, cursor }),
+      (cursor) => this.feedService.getFeed({ tab: options.tab, cursor }),
       options.limit
     )
   }
@@ -482,7 +553,7 @@ export class SubstackClient {
     this.requireAuth('activityFeed')
     let tabsDelivered = false
     yield* this.paginateFeed(async (cursor) => {
-      const result = await this.discoveryService.getFeed({ tabId: options.tabId, cursor })
+      const result = await this.feedService.getFeed({ tabId: options.tabId, cursor })
       if (!tabsDelivered && result.tabs && options.onTabs) {
         options.onTabs(result.tabs)
         tabsDelivered = true
@@ -495,7 +566,7 @@ export class SubstackClient {
    * Get all content categories with subcategories
    */
   async categories(): Promise<Category[]> {
-    const rawCategories = await this.discoveryService.getCategories()
+    const rawCategories = await this.categoryService.getCategories()
     return rawCategories.map((cat) => new Category(cat))
   }
 
@@ -510,7 +581,7 @@ export class SubstackClient {
     categoryId: number | string,
     options?: { limit?: number; offset?: number }
   ): Promise<{ publications: SubstackCategoryPublication[]; more: boolean }> {
-    return await this.discoveryService.getCategoryPublications(categoryId, options)
+    return await this.categoryService.getCategoryPublications(categoryId, options)
   }
 
   // ── Search methods (anonymous) ─────────────────────────────────────
@@ -523,7 +594,7 @@ export class SubstackClient {
    */
   async *search(query: string, options: { limit?: number } = {}): AsyncGenerator<FeedItem> {
     yield* this.paginateFeed(
-      (cursor) => this.discoveryService.search(query, { cursor }),
+      (cursor) => this.searchService.search(query, { cursor }),
       options.limit
     )
   }
@@ -538,7 +609,7 @@ export class SubstackClient {
     query: string,
     options?: { page?: number }
   ): Promise<{ results: SubstackProfileSearchResult[]; more: boolean }> {
-    return await this.discoveryService.searchProfiles(query, options)
+    return await this.searchService.searchProfiles(query, options)
   }
 
   /**
@@ -554,7 +625,7 @@ export class SubstackClient {
     let page = 1
     let totalYielded = 0
     while (true) {
-      const response = await this.discoveryService.searchProfiles(query, { page })
+      const response = await this.searchService.searchProfiles(query, { page })
       for (const result of response.results) {
         if (options.limit && totalYielded >= options.limit) return
         yield result
@@ -573,7 +644,7 @@ export class SubstackClient {
    */
   async *exploreSearch(options: { tab?: string; limit?: number } = {}): AsyncGenerator<FeedItem> {
     yield* this.paginateFeed(
-      (cursor) => this.discoveryService.exploreSearch({ tab: options.tab, cursor }),
+      (cursor) => this.searchService.exploreSearch({ tab: options.tab, cursor }),
       options.limit
     )
   }
@@ -677,7 +748,8 @@ export class SubstackClient {
     options: { tab?: ProfileFeedTab; limit?: number } = {}
   ): AsyncGenerator<FeedItem> {
     yield* this.paginateFeed(
-      (cursor) => this.discoveryService.getProfileActivity(profileId, { tab: options.tab, cursor }),
+      (cursor) =>
+        this.profileActivityService.getProfileActivity(profileId, { tab: options.tab, cursor }),
       options.limit
     )
   }
@@ -691,7 +763,7 @@ export class SubstackClient {
     options: { limit?: number } = {}
   ): AsyncGenerator<FeedItem> {
     yield* this.paginateFeed(
-      (cursor) => this.discoveryService.getProfileLikes(profileId, { cursor }),
+      (cursor) => this.profileActivityService.getProfileLikes(profileId, { cursor }),
       options.limit
     )
   }
@@ -709,7 +781,7 @@ export class SubstackClient {
   ): AsyncGenerator<FeedItem> {
     yield* this.paginateFeed(
       (cursor) =>
-        this.discoveryService.getPublicationFeed(publicationId, { tab: options.tab, cursor }),
+        this.categoryService.getPublicationFeed(publicationId, { tab: options.tab, cursor }),
       options.limit
     )
   }
@@ -1352,7 +1424,6 @@ export class SubstackClient {
       noteService: this.noteService,
       commentService: this.commentService,
       followingService: this.followingService,
-      newNoteService: this.newNoteService,
       perPage: this.perPage
     }
   }
