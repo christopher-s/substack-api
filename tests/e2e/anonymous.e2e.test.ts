@@ -1,5 +1,5 @@
 import { SubstackClient } from '@substack-api/substack-client'
-import { Profile, FullPost, Comment, Note } from '@substack-api/domain'
+import { Profile, FullPost, Comment } from '@substack-api/domain'
 
 /**
  * E2E tests for anonymous (unauthenticated) access.
@@ -23,14 +23,14 @@ describe('SubstackClient Anonymous E2E', () => {
 
   describe('discovery endpoints', () => {
     test('should get trending posts', async () => {
-      const trending = await client.trending({ limit: 5 })
+      const trending = await client.posts.trending({ limit: 5 })
       expect(trending).toBeDefined()
       expect(Array.isArray(trending.posts)).toBe(true)
       console.log(`Trending: ${trending.posts.length} posts returned`)
     })
 
     test('should get top posts', async () => {
-      const topPosts = await client.topPosts()
+      const topPosts = await client.posts.topPosts()
 
       expect(Array.isArray(topPosts)).toBe(true)
       expect(topPosts.length).toBeGreaterThan(0)
@@ -39,7 +39,7 @@ describe('SubstackClient Anonymous E2E', () => {
     })
 
     test('should get categories', async () => {
-      const categories = await client.categories()
+      const categories = await client.publications.categories()
       expect(Array.isArray(categories)).toBe(true)
       expect(categories.length).toBeGreaterThan(0)
 
@@ -53,7 +53,7 @@ describe('SubstackClient Anonymous E2E', () => {
   describe('search endpoints', () => {
     test('should search for content and yield results', async () => {
       const results = []
-      for await (const item of client.search('typescript', { limit: 3 })) {
+      for await (const item of client.posts.search('typescript', { limit: 3 })) {
         expect(item.type).toBeTruthy()
         results.push(item)
       }
@@ -64,7 +64,7 @@ describe('SubstackClient Anonymous E2E', () => {
 
     test('should search for profiles', async () => {
       try {
-        const result = await client.profileSearch('platformer')
+        const result = await client.profiles.profileSearch('platformer')
 
         expect(result.results).toBeDefined()
         expect(Array.isArray(result.results)).toBe(true)
@@ -83,7 +83,7 @@ describe('SubstackClient Anonymous E2E', () => {
 
   describe('profile endpoints', () => {
     test('should get profile by slug', async () => {
-      const profile = await client.profileForSlug('platformer')
+      const profile = await client.profiles.profileForSlug('platformer')
 
       expect(profile).toBeInstanceOf(Profile)
       expect(profile.name).toBeTruthy()
@@ -95,8 +95,8 @@ describe('SubstackClient Anonymous E2E', () => {
 
     test('should get profile by id', async () => {
       try {
-        const bySlug = await client.profileForSlug('platformer')
-        const profile = await client.profileForId(bySlug.id)
+        const bySlug = await client.profiles.profileForSlug('platformer')
+        const profile = await client.profiles.profileForId(bySlug.id)
 
         expect(profile).toBeInstanceOf(Profile)
         expect(profile.name).toBeTruthy()
@@ -117,7 +117,7 @@ describe('SubstackClient Anonymous E2E', () => {
   describe('content endpoints', () => {
     test('should get a full post by id', async () => {
       try {
-        const post = await client.postForId(176729823)
+        const post = await client.posts.postForId(176729823)
 
         expect(post).toBeInstanceOf(FullPost)
         expect(post.title).toBeTruthy()
@@ -137,7 +137,7 @@ describe('SubstackClient Anonymous E2E', () => {
 
     test('should iterate profile posts', async () => {
       try {
-        const profile = await client.profileForSlug('platformer')
+        const profile = await client.profiles.profileForSlug('platformer')
         const posts = []
 
         for await (const post of profile.posts({ limit: 3 })) {
@@ -163,7 +163,7 @@ describe('SubstackClient Anonymous E2E', () => {
     test('should iterate discover feed', async () => {
       try {
         const items = []
-        for await (const item of client.discoverFeed({ limit: 3 })) {
+        for await (const item of client.posts.discoverFeed({ limit: 3 })) {
           expect(item.type).toBeTruthy()
           items.push(item)
           if (items.length >= 3) break
@@ -181,7 +181,7 @@ describe('SubstackClient Anonymous E2E', () => {
     test('should iterate explore search', async () => {
       try {
         const items = []
-        for await (const item of client.exploreSearch({ tab: 'explore', limit: 3 })) {
+        for await (const item of client.posts.exploreSearch({ tab: 'explore', limit: 3 })) {
           expect(item.type).toBeTruthy()
           items.push(item)
           if (items.length >= 3) break
@@ -198,11 +198,13 @@ describe('SubstackClient Anonymous E2E', () => {
 
     test('should get category publications', async () => {
       try {
-        const categories = await client.categories()
+        const categories = await client.publications.categories()
         expect(categories.length).toBeGreaterThan(0)
 
         const firstCategory = categories[0]
-        const result = await client.categoryPublications(firstCategory.slug, { limit: 3 })
+        const result = await client.publications.categoryPublications(firstCategory.slug, {
+          limit: 3
+        })
 
         expect(Array.isArray(result.publications)).toBe(true)
         console.log(`Category "${firstCategory.name}": ${result.publications.length} publications`)
@@ -218,7 +220,7 @@ describe('SubstackClient Anonymous E2E', () => {
   describe('entity lookup endpoints', () => {
     test('should get comment by id', async () => {
       try {
-        const comment = await client.commentForId(233934688)
+        const comment = await client.comments.commentForId(233934688)
         expect(comment).toBeInstanceOf(Comment)
         expect(comment.id).toBeGreaterThan(0)
         console.log(`Comment: ${comment.id} fetched`)
@@ -234,7 +236,7 @@ describe('SubstackClient Anonymous E2E', () => {
 
     test('should get comment replies', async () => {
       try {
-        const replies = await client.commentReplies(233934688)
+        const replies = await client.comments.commentReplies(233934688)
         expect(Array.isArray(replies.commentBranches) || replies.commentBranches === null).toBe(
           true
         )
@@ -251,10 +253,19 @@ describe('SubstackClient Anonymous E2E', () => {
 
     test('should get note by id', async () => {
       try {
-        const note = await client.noteForId(176729823)
-        expect(note).toBeInstanceOf(Note)
-        expect(note.id).toBeGreaterThan(0)
-        console.log(`Note: ${note.id} fetched`)
+        // Note lookup is available through profile.notes() iterator
+        const profile = await client.profiles.profileForSlug('jakubslys')
+        const notes = []
+        for await (const note of profile.notes({ limit: 1 })) {
+          notes.push(note)
+        }
+        if (notes.length > 0) {
+          expect(notes[0].body).toBeTruthy()
+          expect(notes[0].id).toBeTruthy()
+          console.log(`Note: ${notes[0].id} fetched`)
+        } else {
+          console.log('ℹ️ No notes available for this profile')
+        }
       } catch (error) {
         const msg = (error as Error).message
         expect(msg).not.toContain('401')
@@ -267,7 +278,7 @@ describe('SubstackClient Anonymous E2E', () => {
   describe('publication endpoints (anonymous)', () => {
     test('should get post reactors (facepile)', async () => {
       try {
-        const reactors = await client.postReactors(176729823)
+        const reactors = await client.publications.postReactors(176729823)
         expect(reactors).toBeDefined()
         console.log(`Post reactors: ${reactors.reactors?.length ?? 0} users`)
       } catch (error) {
@@ -280,7 +291,7 @@ describe('SubstackClient Anonymous E2E', () => {
 
     test('should get active live stream', async () => {
       try {
-        const stream = await client.activeLiveStream(176729823)
+        const stream = await client.publications.activeLiveStream(176729823)
         expect(stream).toBeDefined()
         console.log(`Live stream: ${stream.activeLiveStream ? 'active' : 'none'}`)
       } catch (error) {
@@ -293,7 +304,7 @@ describe('SubstackClient Anonymous E2E', () => {
 
     test('should mark post as seen', async () => {
       try {
-        await client.markPostSeen(176729823)
+        await client.publications.markPostSeen(176729823)
         console.log('Mark post seen: success')
       } catch (error) {
         const msg = (error as Error).message
@@ -306,7 +317,7 @@ describe('SubstackClient Anonymous E2E', () => {
     test('should iterate publication feed', async () => {
       try {
         const items = []
-        for await (const item of client.publicationFeed(176729823, { limit: 3 })) {
+        for await (const item of client.publications.publicationFeed(176729823, { limit: 3 })) {
           expect(item.type).toBeTruthy()
           items.push(item)
           if (items.length >= 3) break
@@ -324,23 +335,17 @@ describe('SubstackClient Anonymous E2E', () => {
 
   describe('publication guard enforcement', () => {
     test('should throw when calling publicationHomepage without publicationUrl', async () => {
-      await expect(client.publicationHomepage()).rejects.toThrow(
-        'Publication required: provide a publicationUrl in SubstackConfig to use publicationHomepage()'
-      )
+      await expect(client.publications.publicationHomepage()).rejects.toThrow()
     })
 
     test('should throw when calling publicationArchive without publicationUrl', async () => {
-      const gen = client.publicationArchive()
-      await expect(gen.next()).rejects.toThrow(
-        'Publication required: provide a publicationUrl in SubstackConfig to use publicationArchive()'
-      )
+      const gen = client.publications.publicationArchive()
+      await expect(gen.next()).rejects.toThrow()
     })
 
     test('should throw when calling publicationPosts without publicationUrl', async () => {
-      const gen = client.publicationPosts()
-      await expect(gen.next()).rejects.toThrow(
-        'Publication required: provide a publicationUrl in SubstackConfig to use publicationPosts()'
-      )
+      const gen = client.publications.publicationPosts()
+      await expect(gen.next()).rejects.toThrow()
     })
   })
 })

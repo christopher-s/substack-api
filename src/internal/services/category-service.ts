@@ -7,7 +7,7 @@ import {
   type SubstackCategoryPublication
 } from '@substack-api/internal/types'
 import { decodeOrThrow } from '@substack-api/internal/validation'
-import { fetchCursorFeed } from '@substack-api/internal/services/cursor-feed'
+import { fetchCursorFeed } from '@substack-api/internal/services/feed-service'
 
 /**
  * Service for category and publication feed endpoints.

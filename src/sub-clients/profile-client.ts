@@ -2,7 +2,7 @@ import { Profile, OwnProfile } from '@substack-api/domain'
 import type {
   ProfileService,
   SearchService,
-  ProfileActivityService
+  FollowingService
 } from '@substack-api/internal/services'
 import type { FeedItem, SubstackProfileSearchResult } from '@substack-api/internal/types'
 import type { ProfileFeedTab } from '@substack-api/internal/services/feed-types'
@@ -16,8 +16,8 @@ export class ProfileClient {
   constructor(
     private readonly profileService: ProfileService,
     private readonly searchService: SearchService,
-    private readonly profileActivityService: ProfileActivityService,
-    private readonly buildEntityDeps: () => EntityDeps
+    private readonly buildEntityDeps: () => EntityDeps,
+    private readonly followingService?: FollowingService
   ) {}
 
   async profileForSlug(slug: string): Promise<Profile> {
@@ -65,8 +65,7 @@ export class ProfileClient {
     options: { tab?: ProfileFeedTab; limit?: number } = {}
   ): AsyncGenerator<FeedItem> {
     yield* paginateFeed(
-      (cursor) =>
-        this.profileActivityService.getProfileActivity(profileId, { tab: options.tab, cursor }),
+      (cursor) => this.profileService.getProfileActivity(profileId, { tab: options.tab, cursor }),
       options.limit
     )
   }
@@ -76,8 +75,30 @@ export class ProfileClient {
     options: { limit?: number } = {}
   ): AsyncGenerator<FeedItem> {
     yield* paginateFeed(
-      (cursor) => this.profileActivityService.getProfileLikes(profileId, { cursor }),
+      (cursor) => this.profileService.getProfileLikes(profileId, { cursor }),
       options.limit
     )
+  }
+
+  async isConnected(): Promise<boolean> {
+    if (!this.followingService) {
+      return false
+    }
+    const result = await this.followingService.isConnected()
+    return result.connected
+  }
+
+  async followUser(userId: number): Promise<void> {
+    if (!this.followingService) {
+      throw new Error('Following service not available')
+    }
+    await this.followingService.followUser(userId)
+  }
+
+  async unfollowUser(userId: number): Promise<void> {
+    if (!this.followingService) {
+      throw new Error('Following service not available')
+    }
+    await this.followingService.unfollowUser(userId)
   }
 }

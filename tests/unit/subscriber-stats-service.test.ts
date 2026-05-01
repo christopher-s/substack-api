@@ -1,10 +1,10 @@
-import { SubscriberStatsService } from '@substack-api/internal/services/subscriber-stats-service'
+import { PublicationStatsService } from '@substack-api/internal/services/publication-stats-service'
 import type { HttpClient } from '@substack-api/internal/http-client'
 
-describe('SubscriberStatsService', () => {
+describe('PublicationStatsService (subscriber stats methods)', () => {
   let mockPublicationClient: jest.Mocked<HttpClient>
   let mockSubstackClient: jest.Mocked<HttpClient>
-  let service: SubscriberStatsService
+  let service: PublicationStatsService
 
   beforeEach(() => {
     mockPublicationClient = {
@@ -14,7 +14,7 @@ describe('SubscriberStatsService', () => {
     mockSubstackClient = {
       get: jest.fn()
     } as unknown as jest.Mocked<HttpClient>
-    service = new SubscriberStatsService(mockPublicationClient, mockSubstackClient)
+    service = new PublicationStatsService(mockPublicationClient, mockSubstackClient)
   })
 
   describe('getSubscriberStats', () => {

@@ -21,6 +21,8 @@ import type {
   ChatThread,
   ChatMessage
 } from '@substack-api/internal/types/chat'
+import type { SubstackNotificationsResponse } from '@substack-api/internal/types'
+import { SubstackNotificationsResponseCodec } from '@substack-api/internal/types'
 
 export class ChatService {
   constructor(private readonly substackClient: HttpClient) {}
@@ -127,5 +129,19 @@ export class ChatService {
       if (!response.more) break
       cursor = response.cursor ?? undefined
     }
+  }
+
+  // ── Methods merged from NotificationService ─────────────────────────
+
+  async getNotifications(options?: { cursor?: string }): Promise<SubstackNotificationsResponse> {
+    const url = options?.cursor
+      ? `/notifications?cursor=${encodeURIComponent(options.cursor)}`
+      : '/notifications'
+    const response = await this.substackClient.get<unknown>(url)
+    return decodeOrThrow(SubstackNotificationsResponseCodec, response, 'Notifications response')
+  }
+
+  async markNotificationsSeen(): Promise<void> {
+    await this.substackClient.post('/notifications/seen')
   }
 }

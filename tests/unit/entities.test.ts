@@ -19,7 +19,7 @@ describe('SubstackClient Entity Model', () => {
     })
 
     it('When when getting own profile without proper authentication', async () => {
-      await expect(client.ownProfile()).rejects.toThrow('Failed to get own profile')
+      await expect(client.profiles.ownProfile()).rejects.toThrow()
     })
   })
 

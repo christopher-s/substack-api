@@ -5,7 +5,7 @@ import { CategoryService } from '@substack-api/internal/services'
 jest.mock('@substack-api/internal/http-client')
 jest.mock('@substack-api/internal/services')
 
-describe('publicationFeed', () => {
+describe('publicationFeed (via publications sub-client)', () => {
   let client: SubstackClient
   let mockCategoryService: jest.Mocked<CategoryService>
 
@@ -22,9 +22,10 @@ describe('publicationFeed', () => {
 
     client = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
 
+    // Inject mock into the publications sub-client
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const anyClient = client as any
-    anyClient.categoryService = mockCategoryService
+    const pubClient = (client as any).publications as any
+    pubClient.categoryService = mockCategoryService
   })
 
   it('should yield publication feed items', async () => {
@@ -33,7 +34,7 @@ describe('publicationFeed', () => {
       nextCursor: null
     })
     const results = []
-    for await (const item of client.publicationFeed(42)) {
+    for await (const item of client.publications.publicationFeed(42)) {
       results.push(item)
     }
     expect(results).toHaveLength(1)
@@ -54,7 +55,7 @@ describe('publicationFeed', () => {
       nextCursor: null
     })
     const results = []
-    for await (const item of client.publicationFeed(99)) {
+    for await (const item of client.publications.publicationFeed(99)) {
       results.push(item)
     }
     expect(results).toHaveLength(2)
@@ -71,7 +72,7 @@ describe('publicationFeed', () => {
       nextCursor: null
     })
     const results = []
-    for await (const item of client.publicationFeed(42, { tab: 'posts' })) {
+    for await (const item of client.publications.publicationFeed(42, { tab: 'posts' })) {
       results.push(item)
     }
     expect(results).toHaveLength(1)
@@ -91,7 +92,7 @@ describe('publicationFeed', () => {
       nextCursor: null
     })
     const results = []
-    for await (const item of client.publicationFeed(42, { limit: 2 })) {
+    for await (const item of client.publications.publicationFeed(42, { limit: 2 })) {
       results.push(item)
     }
     expect(results).toHaveLength(2)

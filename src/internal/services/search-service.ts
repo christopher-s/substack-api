@@ -2,7 +2,7 @@ import type { HttpClient } from '@substack-api/internal/http-client'
 import type { FeedItem, SubstackProfileSearchResult } from '@substack-api/internal/types'
 import { SubstackProfileSearchResponseCodec } from '@substack-api/internal/types'
 import { decodeOrThrow } from '@substack-api/internal/validation'
-import { fetchCursorFeed } from '@substack-api/internal/services/cursor-feed'
+import { fetchCursorFeed } from '@substack-api/internal/services/feed-service'
 
 /**
  * Service for search endpoints: general search, profile search, explore search.

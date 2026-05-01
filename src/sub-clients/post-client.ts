@@ -1,5 +1,5 @@
 import { FullPost } from '@substack-api/domain'
-import type { PostService, FeedService } from '@substack-api/internal/services'
+import type { PostService, FeedService, SearchService } from '@substack-api/internal/services'
 import type { PublicationService } from '@substack-api/internal/services'
 import type {
   FeedItem,
@@ -20,7 +20,8 @@ export class PostClient {
     private readonly feedService: FeedService,
     private readonly publicationService: PublicationService,
     private readonly buildEntityDeps: () => EntityDeps,
-    private readonly perPage: number
+    private readonly perPage: number,
+    private readonly searchService?: SearchService
   ) {}
 
   async postForId(id: number): Promise<FullPost> {
@@ -91,5 +92,20 @@ export class PostClient {
 
   async unsavePost(postId: number): Promise<void> {
     await this.postService.unsavePost(postId)
+  }
+
+  async *search(query: string, options: { limit?: number } = {}): AsyncGenerator<FeedItem> {
+    if (!this.searchService) throw new Error('Search service not available')
+    const search = this.searchService
+    yield* paginateFeed((cursor) => search.search(query, { cursor }), options.limit)
+  }
+
+  async *exploreSearch(options: { tab?: string; limit?: number } = {}): AsyncGenerator<FeedItem> {
+    if (!this.searchService) throw new Error('Search service not available')
+    const search = this.searchService
+    yield* paginateFeed(
+      (cursor) => search.exploreSearch({ tab: options.tab, cursor }),
+      options.limit
+    )
   }
 }

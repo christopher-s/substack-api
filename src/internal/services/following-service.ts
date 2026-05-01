@@ -5,11 +5,17 @@ import {
   SubstackFullProfileCodec
 } from '@substack-api/internal/types'
 import { decodeOrThrow } from '@substack-api/internal/validation'
+import { AxiosError } from 'axios'
 
 type FollowingUser = {
   id: number
   handle: string
 }
+
+export type ConnectivityResult =
+  | { connected: true }
+  | { connected: false; reason: 'auth' | 'network' }
+
 /**
  * Service responsible for following-related HTTP operations
  * Returns internal types that can be transformed into domain models
@@ -54,5 +60,24 @@ export class FollowingService {
 
   async unfollowUser(userId: number): Promise<void> {
     await this.substackClient.post(`/user/${userId}/unfollow`)
+  }
+
+  // ── Methods merged from ConnectivityService ─────────────────────────
+
+  /**
+   * Check if the API is connected and accessible
+   * Uses getOwnId as a lightweight authenticated read probe.
+   * @returns ConnectivityResult - { connected: true } or { connected: false, reason: 'auth' | 'network' }
+   */
+  async isConnected(): Promise<ConnectivityResult> {
+    try {
+      await this.getOwnId()
+      return { connected: true }
+    } catch (error) {
+      if (error instanceof AxiosError && error.response?.status === 401) {
+        return { connected: false, reason: 'auth' }
+      }
+      return { connected: false, reason: 'network' }
+    }
   }
 }

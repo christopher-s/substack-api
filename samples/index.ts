@@ -30,9 +30,14 @@ async function getCredentials(): Promise<{ token: string; publicationUrl: string
 
   try {
     const token = await question('Enter your Substack API token: ')
-    const hostname = await question('Enter your publication URL (e.g., https://yourpub.substack.com): ')
+    const hostname = await question(
+      'Enter your publication URL (e.g., https://yourpub.substack.com): '
+    )
     rl.close()
-    return { token: token.trim(), publicationUrl: hostname.startsWith('http') ? hostname : `https://${hostname}` }
+    return {
+      token: token.trim(),
+      publicationUrl: hostname.startsWith('http') ? hostname : `https://${hostname}`
+    }
   } catch (error) {
     rl.close()
     throw error
@@ -53,8 +58,8 @@ async function runExample(): Promise<void> {
 
   // Test connectivity
   console.log('\nTesting API connectivity...')
-  const isConnected = await client.testConnectivity()
-  if (!isConnected) {
+  const { connected } = await client.profiles.isConnected()
+  if (!connected) {
     console.log('Failed to connect to Substack API')
     process.exit(1)
   }
@@ -62,7 +67,7 @@ async function runExample(): Promise<void> {
 
   // Own profile
   console.log('\nFetching your profile...')
-  const profile = await client.ownProfile()
+  const profile = await client.profiles.ownProfile()
   console.log(`Name: ${profile.name}`)
   console.log(`Handle: @${profile.slug}`)
   console.log(`URL: ${profile.url}`)
@@ -102,7 +107,7 @@ async function runExample(): Promise<void> {
   // Anonymous discovery example
   console.log('\nAnonymous discovery — trending posts:')
   const anonClient = new SubstackClient({})
-  const trending = await anonClient.topPosts()
+  const trending = await anonClient.posts.topPosts()
   for (const item of trending.slice(0, 3)) {
     if (item.type === 'post') {
       console.log(`  "${item.post.title}"`)
@@ -111,14 +116,14 @@ async function runExample(): Promise<void> {
 
   // Search example
   console.log('\nSearch — profiles matching "tech":')
-  const searchResults = await anonClient.profileSearch('tech')
+  const searchResults = await anonClient.profiles.profileSearch('tech')
   for (const result of searchResults.slice(0, 3)) {
     console.log(`  ${result.name} (@${result.handle})`)
   }
 
   // Category browsing example
   console.log('\nCategories:')
-  const categories = await anonClient.categories()
+  const categories = await anonClient.publications.categories()
   for (const category of categories.slice(0, 3)) {
     console.log(`  ${category.name}`)
   }

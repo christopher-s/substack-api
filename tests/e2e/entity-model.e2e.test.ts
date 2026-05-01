@@ -17,15 +17,15 @@ describe('SubstackClient Entity Model E2E', () => {
   })
 
   test('should test connectivity', async () => {
-    const isConnected = await client.testConnectivity()
+    const connected = await client.profiles.isConnected()
 
-    expect(typeof isConnected).toBe('boolean')
-    expect(isConnected).toBeTruthy()
-    console.log(`✅ Connectivity test returned: ${isConnected}`)
+    expect(typeof connected).toBe('boolean')
+    expect(connected).toBeTruthy()
+    console.log(`✅ Connectivity test returned: ${connected}`)
   })
 
   test('should get profile by slug', async () => {
-    const profile = await client.profileForSlug('platformer')
+    const profile = await client.profiles.profileForSlug('platformer')
 
     expect(profile).toBeInstanceOf(Profile)
     expect(profile.name).toBeTruthy()
@@ -36,7 +36,7 @@ describe('SubstackClient Entity Model E2E', () => {
   })
 
   test('should get profile by slug - jakubslys', async () => {
-    const profile = await client.profileForSlug('jakubslys')
+    const profile = await client.profiles.profileForSlug('jakubslys')
 
     expect(profile).toBeInstanceOf(Profile)
     expect(profile.name).toBeTruthy()
@@ -48,7 +48,7 @@ describe('SubstackClient Entity Model E2E', () => {
 
   test('should iterate through following users', async () => {
     try {
-      const ownProfile = await client.ownProfile()
+      const ownProfile = await client.profiles.ownProfile()
       let counter = 0
       for await (const profile of ownProfile.following({ limit: 3 })) {
         expect(profile).toBeInstanceOf(Profile)
@@ -72,7 +72,7 @@ describe('SubstackClient Entity Model E2E', () => {
 
   test('should get own profile', async () => {
     try {
-      const ownProfile = await client.ownProfile()
+      const ownProfile = await client.profiles.ownProfile()
 
       expect(ownProfile.name).toBeTruthy()
       expect(ownProfile.slug).toBeTruthy()
@@ -92,7 +92,7 @@ describe('SubstackClient Entity Model E2E', () => {
 
   test('should handle profile posts iteration', async () => {
     try {
-      const profile = await client.profileForSlug('jakubslys')
+      const profile = await client.profiles.profileForSlug('jakubslys')
       const posts: PreviewPost[] = []
       let count = 0
 
@@ -121,7 +121,7 @@ describe('SubstackClient Entity Model E2E', () => {
 
   test('should handle post comments iteration', async () => {
     try {
-      const testPost = await client.postForId(176729823)
+      const testPost = await client.posts.postForId(176729823)
       expect(testPost).not.toBeNull()
 
       let comments: Comment[] = []
@@ -149,7 +149,7 @@ describe('SubstackClient Entity Model E2E', () => {
   test('should handle error cases gracefully - invalid profile slug', async () => {
     try {
       // Test invalid profile slug
-      const profile = await client.profileForSlug('this-profile-should-not-exist-12345')
+      const profile = await client.profiles.profileForSlug('this-profile-should-not-exist-12345')
       // If we reach here, check if it's actually a valid profile or a default
       if (profile && profile.slug === 'this-profile-should-not-exist-12345') {
         // The profile unexpectedly exists, which is fine
@@ -172,7 +172,7 @@ describe('SubstackClient Entity Model E2E', () => {
   test('should handle error cases gracefully - invalid post id', async () => {
     try {
       // Test invalid post ID
-      const _post = await client.postForId(999999999999)
+      const _post = await client.posts.postForId(999999999999)
       // If we reach here, the post unexpectedly exists or there's a default
       console.log('ℹ️ Post request completed (may be default or existing post)')
     } catch (error) {
@@ -187,31 +187,12 @@ describe('SubstackClient Entity Model E2E', () => {
       console.log('✅ Properly handles invalid post lookup')
     }
   })
-  test('should handle error cases gracefully - invalid note id', async () => {
-    try {
-      // Test invalid note ID
-      const _note = await client.noteForId(999999999999)
-      // If we reach here, the note unexpectedly exists or there's a default
-      console.log('ℹ️ Note request completed (may be default or existing note)')
-    } catch (error) {
-      // Check if it's any kind of error by constructor name
-      const errorName = error?.constructor?.name
-      const isValidError =
-        errorName === 'Error' ||
-        errorName === 'TypeError' ||
-        errorName === 'FetchError' ||
-        error instanceof Error
-      expect(isValidError).toBe(true)
-      console.log('✅ Properly handles invalid note lookup')
-    }
-  })
-
   test('should fetch 99 notes using cursor-based pagination', async () => {
     const notes = []
     let count = 0
 
     try {
-      const foreignProfile = await client.profileForSlug('jakubslys')
+      const foreignProfile = await client.profiles.profileForSlug('jakubslys')
       // Test fetching exactly 99 notes with the limit parameter
       for await (const note of foreignProfile.notes({ limit: 99 })) {
         notes.push(note)

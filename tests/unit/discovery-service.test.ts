@@ -1,14 +1,14 @@
 import { FeedService } from '@substack-api/internal/services/feed-service'
 import { CategoryService } from '@substack-api/internal/services/category-service'
-import { ProfileActivityService } from '@substack-api/internal/services/profile-activity-service'
+import { ProfileService } from '@substack-api/internal/services/profile-service'
 import type { FeedTab, ProfileFeedTab } from '@substack-api/internal/services/feed-types'
 import type { HttpClient } from '@substack-api/internal/http-client'
 
-describe('FeedService / CategoryService / ProfileActivityService', () => {
+describe('FeedService / CategoryService / ProfileService', () => {
   let mockClient: jest.Mocked<HttpClient>
   let feedService: FeedService
   let categoryService: CategoryService
-  let profileActivityService: ProfileActivityService
+  let profileService: ProfileService
 
   beforeEach(() => {
     mockClient = {
@@ -18,7 +18,7 @@ describe('FeedService / CategoryService / ProfileActivityService', () => {
     } as unknown as jest.Mocked<HttpClient>
     feedService = new FeedService(mockClient)
     categoryService = new CategoryService(mockClient)
-    profileActivityService = new ProfileActivityService(mockClient)
+    profileService = new ProfileService(mockClient)
   })
 
   describe('getTopPosts', () => {
@@ -127,20 +127,20 @@ describe('FeedService / CategoryService / ProfileActivityService', () => {
   describe('getProfileActivity', () => {
     it('should fetch profile activity', async () => {
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
-      const result = await profileActivityService.getProfileActivity(123)
+      const result = await profileService.getProfileActivity(123)
       expect(mockClient.get).toHaveBeenCalledWith('/reader/feed/profile/123')
       expect(result.nextCursor).toBeNull()
     })
 
     it('should pass cursor for pagination', async () => {
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
-      await profileActivityService.getProfileActivity(123, { cursor: 'xyz' })
+      await profileService.getProfileActivity(123, { cursor: 'xyz' })
       expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining('cursor=xyz'))
     })
 
     it('should include tab parameter in URL', async () => {
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
-      await profileActivityService.getProfileActivity(123, { tab: 'posts' })
+      await profileService.getProfileActivity(123, { tab: 'posts' })
       expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining('tab=posts'))
     })
 
@@ -148,14 +148,14 @@ describe('FeedService / CategoryService / ProfileActivityService', () => {
       const tabs: ProfileFeedTab[] = ['posts', 'notes', 'comments', 'likes']
       for (const tab of tabs) {
         mockClient.get.mockResolvedValueOnce({ items: [], nextCursor: null })
-        await profileActivityService.getProfileActivity(123, { tab })
+        await profileService.getProfileActivity(123, { tab })
         expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining(`tab=${tab}`))
       }
     })
 
     it('should omit tab when not specified', async () => {
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
-      await profileActivityService.getProfileActivity(123)
+      await profileService.getProfileActivity(123)
       const calledUrl = mockClient.get.mock.calls[0][0] as string
       expect(calledUrl).not.toContain('tab=')
     })
@@ -164,7 +164,7 @@ describe('FeedService / CategoryService / ProfileActivityService', () => {
   describe('getProfileLikes', () => {
     it('should fetch profile likes with types[]=like', async () => {
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
-      await profileActivityService.getProfileLikes(456)
+      await profileService.getProfileLikes(456)
       expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining('types%5B%5D=like'))
     })
   })

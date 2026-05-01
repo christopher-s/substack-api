@@ -1,5 +1,4 @@
 import type {
-  SubscriberStatsService,
   GrowthStatsService,
   PublicationStatsService,
   DashboardService
@@ -38,20 +37,19 @@ import type {
  */
 export class AnalyticsClient {
   constructor(
-    private readonly subscriberStatsService: SubscriberStatsService,
-    private readonly growthStatsService: GrowthStatsService,
     private readonly publicationStatsService: PublicationStatsService,
+    private readonly growthStatsService: GrowthStatsService,
     private readonly dashboardService: DashboardService
   ) {}
 
   // ── Subscriber stats ──
 
   async subscriberStats(): Promise<SubscriberStats> {
-    return await this.subscriberStatsService.getSubscriberStats()
+    return await this.publicationStatsService.getSubscriberStats()
   }
 
   async subscriptionsPage(options?: { cursor?: string }): Promise<SubscriptionsPage> {
-    return await this.subscriberStatsService.getSubscriptionsPage(options)
+    return await this.publicationStatsService.getSubscriptionsPage(options)
   }
 
   // ── Growth stats ──

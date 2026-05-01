@@ -1,8 +1,8 @@
-import { NotificationService } from '@substack-api/internal/services/notification-service'
+import { ChatService } from '@substack-api/internal/services/chat-service'
 import { createMockHttpClient } from '@test/unit/helpers/mock-http-client'
 
-describe('NotificationService', () => {
-  let notificationService: NotificationService
+describe('ChatService (notification methods)', () => {
+  let chatService: ChatService
   let mockSubstackClient: ReturnType<typeof createMockHttpClient>
 
   beforeEach(() => {
@@ -10,7 +10,7 @@ describe('NotificationService', () => {
 
     mockSubstackClient = createMockHttpClient('https://substack.com')
 
-    notificationService = new NotificationService(mockSubstackClient)
+    chatService = new ChatService(mockSubstackClient)
   })
 
   describe('getNotifications', () => {
@@ -30,7 +30,7 @@ describe('NotificationService', () => {
       }
       mockSubstackClient.get.mockResolvedValueOnce(mockResponse)
 
-      const result = await notificationService.getNotifications()
+      const result = await chatService.getNotifications()
 
       expect(mockSubstackClient.get).toHaveBeenCalledWith('/notifications')
       expect(result.notifications).toHaveLength(1)
@@ -40,7 +40,7 @@ describe('NotificationService', () => {
     it('When fetching notifications with cursor, then passes cursor parameter', async () => {
       mockSubstackClient.get.mockResolvedValueOnce({ notifications: [], nextCursor: null })
 
-      await notificationService.getNotifications({ cursor: 'cursor-abc' })
+      await chatService.getNotifications({ cursor: 'cursor-abc' })
 
       expect(mockSubstackClient.get).toHaveBeenCalledWith('/notifications?cursor=cursor-abc')
     })
@@ -48,7 +48,7 @@ describe('NotificationService', () => {
     it('When request fails, then throws error', async () => {
       mockSubstackClient.get.mockRejectedValueOnce(new Error('API Error'))
 
-      await expect(notificationService.getNotifications()).rejects.toThrow('API Error')
+      await expect(chatService.getNotifications()).rejects.toThrow('API Error')
     })
   })
 
@@ -56,7 +56,7 @@ describe('NotificationService', () => {
     it('When marking notifications as seen, then posts to the correct endpoint', async () => {
       mockSubstackClient.post.mockResolvedValueOnce(undefined)
 
-      await notificationService.markNotificationsSeen()
+      await chatService.markNotificationsSeen()
 
       expect(mockSubstackClient.post).toHaveBeenCalledWith('/notifications/seen')
     })
@@ -64,7 +64,7 @@ describe('NotificationService', () => {
     it('When request fails, then throws error', async () => {
       mockSubstackClient.post.mockRejectedValueOnce(new Error('API Error'))
 
-      await expect(notificationService.markNotificationsSeen()).rejects.toThrow('API Error')
+      await expect(chatService.markNotificationsSeen()).rejects.toThrow('API Error')
     })
   })
 })

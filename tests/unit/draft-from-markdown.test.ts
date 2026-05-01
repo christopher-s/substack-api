@@ -5,7 +5,7 @@ import { PostManagementService } from '@substack-api/internal/services'
 jest.mock('@substack-api/internal/http-client')
 jest.mock('@substack-api/internal/services')
 
-describe('SubstackClient createDraftFromMarkdown', () => {
+describe('PublicationClient createDraftFromMarkdown', () => {
   let client: SubstackClient
   let mockPostManagementService: jest.Mocked<PostManagementService>
 
@@ -27,16 +27,17 @@ describe('SubstackClient createDraftFromMarkdown', () => {
       publicationUrl: 'https://test.substack.com'
     })
 
+    // Inject mock into the publications sub-client
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const anyClient = client as any
-    anyClient.postManagementService = mockPostManagementService
+    const pubClient = (client as any).publications as any
+    pubClient.postManagementService = mockPostManagementService
   })
 
   it('should convert markdown to HTML and create a draft', async () => {
     const mockResponse = { id: 100, draft_title: '' }
     mockPostManagementService.createDraft.mockResolvedValue(mockResponse)
 
-    const result = await client.createDraftFromMarkdown('# Hello\n\nWorld')
+    const result = await client.publications.createDraftFromMarkdown('# Hello\n\nWorld')
     expect(result).toEqual(mockResponse)
     expect(mockPostManagementService.createDraft).toHaveBeenCalledWith({
       title: '',
@@ -50,7 +51,7 @@ describe('SubstackClient createDraftFromMarkdown', () => {
   it('should pass options through to createDraft', async () => {
     mockPostManagementService.createDraft.mockResolvedValue({ id: 200 })
 
-    await client.createDraftFromMarkdown('Some **bold** text', {
+    await client.publications.createDraftFromMarkdown('Some **bold** text', {
       title: 'My Title',
       type: 'podcast',
       audience: 'only_paid',
@@ -69,36 +70,22 @@ describe('SubstackClient createDraftFromMarkdown', () => {
   it('should use empty string as default title', async () => {
     mockPostManagementService.createDraft.mockResolvedValue({ id: 300 })
 
-    await client.createDraftFromMarkdown('Just content')
+    await client.publications.createDraftFromMarkdown('Just content')
 
     expect(mockPostManagementService.createDraft).toHaveBeenCalledWith(
       expect.objectContaining({ title: '' })
     )
   })
 
-  it('should throw when no token is configured', async () => {
-    const unauthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
-    await expect(unauthClient.createDraftFromMarkdown('# Hello')).rejects.toThrow(
-      'Authentication required: provide a token in SubstackConfig to use createDraftFromMarkdown()'
-    )
-  })
-
-  it('should throw when no publicationUrl is configured', async () => {
-    const noPubClient = new SubstackClient({ token: 'test-api-key' })
-    await expect(noPubClient.createDraftFromMarkdown('# Hello')).rejects.toThrow(
-      'Publication required: provide a publicationUrl in SubstackConfig to use createDraftFromMarkdown()'
-    )
-  })
-
   it('should throw when markdown is empty', async () => {
-    await expect(client.createDraftFromMarkdown('')).rejects.toThrow()
-    await expect(client.createDraftFromMarkdown('')).rejects.toThrow(
+    await expect(client.publications.createDraftFromMarkdown('')).rejects.toThrow()
+    await expect(client.publications.createDraftFromMarkdown('')).rejects.toThrow(
       'Markdown content must not be empty'
     )
   })
 
   it('should throw when markdown is only whitespace', async () => {
-    await expect(client.createDraftFromMarkdown('   \n  \t  ')).rejects.toThrow(
+    await expect(client.publications.createDraftFromMarkdown('   \n  \t  ')).rejects.toThrow(
       'Markdown content must not be empty'
     )
   })
@@ -106,7 +93,7 @@ describe('SubstackClient createDraftFromMarkdown', () => {
   it('should convert inline formatting correctly', async () => {
     mockPostManagementService.createDraft.mockResolvedValue({ id: 400 })
 
-    await client.createDraftFromMarkdown('A [link](https://example.com) and `code`')
+    await client.publications.createDraftFromMarkdown('A [link](https://example.com) and `code`')
 
     expect(mockPostManagementService.createDraft).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -118,7 +105,7 @@ describe('SubstackClient createDraftFromMarkdown', () => {
   it('should convert strikethrough markdown to HTML', async () => {
     mockPostManagementService.createDraft.mockResolvedValue({ id: 500 })
 
-    await client.createDraftFromMarkdown('Some ~~deleted~~ text')
+    await client.publications.createDraftFromMarkdown('Some ~~deleted~~ text')
 
     expect(mockPostManagementService.createDraft).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -1,15 +1,56 @@
+import * as t from 'io-ts'
 import type { HttpClient } from '@substack-api/internal/http-client'
 import type { FeedItem, SubstackInboxItem } from '@substack-api/internal/types'
 import type { SubstackTrendingResponse } from '@substack-api/internal/types/substack-trending'
 import { SubstackInboxItemCodec } from '@substack-api/internal/types'
 import { decodeOrThrow } from '@substack-api/internal/validation'
 import type { ActivityFeedTab } from '@substack-api/internal/services/feed-types'
-import { fetchCursorFeed } from '@substack-api/internal/services/cursor-feed'
 
 /**
  * Supported tabs for the discovery feed endpoint.
  */
 export type FeedTab = 'for-you' | 'top' | 'popular' | 'catchup' | 'notes' | 'explore'
+
+/**
+ * Shared cursor-feed fetcher for paginated feed endpoints.
+ * Handles the common pattern: fetch URL, normalize items/nextCursor/tabs.
+ * Merged from cursor-feed.ts.
+ */
+export async function fetchCursorFeed(
+  client: HttpClient,
+  url: string
+): Promise<{ items: FeedItem[]; nextCursor: string | null; tabs?: ActivityFeedTab[] }> {
+  const response = await client.get<unknown>(url)
+
+  const decoded = decodeOrThrow(
+    t.type({
+      items: t.union([t.array(t.unknown), t.null, t.undefined]),
+      nextCursor: t.union([t.string, t.null, t.undefined]),
+      tabs: t.union([t.array(t.unknown), t.null, t.undefined])
+    }),
+    response,
+    'cursor feed response'
+  )
+
+  const items = (decoded.items || []).map((item, i) => {
+    if (item && typeof item === 'object' && 'post_id' in item) {
+      return decodeOrThrow(SubstackInboxItemCodec, item, `Feed item ${i}`) as unknown as FeedItem
+    }
+    return item as FeedItem
+  })
+
+  const nextCursor = decoded.nextCursor && decoded.nextCursor !== '' ? decoded.nextCursor : null
+
+  const tabs: ActivityFeedTab[] | undefined = decoded.tabs
+    ? (decoded.tabs as ActivityFeedTab[])
+    : undefined
+
+  return {
+    items,
+    nextCursor,
+    ...(tabs && { tabs })
+  }
+}
 
 /**
  * Service for feed endpoints: top posts, trending, reader feed.

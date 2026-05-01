@@ -27,9 +27,10 @@ describe('SubstackClient publicationPosts', () => {
 
     client = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
 
+    // Inject mock into the publications sub-client's publicationService
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const anyClient = client as any
-    anyClient.publicationService = mockPublicationService
+    const pubClient = (client as any).publications as any
+    pubClient.publicationService = mockPublicationService
   })
 
   it('should yield PublicationPost instances from full posts', async () => {
@@ -47,7 +48,7 @@ describe('SubstackClient publicationPosts', () => {
     ])
 
     const results = []
-    for await (const post of client.publicationPosts()) {
+    for await (const post of client.publications.publicationPosts()) {
       results.push(post)
     }
 
@@ -81,7 +82,7 @@ describe('SubstackClient publicationPosts', () => {
       .mockResolvedValueOnce(secondBatch)
 
     const results = []
-    for await (const post of client.publicationPosts()) {
+    for await (const post of client.publications.publicationPosts()) {
       results.push(post)
     }
 
@@ -116,7 +117,7 @@ describe('SubstackClient publicationPosts', () => {
     ])
 
     const results = []
-    for await (const post of client.publicationPosts({ limit: 1 })) {
+    for await (const post of client.publications.publicationPosts({ limit: 1 })) {
       results.push(post)
     }
 
@@ -128,7 +129,7 @@ describe('SubstackClient publicationPosts', () => {
     mockPublicationService.getPosts.mockResolvedValueOnce([])
 
     const results = []
-    for await (const post of client.publicationPosts()) {
+    for await (const post of client.publications.publicationPosts()) {
       results.push(post)
     }
 

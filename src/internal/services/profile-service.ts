@@ -4,8 +4,10 @@ import {
   SubstackUserProfileCodec,
   PotentialHandlesCodec
 } from '@substack-api/internal/types'
-import type { SubstackFullProfile } from '@substack-api/internal/types'
+import type { SubstackFullProfile, FeedItem } from '@substack-api/internal/types'
 import { decodeOrThrow } from '@substack-api/internal/validation'
+import type { ProfileFeedTab } from '@substack-api/internal/services/feed-types'
+import { fetchCursorFeed } from '@substack-api/internal/services/feed-service'
 
 /**
  * Service responsible for profile-related HTTP operations
@@ -75,5 +77,42 @@ export class ProfileService {
     }
     const rawResponse = await this.substackClient.get<unknown>(`/user/${slug}/public_profile`)
     return decodeOrThrow(SubstackFullProfileCodec, rawResponse, 'Full profile response')
+  }
+
+  // ── Methods merged from ProfileActivityService ──────────────────────
+
+  /**
+   * Get profile activity feed
+   * GET /api/v1/reader/feed/profile/{id} (anonymous, paginated)
+   */
+  async getProfileActivity(
+    profileId: number,
+    options?: { tab?: ProfileFeedTab; cursor?: string }
+  ): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
+    const params = new URLSearchParams()
+    if (options?.tab) params.set('tab', options.tab)
+    if (options?.cursor) params.set('cursor', options.cursor)
+    const query = params.toString() ? `?${params.toString()}` : ''
+    return fetchCursorFeed(
+      this.substackClient,
+      `/reader/feed/profile/${encodeURIComponent(String(profileId))}${query}`
+    )
+  }
+
+  /**
+   * Get profile likes feed
+   * GET /api/v1/reader/feed/profile/{id}?types[]=like (anonymous, paginated)
+   */
+  async getProfileLikes(
+    profileId: number,
+    options?: { cursor?: string }
+  ): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
+    const params = new URLSearchParams()
+    params.append('types[]', 'like')
+    if (options?.cursor) params.set('cursor', options.cursor)
+    return fetchCursorFeed(
+      this.substackClient,
+      `/reader/feed/profile/${encodeURIComponent(String(profileId))}?${params.toString()}`
+    )
   }
 }

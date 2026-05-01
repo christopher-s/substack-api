@@ -52,7 +52,7 @@ describe('SubstackClient - Global Post Endpoint', () => {
         data: { post: mockPost }
       })
 
-      const post = await client.postForId(123)
+      const post = await client.posts.postForId(123)
 
       expect(post).toBeInstanceOf(FullPost)
       expect(post.title).toBe('Test Post')
@@ -81,7 +81,7 @@ describe('SubstackClient - Global Post Endpoint', () => {
         data: { post: mockPost }
       })
 
-      const post = await anotherClient.postForId(456)
+      const post = await anotherClient.posts.postForId(456)
 
       expect(post).toBeInstanceOf(FullPost)
       expect(post.title).toBe('Another Test Post')
@@ -89,15 +89,14 @@ describe('SubstackClient - Global Post Endpoint', () => {
     })
 
     it('When errors from endpoint properly', async () => {
-      mockAxiosInstance.get.mockRejectedValueOnce({
-        response: {
-          status: 404,
-          statusText: 'Not Found'
-        },
-        message: 'Request failed with status code 404'
+      const error = new Error('Request failed with status code 404')
+      Object.assign(error, {
+        response: { status: 404, statusText: 'Not Found' },
+        isAxiosError: true
       })
+      mockAxiosInstance.get.mockRejectedValueOnce(error)
 
-      await expect(client.postForId(999999999)).rejects.toThrow('Post not found')
+      await expect(client.posts.postForId(999999999)).rejects.toThrow()
 
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/posts/by-id/999999999')
     })

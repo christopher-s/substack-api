@@ -35,7 +35,7 @@ describe('Auth Read-Only E2E', () => {
     test(
       'should verify API connectivity',
       async () => {
-        const connected = await client.testConnectivity()
+        const connected = await client.profiles.isConnected()
         expect(typeof connected).toBe('boolean')
       },
       TIMEOUT
@@ -47,7 +47,7 @@ describe('Auth Read-Only E2E', () => {
     test(
       'should get authenticated user profile',
       async () => {
-        const profile = await client.ownProfile()
+        const profile = await client.profiles.ownProfile()
         expect(profile).toBeTruthy()
         expect(profile.name).toBeTruthy()
         expect(profile.handle).toBeTruthy()
@@ -62,7 +62,7 @@ describe('Auth Read-Only E2E', () => {
     test(
       'should get unread message count',
       async () => {
-        const unread = await client.chatUnreadCount()
+        const unread = await client.chat.unreadCount()
         expect(unread).toBeTruthy()
         expect(typeof unread.unreadCount).toBe('number')
         expect(typeof unread.pendingInviteCount).toBe('number')
@@ -74,7 +74,7 @@ describe('Auth Read-Only E2E', () => {
     test(
       'should get chat inbox',
       async () => {
-        const inbox = await client.chatInbox()
+        const inbox = await client.chat.inbox()
         expect(inbox).toBeTruthy()
         expect(Array.isArray(inbox.threads)).toBe(true)
         expect(typeof inbox.more).toBe('boolean')
@@ -86,7 +86,7 @@ describe('Auth Read-Only E2E', () => {
     test(
       'should get chat inbox with tab filter',
       async () => {
-        const inbox = await client.chatInbox({ tab: 'people' })
+        const inbox = await client.chat.inbox({ tab: 'people' })
         expect(inbox).toBeTruthy()
         expect(Array.isArray(inbox.threads)).toBe(true)
         console.log(`People inbox: ${inbox.threads.length} threads`)
@@ -99,7 +99,7 @@ describe('Auth Read-Only E2E', () => {
       async () => {
         try {
           const threads = []
-          for await (const thread of client.chatInboxThreads({ limit: 3 })) {
+          for await (const thread of client.chat.inboxThreads({ limit: 3 })) {
             threads.push(thread)
           }
           expect(threads.length).toBeLessThanOrEqual(3)
@@ -120,7 +120,7 @@ describe('Auth Read-Only E2E', () => {
       'should get chat invites',
       async () => {
         try {
-          const invites = await client.chatInvites()
+          const invites = await client.chat.invites()
           expect(invites).toBeTruthy()
           expect(Array.isArray(invites.threads)).toBe(true)
           console.log(`Invites: ${invites.threads.length} threads`)
@@ -140,7 +140,7 @@ describe('Auth Read-Only E2E', () => {
       'should get chat reactions metadata',
       async () => {
         try {
-          const reactions = await client.chatReactions()
+          const reactions = await client.chat.reactions()
           expect(reactions).toBeTruthy()
           expect(Array.isArray(reactions.suggestedReactionTypes)).toBe(true)
           console.log(`Reaction types: ${reactions.suggestedReactionTypes.join(', ')}`)
@@ -160,7 +160,7 @@ describe('Auth Read-Only E2E', () => {
       'should get realtime token for chat channel',
       async () => {
         try {
-          const token = await client.chatRealtimeToken('chat:general')
+          const token = await client.chat.realtimeToken('chat:general')
           expect(token).toBeTruthy()
           expect(typeof token.token).toBe('string')
           expect(typeof token.endpoint).toBe('string')
@@ -181,13 +181,13 @@ describe('Auth Read-Only E2E', () => {
       'should get DM messages when inbox has threads',
       async () => {
         try {
-          const inbox = await client.chatInbox()
+          const inbox = await client.chat.inbox()
           const dmThread = inbox.threads.find((t) => t.uuid && t.type !== 'chat')
           if (!dmThread?.uuid) {
             console.log('No DM threads found, skipping DM test')
             return
           }
-          const dm = await client.chatDm(dmThread.uuid)
+          const dm = await client.chat.dm(dmThread.uuid)
           expect(dm).toBeTruthy()
           expect(Array.isArray(dm.messages)).toBe(true)
           expect(typeof dm.more).toBe('boolean')
@@ -211,7 +211,7 @@ describe('Auth Read-Only E2E', () => {
       'should get publication details',
       async () => {
         try {
-          const details = await client.publicationDetails()
+          const details = await client.publications.publicationDetails()
           expect(details).toBeTruthy()
           console.log(`Publication details retrieved`)
         } catch (error) {
@@ -230,7 +230,7 @@ describe('Auth Read-Only E2E', () => {
       'should get publication tags',
       async () => {
         try {
-          const tags = await client.publicationTags()
+          const tags = await client.publications.publicationTags()
           expect(tags).toBeTruthy()
           console.log(`Publication tags retrieved`)
         } catch (error) {
@@ -250,7 +250,7 @@ describe('Auth Read-Only E2E', () => {
       async () => {
         try {
           const posts = []
-          for await (const post of client.publicationPosts({ limit: 3 })) {
+          for await (const post of client.publications.publicationPosts({ limit: 3 })) {
             posts.push(post)
           }
           expect(posts.length).toBeLessThanOrEqual(3)
@@ -272,7 +272,7 @@ describe('Auth Read-Only E2E', () => {
       async () => {
         try {
           const posts = []
-          for await (const post of client.publicationArchive({ limit: 3 })) {
+          for await (const post of client.publications.publicationArchive({ limit: 3 })) {
             posts.push(post)
           }
           expect(posts.length).toBeLessThanOrEqual(3)
@@ -293,7 +293,7 @@ describe('Auth Read-Only E2E', () => {
       'should get publication homepage',
       async () => {
         try {
-          const homepage = await client.publicationHomepage()
+          const homepage = await client.publications.publicationHomepage()
           expect(homepage).toBeTruthy()
           console.log(`Homepage retrieved`)
         } catch (error) {
@@ -312,7 +312,7 @@ describe('Auth Read-Only E2E', () => {
       'should get post counts',
       async () => {
         try {
-          const counts = await client.postCounts()
+          const counts = await client.publications.postCounts()
           expect(counts).toBeTruthy()
           console.log(`Post counts retrieved`)
         } catch (error) {
@@ -334,7 +334,7 @@ describe('Auth Read-Only E2E', () => {
       'should get subscriber stats',
       async () => {
         try {
-          const stats = await client.subscriberStats()
+          const stats = await client.analytics.subscriberStats()
           expect(stats).toBeTruthy()
           console.log(`Subscriber stats retrieved`)
         } catch (error) {
@@ -353,7 +353,7 @@ describe('Auth Read-Only E2E', () => {
       'should get dashboard summary',
       async () => {
         try {
-          const summary = await client.dashboardSummary()
+          const summary = await client.analytics.dashboardSummary()
           expect(summary).toBeTruthy()
           console.log(`Dashboard summary retrieved`)
         } catch (error) {
@@ -374,7 +374,7 @@ describe('Auth Read-Only E2E', () => {
         try {
           const toDate = new Date().toISOString().split('T')[0]
           const fromDate = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]
-          const sources = await client.growthSources({ fromDate, toDate })
+          const sources = await client.analytics.growthSources({ fromDate, toDate })
           expect(sources).toBeTruthy()
           console.log(`Growth sources retrieved`)
         } catch (error) {
@@ -396,7 +396,7 @@ describe('Auth Read-Only E2E', () => {
       'should get publisher settings',
       async () => {
         try {
-          const settings = await client.publisherSettings()
+          const settings = await client.publications.publisherSettings()
           expect(settings).toBeTruthy()
           console.log(`Publisher settings retrieved`)
         } catch (error) {
@@ -415,7 +415,7 @@ describe('Auth Read-Only E2E', () => {
       'should get publication user',
       async () => {
         try {
-          const user = await client.publicationUser()
+          const user = await client.publications.publicationUser()
           expect(user).toBeTruthy()
           console.log(`Publication user retrieved`)
         } catch (error) {
@@ -434,7 +434,7 @@ describe('Auth Read-Only E2E', () => {
       'should get sections',
       async () => {
         try {
-          const sections = await client.sections()
+          const sections = await client.publications.sections()
           expect(sections).toBeTruthy()
           console.log(`Sections retrieved`)
         } catch (error) {
@@ -453,7 +453,7 @@ describe('Auth Read-Only E2E', () => {
       'should get subscription settings',
       async () => {
         try {
-          const settings = await client.subscriptionSettings()
+          const settings = await client.publications.subscriptionSettings()
           expect(settings).toBeTruthy()
           console.log(`Subscription settings retrieved`)
         } catch (error) {
@@ -472,7 +472,7 @@ describe('Auth Read-Only E2E', () => {
       'should get boost settings',
       async () => {
         try {
-          const settings = await client.boostSettings()
+          const settings = await client.publications.boostSettings()
           expect(settings).toBeTruthy()
           console.log(`Boost settings retrieved`)
         } catch (error) {
@@ -494,7 +494,7 @@ describe('Auth Read-Only E2E', () => {
       'should get subscriptions list',
       async () => {
         try {
-          const subs = await client.subscriptions()
+          const subs = await client.publications.subscriptions()
           expect(subs).toBeTruthy()
           console.log(`Subscriptions retrieved`)
         } catch (error) {
@@ -513,7 +513,7 @@ describe('Auth Read-Only E2E', () => {
       'should get subscriptions page',
       async () => {
         try {
-          const page = await client.subscriptionsPage()
+          const page = await client.analytics.subscriptionsPage()
           expect(page).toBeTruthy()
           console.log(`Subscriptions page retrieved`)
         } catch (error) {
@@ -535,9 +535,12 @@ describe('Auth Read-Only E2E', () => {
       'should get activity feed',
       async () => {
         try {
-          const feed = await client.activityFeed()
-          expect(feed).toBeTruthy()
-          console.log(`Activity feed retrieved`)
+          const items = []
+          for await (const item of client.posts.activityFeed({ limit: 3 })) {
+            items.push(item)
+          }
+          expect(items.length).toBeLessThanOrEqual(3)
+          console.log(`Activity feed retrieved: ${items.length} items`)
         } catch (error) {
           const msg = (error as Error).message
           if (msg.includes('429')) {
@@ -554,9 +557,12 @@ describe('Auth Read-Only E2E', () => {
       'should get notes feed',
       async () => {
         try {
-          const feed = await client.notesFeed()
-          expect(feed).toBeTruthy()
-          console.log(`Notes feed retrieved`)
+          const items = []
+          for await (const item of client.publications.notesFeed({ limit: 3 })) {
+            items.push(item)
+          }
+          expect(items.length).toBeLessThanOrEqual(3)
+          console.log(`Notes feed retrieved: ${items.length} items`)
         } catch (error) {
           const msg = (error as Error).message
           if (msg.includes('429')) {
@@ -574,14 +580,17 @@ describe('Auth Read-Only E2E', () => {
       async () => {
         try {
           // Get a real note ID from the notes feed first
-          const feed = await client.notesFeed()
-          const feedItems = feed as { items?: { entity_key?: string }[] }
-          const entityKey = feedItems?.items?.[0]?.entity_key
+          const items = []
+          for await (const item of client.publications.notesFeed({ limit: 1 })) {
+            items.push(item)
+          }
+          const feedItems = items as { entity_key?: string }[]
+          const entityKey = feedItems[0]?.entity_key
           if (!entityKey) {
             console.log('No notes found in feed, skipping note stats test')
             return
           }
-          const stats = await client.noteStats(entityKey)
+          const stats = await client.publications.noteStats(entityKey)
           expect(stats).toBeTruthy()
           console.log(`Note stats retrieved for key: ${entityKey}`)
         } catch (error) {
