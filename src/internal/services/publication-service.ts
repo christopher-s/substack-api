@@ -7,7 +7,11 @@ import type {
   SubstackPublicationExport,
   SubstackPublicationSearchResponse,
   SubstackLiveStreamList,
-  SubstackEligibleHosts
+  SubstackEligibleHosts,
+  SubstackPublicationDetail,
+  SubstackPostTag,
+  SubstackSubscription,
+  SubstackSubscriptionsResponse
 } from '@substack-api/internal/types'
 import {
   SubstackPublicationPostCodec,
@@ -17,7 +21,11 @@ import {
   SubstackPublicationExportCodec,
   SubstackPublicationSearchResponseCodec,
   SubstackLiveStreamListCodec,
-  SubstackEligibleHostsCodec
+  SubstackEligibleHostsCodec,
+  SubstackPublicationDetailCodec,
+  SubstackPostTagCodec,
+  SubstackSubscriptionCodec,
+  SubstackSubscriptionsResponseCodec
 } from '@substack-api/internal/types'
 import { decodeOrThrow } from '@substack-api/internal/validation'
 
@@ -27,7 +35,10 @@ import { decodeOrThrow } from '@substack-api/internal/validation'
  * Uses the publicationClient (publication-specific domain).
  */
 export class PublicationService {
-  constructor(private readonly publicationClient: HttpClient) {}
+  constructor(
+    private readonly publicationClient: HttpClient,
+    private readonly substackClient?: HttpClient
+  ) {}
 
   /**
    * Get publication homepage data including recent posts
@@ -176,5 +187,38 @@ export class PublicationService {
       `/live_stream/eligible_hosts?publication_id=${publicationId}`
     )
     return decodeOrThrow(SubstackEligibleHostsCodec, response, 'Eligible hosts')
+  }
+
+  // ── Methods merged from PublicationDetailService ─────────────────────
+
+  async getPublicationDetails(): Promise<SubstackPublicationDetail> {
+    const response = await this.publicationClient.get<unknown>('/publication')
+    return decodeOrThrow(SubstackPublicationDetailCodec, response, 'Publication details')
+  }
+
+  async getPostTags(): Promise<SubstackPostTag[]> {
+    const response = await this.publicationClient.get<unknown>('/publication/post-tag')
+    if (!Array.isArray(response)) {
+      return [decodeOrThrow(SubstackPostTagCodec, response, 'Post tag')]
+    }
+    return response.map((tag, i) => decodeOrThrow(SubstackPostTagCodec, tag, `Post tag ${i}`))
+  }
+
+  // ── Methods merged from SubscriptionService ──────────────────────────
+
+  async getCurrentSubscription(): Promise<SubstackSubscription> {
+    const response = await this.publicationClient.get<unknown>('/subscription')
+    return decodeOrThrow(SubstackSubscriptionCodec, response, 'Current subscription')
+  }
+
+  async getAllSubscriptions(options?: {
+    offset?: number
+    limit?: number
+  }): Promise<SubstackSubscriptionsResponse> {
+    const offset = options?.offset ?? 0
+    const limit = options?.limit ?? 25
+    const sc = this.substackClient ?? this.publicationClient
+    const response = await sc.get<unknown>(`/subscriptions/page_v2?offset=${offset}&limit=${limit}`)
+    return decodeOrThrow(SubstackSubscriptionsResponseCodec, response, 'All subscriptions')
   }
 }

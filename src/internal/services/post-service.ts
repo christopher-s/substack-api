@@ -91,4 +91,27 @@ export class PostService {
 
     return { posts: validatedPosts, nextCursor: response.nextCursor }
   }
+
+  async likePost(postId: number): Promise<void> {
+    await this.substackClient.post(`/posts/${postId}/like`)
+  }
+
+  async unlikePost(postId: number): Promise<void> {
+    await this.substackClient.post(`/posts/${postId}/unlike`)
+  }
+
+  async getReadingList(): Promise<SubstackPreviewPost[]> {
+    const response = await this.substackClient.get<{ posts?: SubstackPreviewPost[] }>(
+      '/reading-list'
+    )
+    return response.posts || []
+  }
+
+  async savePost(postId: number): Promise<void> {
+    await this.substackClient.post(`/posts/${postId}/save`)
+  }
+
+  async unsavePost(postId: number): Promise<void> {
+    await this.substackClient.post(`/posts/${postId}/unsave`)
+  }
 }

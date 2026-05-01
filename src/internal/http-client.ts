@@ -160,7 +160,8 @@ export class HttpClient {
                 .join('; ')
               return await this.httpClient.request(error.config)
             }
-          } catch {
+          } catch (refreshError) {
+            console.warn('Token refresh failed:', refreshError)
             // Token refresh failed — fall through to original error
           }
         }

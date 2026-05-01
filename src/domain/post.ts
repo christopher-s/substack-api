@@ -1,6 +1,7 @@
 import type { SubstackFullPost, SubstackPreviewPost } from '@substack-api/internal'
 import type { EntityDeps } from '@substack-api/domain/entity-deps'
 import { Comment } from '@substack-api/domain/comment'
+import { getErrorMessage } from '@substack-api/internal/validation'
 
 /**
  * Post interface defining the common contract for all post types
@@ -98,7 +99,7 @@ export class PreviewPost implements Post {
         count++
       }
     } catch (error) {
-      throw new Error(`Failed to get comments for post ${this.id}: ${(error as Error).message}`, {
+      throw new Error(`Failed to get comments for post ${this.id}: ${getErrorMessage(error)}`, {
         cause: error
       })
     }
@@ -114,7 +115,7 @@ export class PreviewPost implements Post {
       const fullPostData = await this.deps.postService.getPostById(this.id)
       return new FullPost(fullPostData, this.deps)
     } catch (error) {
-      throw new Error(`Failed to fetch full post ${this.id}: ${(error as Error).message}`, {
+      throw new Error(`Failed to fetch full post ${this.id}: ${getErrorMessage(error)}`, {
         cause: error
       })
     }
@@ -202,7 +203,7 @@ export class FullPost implements Post {
         count++
       }
     } catch (error) {
-      throw new Error(`Failed to get comments for post ${this.id}: ${(error as Error).message}`, {
+      throw new Error(`Failed to get comments for post ${this.id}: ${getErrorMessage(error)}`, {
         cause: error
       })
     }

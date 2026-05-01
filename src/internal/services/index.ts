@@ -26,3 +26,4 @@ export { PublicationStatsService } from '@substack-api/internal/services/publica
 export { DashboardService } from '@substack-api/internal/services/dashboard-service'
 export { RecommendationService } from '@substack-api/internal/services/recommendation-service'
 export { ChatService } from '@substack-api/internal/services/chat-service'
+export { NotificationService } from '@substack-api/internal/services/notification-service'

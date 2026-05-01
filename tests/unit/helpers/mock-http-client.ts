@@ -8,6 +8,7 @@ export function createMockHttpClient(
     get: jest.fn(),
     post: jest.fn(),
     put: jest.fn(),
+    delete: jest.fn(),
     ...overrides
   } as unknown as jest.Mocked<HttpClient>
 

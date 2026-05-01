@@ -160,4 +160,12 @@ export class NoteService {
   async unrestackNote(noteId: number): Promise<void> {
     await this.publicationClient.post(`/notes/${noteId}/unrestack`)
   }
+
+  async likeNote(noteId: number): Promise<void> {
+    await this.publicationClient.post(`/notes/${noteId}/like`)
+  }
+
+  async unlikeNote(noteId: number): Promise<void> {
+    await this.publicationClient.post(`/notes/${noteId}/unlike`)
+  }
 }

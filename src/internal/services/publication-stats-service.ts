@@ -38,13 +38,24 @@ import type {
   PublicationSettings,
   BestsellerTier
 } from '@substack-api/internal/types/publication-stats'
+import {
+  SubscriberStatsCodec,
+  SubscriptionsPageCodec
+} from '@substack-api/internal/types/subscriber-stats'
+import type {
+  SubscriberStats,
+  SubscriptionsPage
+} from '@substack-api/internal/types/subscriber-stats'
 
 /**
  * Service responsible for publication statistics HTTP operations
  * Returns raw API responses for publication analytics endpoints
  */
 export class PublicationStatsService {
-  constructor(private readonly publicationClient: HttpClient) {}
+  constructor(
+    private readonly publicationClient: HttpClient,
+    private readonly substackClient?: HttpClient
+  ) {}
 
   // Network tab
 
@@ -233,5 +244,22 @@ export class PublicationStatsService {
   async getBestsellerTier(): Promise<BestsellerTier> {
     const response = await this.publicationClient.get<unknown>('/publication/bestseller_tier')
     return decodeOrThrow(BestsellerTierCodec, response, 'bestseller tier')
+  }
+
+  // ── Methods merged from SubscriberStatsService ───────────────────────
+
+  async getSubscriberStats(): Promise<SubscriberStats> {
+    const response = await this.publicationClient.post<unknown>('/subscriber-stats')
+    return decodeOrThrow(SubscriberStatsCodec, response, 'subscriber stats')
+  }
+
+  async getSubscriptionsPage(options?: { cursor?: string }): Promise<SubscriptionsPage> {
+    const cursor = options?.cursor
+    const params = new URLSearchParams()
+    if (cursor) params.set('cursor', cursor)
+    const path = cursor ? `/subscriptions/page_v2?${params.toString()}` : '/subscriptions/page_v2'
+    const sc = this.substackClient ?? this.publicationClient
+    const response = await sc.get<unknown>(path)
+    return decodeOrThrow(SubscriptionsPageCodec, response, 'subscrsciptions page')
   }
 }

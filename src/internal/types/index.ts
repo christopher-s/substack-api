@@ -287,6 +287,16 @@ export {
   SubstackPublicationSearchResponseCodec
 } from '@substack-api/internal/types/publication-export'
 
+// Notification types
+export type {
+  SubstackNotification,
+  SubstackNotificationsResponse
+} from '@substack-api/internal/types/notification'
+export {
+  SubstackNotificationCodec,
+  SubstackNotificationsResponseCodec
+} from '@substack-api/internal/types/notification'
+
 // Chat types
 export type {
   ChatUser,

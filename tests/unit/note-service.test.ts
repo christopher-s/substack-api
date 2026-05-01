@@ -226,6 +226,70 @@ describe('NoteService', () => {
     })
   })
 
+  describe('restackNote', () => {
+    it('When restacking a note, then posts to the correct endpoint', async () => {
+      mockPublicationClient.post.mockResolvedValueOnce(undefined)
+
+      await noteService.restackNote(123)
+
+      expect(mockPublicationClient.post).toHaveBeenCalledWith('/notes/123/restack')
+    })
+
+    it('When restack request fails, then throws error', async () => {
+      mockPublicationClient.post.mockRejectedValueOnce(new Error('API Error'))
+
+      await expect(noteService.restackNote(123)).rejects.toThrow('API Error')
+    })
+  })
+
+  describe('unrestackNote', () => {
+    it('When unrestacking a note, then posts to the correct endpoint', async () => {
+      mockPublicationClient.post.mockResolvedValueOnce(undefined)
+
+      await noteService.unrestackNote(456)
+
+      expect(mockPublicationClient.post).toHaveBeenCalledWith('/notes/456/unrestack')
+    })
+
+    it('When unrestack request fails, then throws error', async () => {
+      mockPublicationClient.post.mockRejectedValueOnce(new Error('API Error'))
+
+      await expect(noteService.unrestackNote(456)).rejects.toThrow('API Error')
+    })
+  })
+
+  describe('likeNote', () => {
+    it('When liking a note, then posts to the correct endpoint', async () => {
+      mockPublicationClient.post.mockResolvedValueOnce(undefined)
+
+      await noteService.likeNote(123)
+
+      expect(mockPublicationClient.post).toHaveBeenCalledWith('/notes/123/like')
+    })
+
+    it('When like request fails, then throws error', async () => {
+      mockPublicationClient.post.mockRejectedValueOnce(new Error('API Error'))
+
+      await expect(noteService.likeNote(123)).rejects.toThrow('API Error')
+    })
+  })
+
+  describe('unlikeNote', () => {
+    it('When unliking a note, then posts to the correct endpoint', async () => {
+      mockPublicationClient.post.mockResolvedValueOnce(undefined)
+
+      await noteService.unlikeNote(456)
+
+      expect(mockPublicationClient.post).toHaveBeenCalledWith('/notes/456/unlike')
+    })
+
+    it('When unlike request fails, then throws error', async () => {
+      mockPublicationClient.post.mockRejectedValueOnce(new Error('API Error'))
+
+      await expect(noteService.unlikeNote(456)).rejects.toThrow('API Error')
+    })
+  })
+
   describe('getNoteStats', () => {
     it('When fetching stats for a note', async () => {
       const mockStats = { cards: [{ title: 'Impressions', value: 42 }] }

@@ -9,7 +9,10 @@ import {
   CommentService,
   PublicationService,
   DashboardService,
-  DiscoveryService
+  DiscoveryService,
+  PostService,
+  FollowingService,
+  NotificationService
 } from '@substack-api/internal/services'
 
 jest.mock('@substack-api/internal/http-client')
@@ -25,6 +28,9 @@ describe('SubstackClient new service methods', () => {
   let mockPublicationService: jest.Mocked<PublicationService>
   let mockDashboardService: jest.Mocked<DashboardService>
   let mockDiscoveryService: jest.Mocked<DiscoveryService>
+  let mockPostService: jest.Mocked<PostService>
+  let mockFollowingService: jest.Mocked<FollowingService>
+  let mockNotificationService: jest.Mocked<NotificationService>
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -77,6 +83,26 @@ describe('SubstackClient new service methods', () => {
     mockPublicationService.getLiveStreams = jest.fn()
     mockPublicationService.getEligibleHosts = jest.fn()
 
+    mockPostService = new PostService(mockHttpClient) as jest.Mocked<PostService>
+    mockPostService.likePost = jest.fn()
+    mockPostService.unlikePost = jest.fn()
+    mockPostService.getReadingList = jest.fn()
+    mockPostService.savePost = jest.fn()
+    mockPostService.unsavePost = jest.fn()
+
+    mockFollowingService = new FollowingService(
+      mockHttpClient,
+      mockHttpClient
+    ) as jest.Mocked<FollowingService>
+    mockFollowingService.followUser = jest.fn()
+    mockFollowingService.unfollowUser = jest.fn()
+
+    mockNotificationService = new NotificationService(
+      mockHttpClient
+    ) as jest.Mocked<NotificationService>
+    mockNotificationService.getNotifications = jest.fn()
+    mockNotificationService.markNotificationsSeen = jest.fn()
+
     client = new SubstackClient({
       token: 'test-api-key',
       publicationUrl: 'https://test.substack.com'
@@ -92,6 +118,9 @@ describe('SubstackClient new service methods', () => {
     anyClient.publicationService = mockPublicationService
     anyClient.dashboardService = mockDashboardService
     anyClient.discoveryService = mockDiscoveryService
+    anyClient.postService = mockPostService
+    anyClient.followingService = mockFollowingService
+    anyClient.notificationService = mockNotificationService
   })
 
   describe('publicationDetails', () => {
@@ -467,6 +496,119 @@ describe('SubstackClient new service methods', () => {
       const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
       const gen = noAuthClient.activityFeed()
       await expect(gen.next()).rejects.toThrow('Authentication required')
+    })
+  })
+
+  describe('likeNote', () => {
+    it('should delegate to noteService', async () => {
+      mockNoteService.likeNote.mockResolvedValue(undefined)
+      await client.likeNote(123)
+      expect(mockNoteService.likeNote).toHaveBeenCalledWith(123)
+    })
+
+    it('should throw when no auth', async () => {
+      const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
+      await expect(noAuthClient.likeNote(1)).rejects.toThrow('Authentication required')
+    })
+  })
+
+  describe('unlikeNote', () => {
+    it('should delegate to noteService', async () => {
+      mockNoteService.unlikeNote.mockResolvedValue(undefined)
+      await client.unlikeNote(456)
+      expect(mockNoteService.unlikeNote).toHaveBeenCalledWith(456)
+    })
+  })
+
+  describe('likePost', () => {
+    it('should delegate to postService', async () => {
+      mockPostService.likePost.mockResolvedValue(undefined)
+      await client.likePost(123)
+      expect(mockPostService.likePost).toHaveBeenCalledWith(123)
+    })
+
+    it('should throw when no auth', async () => {
+      const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
+      await expect(noAuthClient.likePost(1)).rejects.toThrow('Authentication required')
+    })
+  })
+
+  describe('unlikePost', () => {
+    it('should delegate to postService', async () => {
+      mockPostService.unlikePost.mockResolvedValue(undefined)
+      await client.unlikePost(456)
+      expect(mockPostService.unlikePost).toHaveBeenCalledWith(456)
+    })
+  })
+
+  describe('getReadingList', () => {
+    it('should delegate to postService', async () => {
+      mockPostService.getReadingList.mockResolvedValue([])
+      const result = await client.getReadingList()
+      expect(mockPostService.getReadingList).toHaveBeenCalled()
+      expect(result).toEqual([])
+    })
+  })
+
+  describe('savePost', () => {
+    it('should delegate to postService', async () => {
+      mockPostService.savePost.mockResolvedValue(undefined)
+      await client.savePost(123)
+      expect(mockPostService.savePost).toHaveBeenCalledWith(123)
+    })
+  })
+
+  describe('unsavePost', () => {
+    it('should delegate to postService', async () => {
+      mockPostService.unsavePost.mockResolvedValue(undefined)
+      await client.unsavePost(456)
+      expect(mockPostService.unsavePost).toHaveBeenCalledWith(456)
+    })
+  })
+
+  describe('followUser', () => {
+    it('should delegate to followingService', async () => {
+      mockFollowingService.followUser.mockResolvedValue(undefined)
+      await client.followUser(12345)
+      expect(mockFollowingService.followUser).toHaveBeenCalledWith(12345)
+    })
+
+    it('should throw when no auth', async () => {
+      const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
+      await expect(noAuthClient.followUser(1)).rejects.toThrow('Authentication required')
+    })
+  })
+
+  describe('unfollowUser', () => {
+    it('should delegate to followingService', async () => {
+      mockFollowingService.unfollowUser.mockResolvedValue(undefined)
+      await client.unfollowUser(67890)
+      expect(mockFollowingService.unfollowUser).toHaveBeenCalledWith(67890)
+    })
+  })
+
+  describe('getNotifications', () => {
+    it('should delegate to notificationService', async () => {
+      mockNotificationService.getNotifications.mockResolvedValue({
+        notifications: [],
+        nextCursor: null
+      })
+      const result = await client.getNotifications()
+      expect(mockNotificationService.getNotifications).toHaveBeenCalled()
+      expect(result.notifications).toEqual([])
+    })
+
+    it('should throw when no auth', async () => {
+      const noAuthClient = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
+      await expect(noAuthClient.getNotifications()).rejects.toThrow('Authentication required')
+    })
+  })
+
+  describe('markNotificationsSeen', () => {
+    it('should delegate to notificationService', async () => {
+      mockNotificationService.markNotificationsSeen.mockResolvedValue(undefined)
+      await client.markNotificationsSeen()
+      expect(mockNotificationService.markNotificationsSeen).toHaveBeenCalled()
     })
   })
 })

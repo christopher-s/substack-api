@@ -178,4 +178,91 @@ describe('ProfileService', () => {
       )
     })
   })
+
+  describe('getOwnSlug', () => {
+    it('When no existing handle found, then throws error', async () => {
+      const mockHandles = {
+        potentialHandles: [{ id: '1', handle: 'newuser', type: 'suggestion' as const }]
+      }
+
+      mockPublicationClient.get.mockResolvedValueOnce(mockHandles)
+
+      await expect(profileService.getOwnSlug()).rejects.toThrow(
+        'No existing handle found for authenticated user'
+      )
+    })
+
+    it('When handle options request fails, then throws error', async () => {
+      mockPublicationClient.get.mockRejectedValueOnce(new Error('API Error'))
+
+      await expect(profileService.getOwnSlug()).rejects.toThrow('API Error')
+    })
+  })
+
+  describe('getProfileById edge cases', () => {
+    it('When no matching user found in feed items, then throws error', async () => {
+      const mockFeedResponse = {
+        items: [
+          {
+            entity_key: 'test-key',
+            type: 'note',
+            context: {
+              type: 'reshare',
+              timestamp: '2023-01-01T00:00:00Z',
+              users: [
+                {
+                  id: 999,
+                  name: 'Wrong User',
+                  handle: 'wronguser',
+                  photo_url: ''
+                }
+              ],
+              isFresh: true,
+              source: 'feed',
+              page_rank: 1
+            },
+            parentComments: [],
+            canReply: true,
+            isMuted: false
+          }
+        ],
+        nextCursor: null
+      }
+
+      mockPublicationClient.get.mockResolvedValueOnce(mockFeedResponse)
+
+      await expect(profileService.getProfileById(456)).rejects.toThrow(
+        'Profile with ID 456 not found'
+      )
+    })
+
+    it('When feed items have empty users array, then throws error', async () => {
+      const mockFeedResponse = {
+        items: [
+          {
+            entity_key: 'test-key',
+            type: 'note',
+            context: {
+              type: 'reshare',
+              timestamp: '2023-01-01T00:00:00Z',
+              users: [],
+              isFresh: true,
+              source: 'feed',
+              page_rank: 1
+            },
+            parentComments: [],
+            canReply: true,
+            isMuted: false
+          }
+        ],
+        nextCursor: null
+      }
+
+      mockPublicationClient.get.mockResolvedValueOnce(mockFeedResponse)
+
+      await expect(profileService.getProfileById(456)).rejects.toThrow(
+        'Profile with ID 456 not found'
+      )
+    })
+  })
 })

@@ -1,6 +1,10 @@
-import { ConnectivityService } from '@substack-api/internal/services/connectivity-service'
+import {
+  ConnectivityService,
+  ConnectivityResult
+} from '@substack-api/internal/services/connectivity-service'
 import { FollowingService } from '@substack-api/internal/services/following-service'
 import { HttpClient } from '@substack-api/internal/http-client'
+import { AxiosError } from 'axios'
 
 // Mock the HttpClient
 jest.mock('@substack-api/internal/http-client')
@@ -26,58 +30,63 @@ describe('ConnectivityService', () => {
       mockFollowingService.getOwnId.mockResolvedValue(123)
 
       // Act
-      const result = await connectivityService.isConnected()
+      const result: ConnectivityResult = await connectivityService.isConnected()
 
       // Assert
-      expect(result).toBe(true)
+      expect(result.connected).toBe(true)
       expect(mockFollowingService.getOwnId).toHaveBeenCalledTimes(1)
     })
 
-    it('When requesting false when API request fails with network error', async () => {
+    it('When returning auth reason on 401', async () => {
+      // Arrange
+      const axiosError = new AxiosError('Unauthorized', '401', undefined, undefined, {
+        status: 401,
+        data: {}
+      } as any)
+      mockFollowingService.getOwnId.mockRejectedValue(axiosError)
+
+      // Act
+      const result: ConnectivityResult = await connectivityService.isConnected()
+
+      // Assert
+      expect(result.connected).toBe(false)
+      if (!result.connected) {
+        expect(result.reason).toBe('auth')
+      }
+      expect(mockFollowingService.getOwnId).toHaveBeenCalledTimes(1)
+    })
+
+    it('When returning network reason on non-401 errors', async () => {
       // Arrange
       mockFollowingService.getOwnId.mockRejectedValue(new Error('Network error'))
 
       // Act
-      const result = await connectivityService.isConnected()
+      const result: ConnectivityResult = await connectivityService.isConnected()
 
       // Assert
-      expect(result).toBe(false)
+      expect(result.connected).toBe(false)
+      if (!result.connected) {
+        expect(result.reason).toBe('network')
+      }
       expect(mockFollowingService.getOwnId).toHaveBeenCalledTimes(1)
     })
 
-    it('When requesting false when API request fails with HTTP error', async () => {
+    it('When returning network reason on Axios 5xx error', async () => {
       // Arrange
-      mockFollowingService.getOwnId.mockRejectedValue(new Error('HTTP 401: Unauthorized'))
+      const axiosError = new AxiosError('Server Error', '502', undefined, undefined, {
+        status: 502,
+        data: {}
+      } as any)
+      mockFollowingService.getOwnId.mockRejectedValue(axiosError)
 
       // Act
-      const result = await connectivityService.isConnected()
+      const result: ConnectivityResult = await connectivityService.isConnected()
 
       // Assert
-      expect(result).toBe(false)
-      expect(mockFollowingService.getOwnId).toHaveBeenCalledTimes(1)
-    })
-
-    it('When requesting false when API request fails with timeout', async () => {
-      // Arrange
-      mockFollowingService.getOwnId.mockRejectedValue(new Error('Request timeout'))
-
-      // Act
-      const result = await connectivityService.isConnected()
-
-      // Assert
-      expect(result).toBe(false)
-      expect(mockFollowingService.getOwnId).toHaveBeenCalledTimes(1)
-    })
-
-    it('When successful API response with data', async () => {
-      // Arrange
-      mockFollowingService.getOwnId.mockResolvedValue(456)
-
-      // Act
-      const result = await connectivityService.isConnected()
-
-      // Assert
-      expect(result).toBe(true)
+      expect(result.connected).toBe(false)
+      if (!result.connected) {
+        expect(result.reason).toBe('network')
+      }
       expect(mockFollowingService.getOwnId).toHaveBeenCalledTimes(1)
     })
   })

@@ -105,4 +105,36 @@ describe('FollowingService', () => {
       await expect(followingService.getFollowing()).rejects.toThrow('Unauthorized')
     })
   })
+
+  describe('followUser', () => {
+    it('When following a user, then posts to the correct endpoint', async () => {
+      mockSubstackClient.post = jest.fn().mockResolvedValueOnce(undefined)
+
+      await followingService.followUser(12345)
+
+      expect(mockSubstackClient.post).toHaveBeenCalledWith('/user/12345/follow')
+    })
+
+    it('When follow request fails, then throws error', async () => {
+      mockSubstackClient.post = jest.fn().mockRejectedValueOnce(new Error('API Error'))
+
+      await expect(followingService.followUser(12345)).rejects.toThrow('API Error')
+    })
+  })
+
+  describe('unfollowUser', () => {
+    it('When unfollowing a user, then posts to the correct endpoint', async () => {
+      mockSubstackClient.post = jest.fn().mockResolvedValueOnce(undefined)
+
+      await followingService.unfollowUser(67890)
+
+      expect(mockSubstackClient.post).toHaveBeenCalledWith('/user/67890/unfollow')
+    })
+
+    it('When unfollow request fails, then throws error', async () => {
+      mockSubstackClient.post = jest.fn().mockRejectedValueOnce(new Error('API Error'))
+
+      await expect(followingService.unfollowUser(67890)).rejects.toThrow('API Error')
+    })
+  })
 })

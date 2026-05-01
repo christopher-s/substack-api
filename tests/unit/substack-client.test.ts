@@ -164,14 +164,14 @@ describe('SubstackClient', () => {
 
   describe('testConnectivity', () => {
     it('When requesting true when API is accessible', async () => {
-      mockConnectivityService.isConnected.mockResolvedValue(true)
+      mockConnectivityService.isConnected.mockResolvedValue({ connected: true })
       const result = await client.testConnectivity()
       expect(result).toBe(true)
       expect(mockConnectivityService.isConnected).toHaveBeenCalled()
     })
 
     it('When requesting false when API is not accessible', async () => {
-      mockConnectivityService.isConnected.mockResolvedValue(false)
+      mockConnectivityService.isConnected.mockResolvedValue({ connected: false, reason: 'network' })
       const result = await client.testConnectivity()
       expect(result).toBe(false)
       expect(mockConnectivityService.isConnected).toHaveBeenCalled()
@@ -198,7 +198,7 @@ describe('SubstackClient', () => {
     it('When when authentication fails', async () => {
       mockProfileService.getOwnProfile.mockRejectedValue(new Error('Unauthorized'))
 
-      await expect(client.ownProfile()).rejects.toThrow('Failed to get own profile: Unauthorized')
+      await expect(client.ownProfile()).rejects.toThrow('Failed to get own profile')
     })
   })
 
@@ -222,9 +222,7 @@ describe('SubstackClient', () => {
     it('When API error for profileForId', async () => {
       mockProfileService.getProfileById.mockRejectedValue(new Error('Not found'))
 
-      await expect(client.profileForId(999)).rejects.toThrow(
-        'Profile with ID 999 not found: Not found'
-      )
+      await expect(client.profileForId(999)).rejects.toThrow('Profile not found')
     })
 
     it('should accept large numeric IDs', async () => {
@@ -269,9 +267,7 @@ describe('SubstackClient', () => {
     it('When API error for profileForSlug', async () => {
       mockProfileService.getProfileBySlug.mockRejectedValue(new Error('Not found'))
 
-      await expect(client.profileForSlug('nonexistent')).rejects.toThrow(
-        "Profile with slug 'nonexistent' not found: Not found"
-      )
+      await expect(client.profileForSlug('nonexistent')).rejects.toThrow('Profile not found')
     })
   })
 
@@ -300,9 +296,7 @@ describe('SubstackClient', () => {
       // Mock PostService to throw an HTTP error
       mockPostService.getPostById.mockRejectedValueOnce(new Error('HTTP 404: Not found'))
 
-      await expect(client.postForId(999999999)).rejects.toThrow(
-        'Post with ID 999999999 not found: HTTP 404: Not found'
-      )
+      await expect(client.postForId(999999999)).rejects.toThrow('Post not found')
     })
   })
 
@@ -387,7 +381,7 @@ describe('SubstackClient', () => {
     it('When API error for noteForId', async () => {
       mockNoteService.getNoteById.mockRejectedValue(new Error('Not found'))
 
-      await expect(client.noteForId(999)).rejects.toThrow('Note with ID 999 not found')
+      await expect(client.noteForId(999)).rejects.toThrow('Note not found')
     })
   })
 

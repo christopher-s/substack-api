@@ -201,4 +201,67 @@ describe('PostService', () => {
       expect(result.nextCursor).toBe('cursor123')
     })
   })
+
+  describe('likePost', () => {
+    it('When liking a post, then posts to the correct endpoint', async () => {
+      nock(baseUrl).post('/posts/123/like').reply(200)
+
+      await postService.likePost(123)
+    })
+
+    it('When like request fails, then throws error', async () => {
+      nock(baseUrl).post('/posts/123/like').replyWithError('API Error')
+
+      await expect(postService.likePost(123)).rejects.toThrow()
+    })
+  })
+
+  describe('unlikePost', () => {
+    it('When unliking a post, then posts to the correct endpoint', async () => {
+      nock(baseUrl).post('/posts/456/unlike').reply(200)
+
+      await postService.unlikePost(456)
+    })
+  })
+
+  describe('getReadingList', () => {
+    it('When fetching reading list, then returns posts', async () => {
+      const mockPosts = [{ id: 1, title: 'Saved Post', post_date: '2023-01-01T00:00:00Z' }]
+      nock(baseUrl).get('/reading-list').reply(200, { posts: mockPosts })
+
+      const result = await postService.getReadingList()
+
+      expect(result).toEqual(mockPosts)
+    })
+
+    it('When reading list is empty, then returns empty array', async () => {
+      nock(baseUrl).get('/reading-list').reply(200, {})
+
+      const result = await postService.getReadingList()
+
+      expect(result).toEqual([])
+    })
+
+    it('When reading list request fails, then throws error', async () => {
+      nock(baseUrl).get('/reading-list').replyWithError('API Error')
+
+      await expect(postService.getReadingList()).rejects.toThrow()
+    })
+  })
+
+  describe('savePost', () => {
+    it('When saving a post, then posts to the correct endpoint', async () => {
+      nock(baseUrl).post('/posts/123/save').reply(200)
+
+      await postService.savePost(123)
+    })
+  })
+
+  describe('unsavePost', () => {
+    it('When unsaving a post, then posts to the correct endpoint', async () => {
+      nock(baseUrl).post('/posts/456/unsave').reply(200)
+
+      await postService.unsavePost(456)
+    })
+  })
 })

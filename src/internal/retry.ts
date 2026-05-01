@@ -32,14 +32,10 @@ export class RetryPolicy {
     getRetryAfter?: () => string | undefined,
     onResponse?: (info: RetryInfo) => void
   ): Promise<T> {
-    let lastError: unknown
-
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
         return await fn()
       } catch (error) {
-        lastError = error
-
         const statusCode = this.getStatusCode(error)
         if (statusCode === undefined || !RETRYABLE_STATUS_CODES.has(statusCode)) {
           throw error
@@ -72,7 +68,8 @@ export class RetryPolicy {
       }
     }
 
-    throw lastError
+    // Unreachable: all retry attempts exhausted — every path in the loop throws or returns
+    throw new Error('RetryPolicy: unreachable — all retry attempts exhausted')
   }
 
   private getStatusCode(error: unknown): number | undefined {

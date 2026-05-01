@@ -97,7 +97,7 @@ describe('SubstackClient - Global Post Endpoint', () => {
         message: 'Request failed with status code 404'
       })
 
-      await expect(client.postForId(999999999)).rejects.toThrow('Post with ID 999999999 not found')
+      await expect(client.postForId(999999999)).rejects.toThrow('Post not found')
 
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/posts/by-id/999999999')
     })

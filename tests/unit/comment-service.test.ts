@@ -169,4 +169,68 @@ describe('CommentService', () => {
       expect(result.more).toBe(true)
     })
   })
+
+  describe('createComment', () => {
+    it('When creating a comment, then posts to the correct endpoint', async () => {
+      mockPublicationClient.post.mockResolvedValue({ id: 1, body: 'New comment' })
+
+      const result = await commentService.createComment(123, 'Great post!')
+
+      expect(mockPublicationClient.post).toHaveBeenCalledWith('/post/123/comment', {
+        body: 'Great post!',
+        post_id: 123
+      })
+      expect(result).toEqual({ id: 1, body: 'New comment' })
+    })
+
+    it('When body is empty, then throws error', async () => {
+      await expect(commentService.createComment(123, '')).rejects.toThrow(
+        'Comment body cannot be empty'
+      )
+    })
+
+    it('When body is whitespace, then throws error', async () => {
+      await expect(commentService.createComment(123, '   ')).rejects.toThrow(
+        'Comment body cannot be empty'
+      )
+    })
+
+    it('When body exceeds maximum length, then throws error', async () => {
+      const longBody = 'x'.repeat(10001)
+      await expect(commentService.createComment(123, longBody)).rejects.toThrow(
+        'Comment body exceeds maximum length of 10000 characters'
+      )
+    })
+  })
+
+  describe('deleteComment', () => {
+    it('When deleting a comment, then sends delete request', async () => {
+      mockPublicationClient.delete.mockResolvedValue({ deleted: true })
+
+      const result = await commentService.deleteComment(99)
+
+      expect(mockPublicationClient.delete).toHaveBeenCalledWith('/comment/99')
+      expect(result).toEqual({ deleted: true })
+    })
+  })
+
+  describe('likeComment', () => {
+    it('When liking a comment, then posts to the correct endpoint', async () => {
+      mockPublicationClient.post.mockResolvedValueOnce(undefined)
+
+      await commentService.likeComment(123)
+
+      expect(mockPublicationClient.post).toHaveBeenCalledWith('/feed/comments/123/like')
+    })
+  })
+
+  describe('unlikeComment', () => {
+    it('When unliking a comment, then posts to the correct endpoint', async () => {
+      mockPublicationClient.post.mockResolvedValueOnce(undefined)
+
+      await commentService.unlikeComment(456)
+
+      expect(mockPublicationClient.post).toHaveBeenCalledWith('/feed/comments/456/unlike')
+    })
+  })
 })

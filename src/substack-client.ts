@@ -27,10 +27,12 @@ import {
   SettingsService,
   SubscriberStatsService,
   SubscriptionService,
-  ChatService
+  ChatService,
+  NotificationService
 } from '@substack-api/internal/services'
 import { NoteBuilderFactory } from '@substack-api/domain'
 import { markdownToHtml } from '@substack-api/internal/markdown-to-html'
+import { getErrorMessage } from '@substack-api/internal/validation'
 import type {
   FeedTab,
   ProfileFeedTab,
@@ -73,6 +75,7 @@ import type {
   UnreadActivity,
   UnreadMessageCount,
   SubstackRecommendation,
+  SubstackRecommendationStats,
   SubstackRecommendationsExist,
   SubstackSuggestedRecommendation,
   SubstackPublicationExport,
@@ -93,7 +96,9 @@ import type {
   SubstackPublicationUserRole,
   SubstackPublicationSection,
   SubstackNoteStats,
-  SubstackCreatedComment
+  SubstackCreatedComment,
+  SubstackNotificationsResponse,
+  SubstackPreviewPost
 } from '@substack-api/internal/types'
 import type { SubstackConfig } from '@substack-api/types'
 import type {
@@ -140,6 +145,7 @@ export class SubstackClient {
   private readonly dashboardService: DashboardService
   private readonly recommendationService: RecommendationService
   private readonly chatService: ChatService
+  private readonly notificationService: NotificationService
   private readonly perPage: number
   private readonly token: string | undefined
   private readonly hasPublication: boolean
@@ -239,6 +245,7 @@ export class SubstackClient {
     this.dashboardService = new DashboardService(this.publicationClient)
     this.recommendationService = new RecommendationService(this.publicationClient)
     this.chatService = new ChatService(this.substackClient)
+    this.notificationService = new NotificationService(this.substackClient)
   }
 
   /** Throw a clear error when an authenticated method is called without a token */
@@ -267,7 +274,8 @@ export class SubstackClient {
    */
   async testConnectivity(): Promise<boolean> {
     this.requireAuth('testConnectivity')
-    return await this.connectivityService.isConnected()
+    const result = await this.connectivityService.isConnected()
+    return result.connected
   }
 
   /**
@@ -280,7 +288,7 @@ export class SubstackClient {
       const profile = await this.profileService.getOwnProfile()
       return new OwnProfile(profile, this.buildEntityDeps(), profile.handle)
     } catch (error) {
-      throw new Error(`Failed to get own profile: ${(error as Error).message}`, { cause: error })
+      throw new Error('Failed to get own profile', { cause: error })
     }
   }
 
@@ -298,7 +306,7 @@ export class SubstackClient {
       const profile = await this.profileService.getProfileBySlug(slug)
       return new Profile(profile, this.buildEntityDeps(), profile.handle)
     } catch (error) {
-      throw new Error(`Profile with slug '${slug}' not found: ${(error as Error).message}`, {
+      throw new Error('Profile not found', {
         cause: error
       })
     }
@@ -312,7 +320,7 @@ export class SubstackClient {
       const profile = await this.profileService.getProfileById(id)
       return new Profile(profile, this.buildEntityDeps(), profile.handle)
     } catch (error) {
-      throw new Error(`Profile with ID ${id} not found: ${(error as Error).message}`, {
+      throw new Error('Profile not found', {
         cause: error
       })
     }
@@ -326,7 +334,7 @@ export class SubstackClient {
       const post = await this.postService.getPostById(id)
       return new FullPost(post, this.buildEntityDeps())
     } catch (error) {
-      throw new Error(`Post with ID ${id} not found: ${(error as Error).message}`, { cause: error })
+      throw new Error('Post not found', { cause: error })
     }
   }
 
@@ -338,7 +346,7 @@ export class SubstackClient {
       const noteData = await this.noteService.getNoteById(id)
       return new Note(noteData, this.publicationClient)
     } catch (error) {
-      throw new Error(`Note with ID ${id} not found: ${(error as Error).message}`, { cause: error })
+      throw new Error('Note not found', { cause: error })
     }
   }
 
@@ -350,7 +358,7 @@ export class SubstackClient {
       const commentData = await this.commentService.getCommentById(id)
       return new Comment(commentData, this.publicationClient)
     } catch (error) {
-      throw new Error(`Comment with ID ${id} not found: ${(error as Error).message}`, {
+      throw new Error('Comment not found', {
         cause: error
       })
     }
@@ -785,10 +793,9 @@ export class SubstackClient {
         bylineUserId: options?.bylineUserId
       })
     } catch (error) {
-      throw new Error(
-        `Failed to create draft from markdown: ${error instanceof Error ? error.message : String(error)}`,
-        { cause: error }
-      )
+      throw new Error(`Failed to create draft from markdown: ${getErrorMessage(error)}`, {
+        cause: error
+      })
     }
   }
 
@@ -911,6 +918,63 @@ export class SubstackClient {
     this.requireAuth('unrestackNote')
     this.requirePublication('unrestackNote')
     return await this.noteService.unrestackNote(noteId)
+  }
+
+  async likeNote(noteId: number): Promise<void> {
+    this.requireAuth('likeNote')
+    this.requirePublication('likeNote')
+    return await this.noteService.likeNote(noteId)
+  }
+
+  async unlikeNote(noteId: number): Promise<void> {
+    this.requireAuth('unlikeNote')
+    this.requirePublication('unlikeNote')
+    return await this.noteService.unlikeNote(noteId)
+  }
+
+  async likePost(postId: number): Promise<void> {
+    this.requireAuth('likePost')
+    return await this.postService.likePost(postId)
+  }
+
+  async unlikePost(postId: number): Promise<void> {
+    this.requireAuth('unlikePost')
+    return await this.postService.unlikePost(postId)
+  }
+
+  async getReadingList(): Promise<SubstackPreviewPost[]> {
+    this.requireAuth('getReadingList')
+    return await this.postService.getReadingList()
+  }
+
+  async savePost(postId: number): Promise<void> {
+    this.requireAuth('savePost')
+    return await this.postService.savePost(postId)
+  }
+
+  async unsavePost(postId: number): Promise<void> {
+    this.requireAuth('unsavePost')
+    return await this.postService.unsavePost(postId)
+  }
+
+  async followUser(userId: number): Promise<void> {
+    this.requireAuth('followUser')
+    return await this.followingService.followUser(userId)
+  }
+
+  async unfollowUser(userId: number): Promise<void> {
+    this.requireAuth('unfollowUser')
+    return await this.followingService.unfollowUser(userId)
+  }
+
+  async getNotifications(): Promise<SubstackNotificationsResponse> {
+    this.requireAuth('getNotifications')
+    return await this.notificationService.getNotifications()
+  }
+
+  async markNotificationsSeen(): Promise<void> {
+    this.requireAuth('markNotificationsSeen')
+    await this.notificationService.markNotificationsSeen()
   }
 
   // ── Settings methods (require auth) ─────────────────────────────────
@@ -1159,8 +1223,7 @@ export class SubstackClient {
   async outgoingRecommendationsPaginated(
     publicationId: number,
     options?: { offset?: number; limit?: number; paginate?: boolean }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): Promise<any> {
+  ): Promise<SubstackRecommendation[]> {
     this.requireAuth('outgoingRecommendationsPaginated')
     this.requirePublication('outgoingRecommendationsPaginated')
     return await this.recommendationService.getOutgoingRecommendationsPaginated(
@@ -1174,8 +1237,7 @@ export class SubstackClient {
     limit?: number
     orderBy?: string
     orderDirection?: string
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }): Promise<any> {
+  }): Promise<SubstackRecommendationStats[]> {
     this.requireAuth('outgoingRecommendationStats')
     this.requirePublication('outgoingRecommendationStats')
     return await this.recommendationService.getOutgoingRecommendationStats(options)
@@ -1186,8 +1248,7 @@ export class SubstackClient {
     limit?: number
     orderBy?: string
     orderDirection?: string
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }): Promise<any> {
+  }): Promise<SubstackRecommendationStats[]> {
     this.requireAuth('incomingRecommendationStats')
     this.requirePublication('incomingRecommendationStats')
     return await this.recommendationService.getIncomingRecommendationStats(options)

@@ -47,4 +47,12 @@ export class FollowingService {
     const lists = decodeOrThrow(SubscriberLists, data, 'Following list')
     return lists.subscriberLists[0].groups[0].users
   }
+
+  async followUser(userId: number): Promise<void> {
+    await this.substackClient.post(`/user/${userId}/follow`)
+  }
+
+  async unfollowUser(userId: number): Promise<void> {
+    await this.substackClient.post(`/user/${userId}/unfollow`)
+  }
 }

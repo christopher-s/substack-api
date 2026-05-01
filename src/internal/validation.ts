@@ -2,6 +2,19 @@
  * Utility functions for runtime validation using io-ts and fp-ts
  */
 
+/**
+ * Safely extract an error message from an unknown value.
+ * Handles Error instances, objects with a message property,
+ * and falls back to String conversion for everything else.
+ */
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message: unknown }).message)
+  }
+  return String(error)
+}
+
 import { pipe } from 'fp-ts/function'
 import { fold } from 'fp-ts/Either'
 import { PathReporter } from 'io-ts/PathReporter'

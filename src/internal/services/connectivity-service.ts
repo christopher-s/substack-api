@@ -1,5 +1,10 @@
 import type { HttpClient } from '@substack-api/internal/http-client'
 import type { FollowingService } from '@substack-api/internal/services/following-service'
+import { AxiosError } from 'axios'
+
+export type ConnectivityResult =
+  | { connected: true }
+  | { connected: false; reason: 'auth' | 'network' }
 
 /**
  * Service responsible for checking API connectivity and session validity
@@ -15,14 +20,17 @@ export class ConnectivityService {
   /**
    * Check if the API is connected and accessible
    * Delegates to FollowingService.getOwnId to avoid duplicate /user-setting writes.
-   * @returns Promise<boolean> - true if API is accessible, false otherwise
+   * @returns ConnectivityResult - { connected: true } or { connected: false, reason: 'auth' | 'network' }
    */
-  async isConnected(): Promise<boolean> {
+  async isConnected(): Promise<ConnectivityResult> {
     try {
       await this.followingService.getOwnId()
-      return true
-    } catch {
-      return false
+      return { connected: true }
+    } catch (error) {
+      if (error instanceof AxiosError && error.response?.status === 401) {
+        return { connected: false, reason: 'auth' }
+      }
+      return { connected: false, reason: 'network' }
     }
   }
 }
