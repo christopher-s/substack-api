@@ -62,6 +62,8 @@ describe('SubstackClient Entity Model E2E', () => {
       const msg = (error as Error).message
       if (msg.includes('403')) {
         console.log('ℹ️ Following endpoint returned 403 — may require different auth scope')
+      } else if (msg.includes('429')) {
+        console.log('ℹ️ Following endpoint rate-limited (429)')
       } else {
         throw error
       }
