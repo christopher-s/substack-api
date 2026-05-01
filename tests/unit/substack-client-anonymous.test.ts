@@ -1,9 +1,12 @@
 import { SubstackClient } from '@substack-api/substack-client'
 import { HttpClient } from '@substack-api/internal/http-client'
 import {
-  DiscoveryService,
+  FeedService,
+  SearchService,
+  CategoryService,
   PublicationService,
-  CommentService
+  CommentService,
+  ProfileActivityService
 } from '@substack-api/internal/services'
 
 jest.mock('@substack-api/internal/http-client')
@@ -11,7 +14,10 @@ jest.mock('@substack-api/internal/services')
 
 describe('SubstackClient anonymous and discovery methods', () => {
   let client: SubstackClient
-  let discoveryService: jest.Mocked<DiscoveryService>
+  let mockFeedService: jest.Mocked<FeedService>
+  let mockSearchService: jest.Mocked<SearchService>
+  let mockCategoryService: jest.Mocked<CategoryService>
+  let mockProfileActivityService: jest.Mocked<ProfileActivityService>
   let mockPublicationService: jest.Mocked<PublicationService>
   let mockCommentService: jest.Mocked<CommentService>
 
@@ -23,18 +29,26 @@ describe('SubstackClient anonymous and discovery methods', () => {
     mockHttpClient.post = jest.fn()
     mockHttpClient.put = jest.fn()
 
-    discoveryService = new DiscoveryService(mockHttpClient) as jest.Mocked<DiscoveryService>
-    discoveryService.getTopPosts = jest.fn()
-    discoveryService.getTrending = jest.fn()
-    discoveryService.getFeed = jest.fn()
-    discoveryService.getCategories = jest.fn()
-    discoveryService.getProfileActivity = jest.fn()
-    discoveryService.getProfileLikes = jest.fn()
-    discoveryService.search = jest.fn()
-    discoveryService.searchProfiles = jest.fn()
-    discoveryService.exploreSearch = jest.fn()
-    discoveryService.getPublicationFeed = jest.fn()
-    discoveryService.getCategoryPublications = jest.fn()
+    mockFeedService = new FeedService(mockHttpClient) as jest.Mocked<FeedService>
+    mockFeedService.getTopPosts = jest.fn()
+    mockFeedService.getTrending = jest.fn()
+    mockFeedService.getFeed = jest.fn()
+
+    mockSearchService = new SearchService(mockHttpClient) as jest.Mocked<SearchService>
+    mockSearchService.search = jest.fn()
+    mockSearchService.searchProfiles = jest.fn()
+    mockSearchService.exploreSearch = jest.fn()
+
+    mockCategoryService = new CategoryService(mockHttpClient) as jest.Mocked<CategoryService>
+    mockCategoryService.getCategories = jest.fn()
+    mockCategoryService.getCategoryPublications = jest.fn()
+    mockCategoryService.getPublicationFeed = jest.fn()
+
+    mockProfileActivityService = new ProfileActivityService(
+      mockHttpClient
+    ) as jest.Mocked<ProfileActivityService>
+    mockProfileActivityService.getProfileActivity = jest.fn()
+    mockProfileActivityService.getProfileLikes = jest.fn()
 
     mockCommentService = new CommentService(
       mockHttpClient,
@@ -54,13 +68,12 @@ describe('SubstackClient anonymous and discovery methods', () => {
 
     client = new SubstackClient({ publicationUrl: 'https://test.substack.com' })
 
-    // Replace the service instances on the client
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const anyClient = client as any
-    anyClient.feedService = discoveryService
-    anyClient.searchService = discoveryService
-    anyClient.profileActivityService = discoveryService
-    anyClient.categoryService = discoveryService
+    anyClient.feedService = mockFeedService
+    anyClient.searchService = mockSearchService
+    anyClient.profileActivityService = mockProfileActivityService
+    anyClient.categoryService = mockCategoryService
     anyClient.publicationService = mockPublicationService
     anyClient.commentService = mockCommentService
   })
@@ -71,7 +84,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
         { post_id: 1, type: 'post', title: 'Test 1', web_url: 'https://test.com/1' },
         { post_id: 2, type: 'post', title: 'Test 2', web_url: 'https://test.com/2' }
       ]
-      discoveryService.getTopPosts.mockResolvedValue({ items: mockItems })
+      mockFeedService.getTopPosts.mockResolvedValue({ items: mockItems })
       const result = await client.topPosts()
       expect(result).toEqual(mockItems)
     })
@@ -79,7 +92,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
 
   describe('categories', () => {
     it('When requesting Category instances', async () => {
-      discoveryService.getCategories.mockResolvedValue([
+      mockCategoryService.getCategories.mockResolvedValue([
         {
           id: 1,
           name: 'Tech',
@@ -98,7 +111,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
 
   describe('search', () => {
     it('should yield search results and stop when no cursor', async () => {
-      discoveryService.search.mockResolvedValueOnce({
+      mockSearchService.search.mockResolvedValueOnce({
         items: [
           { type: 'post', entity_key: 'test-1' },
           { type: 'comment', entity_key: 'test-1' }
@@ -113,11 +126,11 @@ describe('SubstackClient anonymous and discovery methods', () => {
     })
 
     it('should paginate with cursor', async () => {
-      discoveryService.search.mockResolvedValueOnce({
+      mockSearchService.search.mockResolvedValueOnce({
         items: [{ type: 'post', entity_key: 'test-1' }],
         nextCursor: 'page2'
       })
-      discoveryService.search.mockResolvedValueOnce({
+      mockSearchService.search.mockResolvedValueOnce({
         items: [{ type: 'comment', entity_key: 'test-1' }],
         nextCursor: null
       })
@@ -126,11 +139,11 @@ describe('SubstackClient anonymous and discovery methods', () => {
         results.push(item)
       }
       expect(results).toHaveLength(2)
-      expect(discoveryService.search).toHaveBeenCalledTimes(2)
+      expect(mockSearchService.search).toHaveBeenCalledTimes(2)
     })
 
     it('should respect limit option', async () => {
-      discoveryService.search.mockResolvedValue({
+      mockSearchService.search.mockResolvedValue({
         items: [
           { type: 'post', entity_key: 'test-1' },
           { type: 'comment', entity_key: 'test-1' }
@@ -147,7 +160,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
 
   describe('discoverFeed', () => {
     it('should yield feed items', async () => {
-      discoveryService.getFeed.mockResolvedValueOnce({
+      mockFeedService.getFeed.mockResolvedValueOnce({
         items: [{ type: 'post', entity_key: 'test-1' }],
         nextCursor: null
       })
@@ -159,14 +172,14 @@ describe('SubstackClient anonymous and discovery methods', () => {
     })
 
     it('should paginate and respect limit', async () => {
-      discoveryService.getFeed.mockResolvedValueOnce({
+      mockFeedService.getFeed.mockResolvedValueOnce({
         items: [
           { type: 'post', entity_key: 'test-1' },
           { type: 'note', entity_key: 'test-1' }
         ],
         nextCursor: 'next'
       })
-      discoveryService.getFeed.mockResolvedValueOnce({
+      mockFeedService.getFeed.mockResolvedValueOnce({
         items: [{ type: 'comment', entity_key: 'test-1' }],
         nextCursor: null
       })
@@ -254,7 +267,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
 
   describe('profileActivity', () => {
     it('should yield activity items', async () => {
-      discoveryService.getProfileActivity.mockResolvedValueOnce({
+      mockProfileActivityService.getProfileActivity.mockResolvedValueOnce({
         items: [{ type: 'post', entity_key: 'test-1' }],
         nextCursor: null
       })
@@ -266,7 +279,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
     })
 
     it('should respect limit', async () => {
-      discoveryService.getProfileActivity.mockResolvedValueOnce({
+      mockProfileActivityService.getProfileActivity.mockResolvedValueOnce({
         items: [
           { type: 'post', entity_key: 'test-1' },
           { type: 'note', entity_key: 'test-1' }
@@ -283,7 +296,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
 
   describe('profileLikes', () => {
     it('should yield like items', async () => {
-      discoveryService.getProfileLikes.mockResolvedValueOnce({
+      mockProfileActivityService.getProfileLikes.mockResolvedValueOnce({
         items: [{ type: 'comment', entity_key: 'test-1' }],
         nextCursor: null
       })
@@ -305,7 +318,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
 
   describe('trendingFeed', () => {
     it('should yield trending responses via offset pagination', async () => {
-      discoveryService.getTrending.mockResolvedValueOnce({
+      mockFeedService.getTrending.mockResolvedValueOnce({
         posts: [{ id: 1, title: 'A', slug: 'a', post_date: '2026-01-01', type: 'post' }],
         publications: [],
         trendingPosts: []
@@ -317,7 +330,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
       }
       expect(results).toHaveLength(1)
       expect(results[0].posts[0].id).toBe(1)
-      expect(discoveryService.getTrending).toHaveBeenCalledWith({ limit: 25, offset: 0 })
+      expect(mockFeedService.getTrending).toHaveBeenCalledWith({ limit: 25, offset: 0 })
     })
 
     it('should paginate with offset when page is full', async () => {
@@ -329,12 +342,12 @@ describe('SubstackClient anonymous and discovery methods', () => {
         post_date: '2026-01-01',
         type: 'post'
       }))
-      discoveryService.getTrending.mockResolvedValueOnce({
+      mockFeedService.getTrending.mockResolvedValueOnce({
         posts: fullPage,
         publications: [],
         trendingPosts: []
       })
-      discoveryService.getTrending.mockResolvedValueOnce({
+      mockFeedService.getTrending.mockResolvedValueOnce({
         posts: [],
         publications: [],
         trendingPosts: []
@@ -347,7 +360,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
       expect(results).toHaveLength(2)
       expect(results[0].posts).toHaveLength(25)
       expect(results[1].posts).toHaveLength(0)
-      expect(discoveryService.getTrending).toHaveBeenCalledWith({ limit: 25, offset: 25 })
+      expect(mockFeedService.getTrending).toHaveBeenCalledWith({ limit: 25, offset: 25 })
     })
   })
 
@@ -462,35 +475,35 @@ describe('SubstackClient anonymous and discovery methods', () => {
 
   describe('profileSearch', () => {
     it('should delegate to search service', async () => {
-      discoveryService.searchProfiles.mockResolvedValue({
+      mockSearchService.searchProfiles.mockResolvedValue({
         results: [{ id: 1, name: 'Test', handle: 'test' }],
         more: false
       })
       const result = await client.profileSearch('test')
-      expect(discoveryService.searchProfiles).toHaveBeenCalledWith('test', undefined)
+      expect(mockSearchService.searchProfiles).toHaveBeenCalledWith('test', undefined)
       expect(result.results).toHaveLength(1)
     })
 
     it('should pass page option', async () => {
-      discoveryService.searchProfiles.mockResolvedValue({
+      mockSearchService.searchProfiles.mockResolvedValue({
         results: [],
         more: false
       })
       await client.profileSearch('test', { page: 2 })
-      expect(discoveryService.searchProfiles).toHaveBeenCalledWith('test', { page: 2 })
+      expect(mockSearchService.searchProfiles).toHaveBeenCalledWith('test', { page: 2 })
     })
   })
 
   describe('profileSearchAll', () => {
     it('When iterating all pages', async () => {
-      discoveryService.searchProfiles.mockResolvedValueOnce({
+      mockSearchService.searchProfiles.mockResolvedValueOnce({
         results: [
           { id: 1, name: 'A', handle: 'a' },
           { id: 2, name: 'B', handle: 'b' }
         ],
         more: true
       })
-      discoveryService.searchProfiles.mockResolvedValueOnce({
+      mockSearchService.searchProfiles.mockResolvedValueOnce({
         results: [{ id: 3, name: 'C', handle: 'c' }],
         more: false
       })
@@ -500,14 +513,14 @@ describe('SubstackClient anonymous and discovery methods', () => {
         results.push(profile)
       }
       expect(results).toHaveLength(3)
-      expect(discoveryService.searchProfiles).toHaveBeenCalledWith('test', { page: 1 })
-      expect(discoveryService.searchProfiles).toHaveBeenCalledWith('test', { page: 2 })
+      expect(mockSearchService.searchProfiles).toHaveBeenCalledWith('test', { page: 1 })
+      expect(mockSearchService.searchProfiles).toHaveBeenCalledWith('test', { page: 2 })
     })
   })
 
   describe('exploreSearch', () => {
     it('should yield explore search results', async () => {
-      discoveryService.exploreSearch.mockResolvedValueOnce({
+      mockSearchService.exploreSearch.mockResolvedValueOnce({
         items: [{ type: 'post', entity_key: 'explore-1' }],
         nextCursor: null
       })
@@ -516,18 +529,18 @@ describe('SubstackClient anonymous and discovery methods', () => {
         results.push(item)
       }
       expect(results).toHaveLength(1)
-      expect(discoveryService.exploreSearch).toHaveBeenCalledWith({
+      expect(mockSearchService.exploreSearch).toHaveBeenCalledWith({
         tab: undefined,
         cursor: undefined
       })
     })
 
     it('should pass tab option and paginate', async () => {
-      discoveryService.exploreSearch.mockResolvedValueOnce({
+      mockSearchService.exploreSearch.mockResolvedValueOnce({
         items: [{ type: 'note', entity_key: 'note-1' }],
         nextCursor: 'next'
       })
-      discoveryService.exploreSearch.mockResolvedValueOnce({
+      mockSearchService.exploreSearch.mockResolvedValueOnce({
         items: [{ type: 'note', entity_key: 'note-2' }],
         nextCursor: null
       })
@@ -536,18 +549,18 @@ describe('SubstackClient anonymous and discovery methods', () => {
         results.push(item)
       }
       expect(results).toHaveLength(2)
-      expect(discoveryService.exploreSearch).toHaveBeenCalledWith({
+      expect(mockSearchService.exploreSearch).toHaveBeenCalledWith({
         tab: 'notes',
         cursor: undefined
       })
-      expect(discoveryService.exploreSearch).toHaveBeenLastCalledWith({
+      expect(mockSearchService.exploreSearch).toHaveBeenLastCalledWith({
         tab: 'notes',
         cursor: 'next'
       })
     })
 
     it('should respect limit', async () => {
-      discoveryService.exploreSearch.mockResolvedValue({
+      mockSearchService.exploreSearch.mockResolvedValue({
         items: [
           { type: 'post', entity_key: 'a' },
           { type: 'post', entity_key: 'b' }
@@ -564,7 +577,7 @@ describe('SubstackClient anonymous and discovery methods', () => {
 
   describe('publicationFeed', () => {
     it('should yield publication feed items', async () => {
-      discoveryService.getPublicationFeed.mockResolvedValueOnce({
+      mockCategoryService.getPublicationFeed.mockResolvedValueOnce({
         items: [{ type: 'post', entity_key: 'pub-1' }],
         nextCursor: null
       })
@@ -573,18 +586,18 @@ describe('SubstackClient anonymous and discovery methods', () => {
         results.push(item)
       }
       expect(results).toHaveLength(1)
-      expect(discoveryService.getPublicationFeed).toHaveBeenCalledWith(42, {
+      expect(mockCategoryService.getPublicationFeed).toHaveBeenCalledWith(42, {
         tab: undefined,
         cursor: undefined
       })
     })
 
     it('should pass tab option and paginate', async () => {
-      discoveryService.getPublicationFeed.mockResolvedValueOnce({
+      mockCategoryService.getPublicationFeed.mockResolvedValueOnce({
         items: [{ type: 'post', entity_key: 'pub-1' }],
         nextCursor: 'page2'
       })
-      discoveryService.getPublicationFeed.mockResolvedValueOnce({
+      mockCategoryService.getPublicationFeed.mockResolvedValueOnce({
         items: [{ type: 'note', entity_key: 'pub-2' }],
         nextCursor: null
       })
@@ -593,18 +606,18 @@ describe('SubstackClient anonymous and discovery methods', () => {
         results.push(item)
       }
       expect(results).toHaveLength(2)
-      expect(discoveryService.getPublicationFeed).toHaveBeenCalledWith(42, {
+      expect(mockCategoryService.getPublicationFeed).toHaveBeenCalledWith(42, {
         tab: 'posts',
         cursor: undefined
       })
-      expect(discoveryService.getPublicationFeed).toHaveBeenLastCalledWith(42, {
+      expect(mockCategoryService.getPublicationFeed).toHaveBeenLastCalledWith(42, {
         tab: 'posts',
         cursor: 'page2'
       })
     })
 
     it('should respect limit', async () => {
-      discoveryService.getPublicationFeed.mockResolvedValue({
+      mockCategoryService.getPublicationFeed.mockResolvedValue({
         items: [
           { type: 'post', entity_key: 'a' },
           { type: 'post', entity_key: 'b' }
@@ -620,8 +633,8 @@ describe('SubstackClient anonymous and discovery methods', () => {
   })
 
   describe('categoryPublications', () => {
-    it('should delegate to discovery service with category id', async () => {
-      discoveryService.getCategoryPublications.mockResolvedValue({
+    it('should delegate to category service with category id', async () => {
+      mockCategoryService.getCategoryPublications.mockResolvedValue({
         publications: [
           {
             author_id: 1,
@@ -636,17 +649,17 @@ describe('SubstackClient anonymous and discovery methods', () => {
         more: false
       })
       const result = await client.categoryPublications('tech')
-      expect(discoveryService.getCategoryPublications).toHaveBeenCalledWith('tech', undefined)
+      expect(mockCategoryService.getCategoryPublications).toHaveBeenCalledWith('tech', undefined)
       expect(result.publications).toHaveLength(1)
     })
 
     it('should pass limit and offset options', async () => {
-      discoveryService.getCategoryPublications.mockResolvedValue({
+      mockCategoryService.getCategoryPublications.mockResolvedValue({
         publications: [],
         more: false
       })
       await client.categoryPublications(1, { limit: 10, offset: 20 })
-      expect(discoveryService.getCategoryPublications).toHaveBeenCalledWith(1, {
+      expect(mockCategoryService.getCategoryPublications).toHaveBeenCalledWith(1, {
         limit: 10,
         offset: 20
       })

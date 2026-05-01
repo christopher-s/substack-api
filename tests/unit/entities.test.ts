@@ -98,7 +98,7 @@ describe('SubstackClient Entity Model', () => {
       }
       const publicationClient = (client as unknown as { publicationClient: HttpClient })
         .publicationClient
-      const comment = new Comment(mockData, publicationClient)
+      const comment = new Comment(mockData, createMockEntityDeps({ publicationClient }))
 
       expect(comment).toBeInstanceOf(Comment)
       expect(comment.id).toBe(789)

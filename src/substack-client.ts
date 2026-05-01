@@ -47,7 +47,6 @@ import type {
   SubstackCategoryPublication,
   SubstackLiveStreamResponse,
   SubstackTrendingResponse,
-  SubstackPublicationPost,
   SubstackCommentRepliesResponse,
   SubstackProfileSearchResult,
   SubscriberStats,
@@ -125,6 +124,10 @@ import {
   NotificationClient
 } from '@substack-api/sub-clients'
 import { publishNote } from '@substack-api/domain'
+import {
+  paginateFeed as paginateFeedHelper,
+  paginateOffset as paginateOffsetHelper
+} from '@substack-api/sub-clients/pagination'
 
 const DEFAULT_PER_PAGE = 25
 const DEFAULT_MAX_RPS = 25
@@ -301,7 +304,7 @@ export class SubstackClient {
       entityDeps,
       this.perPage
     )
-    this.comments = new CommentClient(this.commentService, this.publicationClient)
+    this.comments = new CommentClient(this.commentService, entityDeps)
     this.publications = new PublicationClient(
       this.publicationService,
       this.categoryService,
@@ -418,7 +421,7 @@ export class SubstackClient {
   async noteForId(id: number): Promise<Note> {
     try {
       const noteData = await this.noteService.getNoteById(id)
-      return new Note(noteData, this.publicationClient)
+      return new Note(noteData, this.buildEntityDeps())
     } catch (error) {
       throw new Error('Note not found', { cause: error })
     }
@@ -430,7 +433,7 @@ export class SubstackClient {
   async commentForId(id: number): Promise<Comment> {
     try {
       const commentData = await this.commentService.getCommentById(id)
-      return new Comment(commentData, this.publicationClient)
+      return new Comment(commentData, this.buildEntityDeps())
     } catch (error) {
       throw new Error('Comment not found', {
         cause: error
@@ -498,7 +501,7 @@ export class SubstackClient {
    * @deprecated Returns empty `publications` and `trendingPosts` arrays. Use {@link topPosts} instead.
    */
   async trending(options?: { limit?: number }): Promise<SubstackTrendingResponse> {
-    return (await this.feedService.getTrending(options)) as unknown as SubstackTrendingResponse
+    return await this.feedService.getTrending(options)
   }
 
   /**
@@ -520,7 +523,7 @@ export class SubstackClient {
         offset
       })
 
-      yield response as unknown as SubstackTrendingResponse
+      yield response
 
       if (response.posts.length < batchSize) break
       offset += batchSize
@@ -534,7 +537,7 @@ export class SubstackClient {
    * @throws {Error} On network or API errors
    */
   async *discoverFeed(options: { tab?: FeedTab; limit?: number } = {}): AsyncGenerator<FeedItem> {
-    yield* this.paginateFeed(
+    yield* paginateFeedHelper(
       (cursor) => this.feedService.getFeed({ tab: options.tab, cursor }),
       options.limit
     )
@@ -552,7 +555,7 @@ export class SubstackClient {
   ): AsyncGenerator<FeedItem> {
     this.requireAuth('activityFeed')
     let tabsDelivered = false
-    yield* this.paginateFeed(async (cursor) => {
+    yield* paginateFeedHelper(async (cursor) => {
       const result = await this.feedService.getFeed({ tabId: options.tabId, cursor })
       if (!tabsDelivered && result.tabs && options.onTabs) {
         options.onTabs(result.tabs)
@@ -593,7 +596,7 @@ export class SubstackClient {
    * @throws {Error} On network or API errors
    */
   async *search(query: string, options: { limit?: number } = {}): AsyncGenerator<FeedItem> {
-    yield* this.paginateFeed(
+    yield* paginateFeedHelper(
       (cursor) => this.searchService.search(query, { cursor }),
       options.limit
     )
@@ -643,7 +646,7 @@ export class SubstackClient {
    * @throws {Error} On network or API errors
    */
   async *exploreSearch(options: { tab?: string; limit?: number } = {}): AsyncGenerator<FeedItem> {
-    yield* this.paginateFeed(
+    yield* paginateFeedHelper(
       (cursor) => this.searchService.exploreSearch({ tab: options.tab, cursor }),
       options.limit
     )
@@ -661,9 +664,11 @@ export class SubstackClient {
     options: { sort?: 'top' | 'new'; limit?: number } = {}
   ): AsyncGenerator<PublicationPost> {
     this.requirePublication('publicationArchive')
-    yield* this.paginateOffset(
+    yield* paginateOffsetHelper(
       (offset, limit) => this.publicationService.getArchive({ sort: options.sort, offset, limit }),
-      options.limit
+      this.perPage,
+      options.limit,
+      (item) => new PublicationPost(item)
     )
   }
 
@@ -675,9 +680,11 @@ export class SubstackClient {
    */
   async *publicationPosts(options: { limit?: number } = {}): AsyncGenerator<PublicationPost> {
     this.requirePublication('publicationPosts')
-    yield* this.paginateOffset(
+    yield* paginateOffsetHelper(
       (offset, limit) => this.publicationService.getPosts({ offset, limit }),
-      options.limit
+      this.perPage,
+      options.limit,
+      (item) => new PublicationPost(item)
     )
   }
 
@@ -747,7 +754,7 @@ export class SubstackClient {
     profileId: number,
     options: { tab?: ProfileFeedTab; limit?: number } = {}
   ): AsyncGenerator<FeedItem> {
-    yield* this.paginateFeed(
+    yield* paginateFeedHelper(
       (cursor) =>
         this.profileActivityService.getProfileActivity(profileId, { tab: options.tab, cursor }),
       options.limit
@@ -762,7 +769,7 @@ export class SubstackClient {
     profileId: number,
     options: { limit?: number } = {}
   ): AsyncGenerator<FeedItem> {
-    yield* this.paginateFeed(
+    yield* paginateFeedHelper(
       (cursor) => this.profileActivityService.getProfileLikes(profileId, { cursor }),
       options.limit
     )
@@ -779,7 +786,7 @@ export class SubstackClient {
     publicationId: number,
     options: { tab?: string; limit?: number } = {}
   ): AsyncGenerator<FeedItem> {
-    yield* this.paginateFeed(
+    yield* paginateFeedHelper(
       (cursor) =>
         this.categoryService.getPublicationFeed(publicationId, { tab: options.tab, cursor }),
       options.limit
@@ -876,7 +883,7 @@ export class SubstackClient {
 
   async updateDraft(
     id: number,
-    data: { title?: string; body?: string; [key: string]: unknown }
+    data: { title?: string; body?: string; type?: string; audience?: string; bylineUserId?: number }
   ): Promise<SubstackDraftPost> {
     this.requireAuth('updateDraft')
     this.requirePublication('updateDraft')
@@ -1425,57 +1432,6 @@ export class SubstackClient {
       commentService: this.commentService,
       followingService: this.followingService,
       perPage: this.perPage
-    }
-  }
-
-  /**
-   * Generic cursor-based pagination for feed endpoints.
-   * Eliminates duplicated pagination loop logic.
-   */
-  private async *paginateFeed(
-    fetcher: (cursor?: string) => Promise<{ items: FeedItem[]; nextCursor: string | null }>,
-    limit?: number
-  ): AsyncGenerator<FeedItem> {
-    let cursor: string | undefined
-    let totalYielded = 0
-
-    while (true) {
-      const result = await fetcher(cursor)
-
-      for (const item of result.items) {
-        if (limit && totalYielded >= limit) return
-        yield item
-        totalYielded++
-      }
-
-      if (!result.nextCursor) break
-      cursor = result.nextCursor
-    }
-  }
-
-  /**
-   * Generic offset-based pagination for publication endpoints.
-   * Eliminates duplicated offset-pagination loop logic.
-   */
-  private async *paginateOffset(
-    fetcher: (offset: number, limit: number) => Promise<SubstackPublicationPost[]>,
-    limit?: number
-  ): AsyncGenerator<PublicationPost> {
-    let offset = 0
-    let totalYielded = 0
-    const batchSize = this.perPage
-
-    while (true) {
-      const items = await fetcher(offset, batchSize)
-
-      for (const item of items) {
-        if (limit && totalYielded >= limit) return
-        yield new PublicationPost(item)
-        totalYielded++
-      }
-
-      if (items.length < batchSize) break
-      offset += batchSize
     }
   }
 }

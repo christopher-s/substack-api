@@ -115,7 +115,7 @@ export class Profile {
         if (options.limit && totalYielded >= options.limit) {
           return // Stop if we've reached the requested limit
         }
-        yield new Note(item, this.deps.publicationClient)
+        yield new Note(item, this.deps)
         totalYielded++
       }
 

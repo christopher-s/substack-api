@@ -5,7 +5,7 @@ import type {
   SubstackCreatedComment,
   SubstackDeleteResponse
 } from '@substack-api/internal/types'
-import type { HttpClient } from '@substack-api/internal/http-client'
+import type { EntityDeps } from '@substack-api/domain/entity-deps'
 
 /**
  * Sub-client for comment-related operations.
@@ -13,12 +13,12 @@ import type { HttpClient } from '@substack-api/internal/http-client'
 export class CommentClient {
   constructor(
     private readonly commentService: CommentService,
-    private readonly publicationClient: HttpClient
+    private readonly buildEntityDeps: () => EntityDeps
   ) {}
 
   async commentForId(id: number): Promise<Comment> {
     const commentData = await this.commentService.getCommentById(id)
-    return new Comment(commentData, this.publicationClient)
+    return new Comment(commentData, this.buildEntityDeps())
   }
 
   async commentReplies(

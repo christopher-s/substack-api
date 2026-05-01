@@ -95,7 +95,7 @@ export class PreviewPost implements Post {
       let count = 0
       for (const commentData of response.comments) {
         if (options.limit && count >= options.limit) break
-        yield new Comment(commentData, this.deps.publicationClient)
+        yield new Comment(commentData, this.deps)
         count++
       }
     } catch (error) {
@@ -199,7 +199,7 @@ export class FullPost implements Post {
       let count = 0
       for (const commentData of response.comments) {
         if (options.limit && count >= options.limit) break
-        yield new Comment(commentData, this.deps.publicationClient)
+        yield new Comment(commentData, this.deps)
         count++
       }
     } catch (error) {

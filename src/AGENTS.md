@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-04-12 | Updated: 2026-04-12 -->
+<!-- Generated: 2026-04-12 | Updated: 2026-05-01 -->
 
 # src
 
@@ -9,14 +9,14 @@ Source directory for the Substack API TypeScript client library. Contains the pu
 ## Key Files
 | File | Description |
 |------|-------------|
-| `index.ts` | Public barrel export. Re-exports SubstackClient, domain entities (Profile, OwnProfile, PreviewPost, FullPost, Note, Comment), builders (NoteBuilder, NoteWithLinkBuilder, ParagraphBuilder, ListBuilder, ListItemBuilder), and public types. Internal modules are not exported. |
+| `index.ts` | Public barrel export. Re-exports SubstackClient, domain entities (Profile, OwnProfile, PreviewPost, FullPost, Note, Comment, PublicationPost, Category), and public types. Internal modules are not exported. |
 | `substack-client.ts` | Main SubstackClient class. Accepts SubstackConfig, creates two HttpClient instances (publication-scoped and global substack.com), and initializes all services. Entry points: `ownProfile()`, `profileForSlug()`, `profileForId()`, `postForId()`, `noteForId()`, `commentForId()`, `testConnectivity()`. |
 
 ## Subdirectories
 | Directory | Purpose |
 |-----------|---------|
-| `domain/` | Domain entities and builders: Profile, OwnProfile, PreviewPost, FullPost, Note, Comment, NoteBuilder, NoteWithLinkBuilder, ParagraphBuilder, ListBuilder, ListItemBuilder. Entities wrap raw API types and expose methods for related data traversal via async iterators. |
-| `internal/` | Internal implementation not exported from the public API. Contains services (PostService, NoteService, ProfileService, CommentService, FollowingService, ConnectivityService, NoteBuilderFactory), HttpClient with rate limiting, validation logic (fp-ts/io-ts codecs), and raw API response type definitions. |
+| `domain/` | Domain entities: Profile, OwnProfile, Post, PublicationPost, Note, Comment, Category. The `note-publisher.ts` module provides `publishNote()` for markdown-based note publishing. Entities wrap raw API types and expose methods for related data traversal via async iterators. |
+| `internal/` | Internal implementation not exported from the public API. Contains services (PostService, NoteService, ProfileService, CommentService, FollowingService, ConnectivityService, and 20+ more), HttpClient with rate limiting, validation logic (fp-ts/io-ts codecs), and raw API response type definitions. |
 | `types/` | Public type definitions: SubstackConfig (client configuration), PaginationParams, SearchParams, PostsIteratorOptions, CommentsIteratorOptions, NotesIteratorOptions. These are exported as TypeScript types (not runtime values). |
 
 ## For AI Agents
@@ -40,7 +40,7 @@ Source directory for the Substack API TypeScript client library. Contains the pu
 - Entity-based API: domain objects carry methods (e.g., `post.comments()`, `profile.posts()`)
 - Service layer: services encapsulate HTTP calls and return internal types
 - Async iterators: pagination via `for await (const post of profile.posts())`
-- Builder pattern: NoteBuilder constructs formatted notes with paragraphs, lists, and links
+- Markdown publishing: `me.publishNote(markdown, options?)` converts markdown to ProseMirror JSON and publishes
 - fp-ts/io-ts: runtime type validation using codecs (e.g., `SubstackPreviewPostCodec`)
 - Domain entities receive service dependencies via constructor injection
 

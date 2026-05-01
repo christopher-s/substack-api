@@ -1,9 +1,9 @@
-import { DiscoveryService } from '@substack-api/internal/services/discovery-service'
+import { SearchService } from '@substack-api/internal/services/search-service'
 import type { HttpClient } from '@substack-api/internal/http-client'
 
 describe('SearchService', () => {
   let mockClient: jest.Mocked<HttpClient>
-  let service: DiscoveryService
+  let service: SearchService
 
   beforeEach(() => {
     mockClient = {
@@ -11,7 +11,7 @@ describe('SearchService', () => {
       post: jest.fn(),
       put: jest.fn()
     } as unknown as jest.Mocked<HttpClient>
-    service = new DiscoveryService(mockClient)
+    service = new SearchService(mockClient)
   })
 
   it('should search with query', async () => {

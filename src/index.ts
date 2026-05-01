@@ -24,7 +24,7 @@ export type {
   FeedTab,
   ProfileFeedTab,
   ActivityFeedTab
-} from '@substack-api/internal/services/discovery-service'
+} from '@substack-api/internal/services/feed-types'
 
 export type { SubstackCategoryPublication } from '@substack-api/internal/types'
 export type { SubstackLiveStreamResponse } from '@substack-api/internal/types'

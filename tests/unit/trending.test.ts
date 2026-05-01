@@ -1,9 +1,9 @@
-import { DiscoveryService } from '@substack-api/internal/services/discovery-service'
+import { FeedService } from '@substack-api/internal/services/feed-service'
 import type { HttpClient } from '@substack-api/internal/http-client'
 
-describe('DiscoveryService - getTrending', () => {
+describe('FeedService - getTrending', () => {
   let mockClient: jest.Mocked<HttpClient>
-  let service: DiscoveryService
+  let service: FeedService
 
   beforeEach(() => {
     mockClient = {
@@ -11,7 +11,7 @@ describe('DiscoveryService - getTrending', () => {
       post: jest.fn(),
       put: jest.fn()
     } as unknown as jest.Mocked<HttpClient>
-    service = new DiscoveryService(mockClient)
+    service = new FeedService(mockClient)
   })
 
   it('should fetch and decode trending response from inbox/top', async () => {

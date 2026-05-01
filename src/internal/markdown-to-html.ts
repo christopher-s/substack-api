@@ -1,3 +1,5 @@
+const SAFE_LANG_RE = /^[a-zA-Z0-9+-]+$/
+
 export function markdownToHtml(md: string): string {
   if (!md.trim()) {
     throw new Error('Markdown content must not be empty')
@@ -28,7 +30,7 @@ export function markdownToHtml(md: string): string {
       }
       i++ // skip closing ```
       const escaped = escapeHtml(codeLines.join('\n'))
-      if (lang) {
+      if (lang && SAFE_LANG_RE.test(lang)) {
         htmlParts.push(`<pre><code class="language-${lang}">${escaped}</code></pre>`)
       } else {
         htmlParts.push(`<pre><code>${escaped}</code></pre>`)

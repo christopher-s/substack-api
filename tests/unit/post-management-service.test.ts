@@ -214,25 +214,25 @@ describe('PostManagementService', () => {
       })
     })
 
-    it('should include extra fields beyond title and body', async () => {
+    it('should include type and audience fields', async () => {
       mockClient.put.mockResolvedValue({ id: 200 })
       await service.updateDraft(200, {
         title: 'Title',
-        custom_field: 'value',
-        numeric_field: 42
+        type: 'podcast',
+        audience: 'paid'
       })
       expect(mockClient.put).toHaveBeenCalledWith('/drafts/200', {
         draft_title: 'Title',
-        custom_field: 'value',
-        numeric_field: 42
+        type: 'podcast',
+        audience: 'paid'
       })
     })
 
-    it('should send empty body when no fields match title/body', async () => {
+    it('should send only title when no other fields provided', async () => {
       mockClient.put.mockResolvedValue({ id: 300 })
-      await service.updateDraft(300, { metadata: 'test' })
+      await service.updateDraft(300, { title: 'Just Title' })
       expect(mockClient.put).toHaveBeenCalledWith('/drafts/300', {
-        metadata: 'test'
+        draft_title: 'Just Title'
       })
     })
 

@@ -55,23 +55,42 @@ To obtain your `substack.sid` cookie:
 src/
 ├── substack-client.ts          # Main client entry point
 ├── index.ts                    # Public API exports
-├── domain/                     # Entity classes (Profile, Post, Note, Comment, builders)
+├── domain/                     # Entity classes (Profile, Post, Note, Comment, etc.)
 │   ├── profile.ts
 │   ├── own-profile.ts
 │   ├── post.ts
+│   ├── publication-post.ts
 │   ├── note.ts
+│   ├── note-publisher.ts
 │   ├── comment.ts
-│   └── note-builder.ts
+│   ├── category.ts
+│   └── entity-deps.ts
 ├── internal/
 │   ├── services/               # Business logic by domain
-│   │   ├── post-service.ts
-│   │   ├── note-service.ts
-│   │   ├── profile-service.ts
+│   │   ├── category-service.ts
+│   │   ├── chat-service.ts
 │   │   ├── comment-service.ts
-│   │   ├── discovery-service.ts
-│   │   ├── publication-service.ts
+│   │   ├── connectivity-service.ts
+│   │   ├── cursor-feed.ts
+│   │   ├── dashboard-service.ts
+│   │   ├── feed-service.ts
+│   │   ├── feed-types.ts
 │   │   ├── following-service.ts
-│   │   └── connectivity-service.ts
+│   │   ├── growth-stats-service.ts
+│   │   ├── note-service.ts
+│   │   ├── notification-service.ts
+│   │   ├── post-management-service.ts
+│   │   ├── post-service.ts
+│   │   ├── profile-activity-service.ts
+│   │   ├── profile-service.ts
+│   │   ├── publication-detail-service.ts
+│   │   ├── publication-service.ts
+│   │   ├── publication-stats-service.ts
+│   │   ├── recommendation-service.ts
+│   │   ├── search-service.ts
+│   │   ├── settings-service.ts
+│   │   ├── subscriber-stats-service.ts
+│   │   └── subscription-service.ts
 │   ├── http-client.ts          # HTTP abstraction with auth and rate limiting
 │   ├── types/                  # io-ts codecs and internal type definitions
 │   └── validation.ts           # Runtime type validation helpers
@@ -106,7 +125,7 @@ pnpm test:unit:fast     # Skip live-api-validation and property tests
 ### 2. Integration Tests
 
 - **Location**: `tests/integration/`
-- **Purpose**: Test entity interactions and builder patterns against a local test server
+- **Purpose**: Test entity interactions and service logic against a local test server
 - **Speed**: Fast (few seconds)
 - **Mocking**: Mock HTTP layer, real entity logic
 

@@ -89,6 +89,9 @@ export class PostManagementService {
     if (data.body !== undefined && data.body.trim().length === 0) {
       throw new Error('Draft body cannot be empty')
     }
+    if (data.body && data.body.length > 10_000_000) {
+      throw new Error('Draft body exceeds maximum size of 10MB')
+    }
     const request = {
       draft_title: data.title,
       draft_body: data.body,
@@ -104,7 +107,7 @@ export class PostManagementService {
 
   async updateDraft(
     id: number,
-    data: { title?: string; body?: string; [key: string]: unknown }
+    data: { title?: string; body?: string; type?: string; audience?: string; bylineUserId?: number }
   ): Promise<SubstackDraftPost> {
     if (data.title !== undefined && data.title.length > 200) {
       throw new Error('Draft title exceeds maximum length of 200 characters')
@@ -115,10 +118,10 @@ export class PostManagementService {
     const request: Record<string, unknown> = {}
     if (data.title !== undefined) request.draft_title = data.title
     if (data.body !== undefined) request.draft_body = data.body
-    for (const [key, value] of Object.entries(data)) {
-      if (key !== 'title' && key !== 'body') {
-        request[key] = value
-      }
+    if (data.type !== undefined) request.type = data.type
+    if (data.audience !== undefined) request.audience = data.audience
+    if (data.bylineUserId !== undefined) {
+      request.draft_bylines = [{ id: data.bylineUserId, is_draft: true, is_guest: false }]
     }
     const response = await this.publicationClient.put<unknown>(`/drafts/${id}`, request)
     return decodeOrThrow(SubstackDraftPostCodec, response, 'Updated draft')

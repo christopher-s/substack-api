@@ -3,6 +3,7 @@ import {
   ConnectivityResult
 } from '@substack-api/internal/services/connectivity-service'
 import { FollowingService } from '@substack-api/internal/services/following-service'
+import type { AxiosResponse } from 'axios'
 import { HttpClient } from '@substack-api/internal/http-client'
 import { AxiosError } from 'axios'
 
@@ -42,7 +43,7 @@ describe('ConnectivityService', () => {
       const axiosError = new AxiosError('Unauthorized', '401', undefined, undefined, {
         status: 401,
         data: {}
-      } as any)
+      } as unknown as AxiosResponse)
       mockFollowingService.getOwnId.mockRejectedValue(axiosError)
 
       // Act
@@ -76,7 +77,7 @@ describe('ConnectivityService', () => {
       const axiosError = new AxiosError('Server Error', '502', undefined, undefined, {
         status: 502,
         data: {}
-      } as any)
+      } as unknown as AxiosResponse)
       mockFollowingService.getOwnId.mockRejectedValue(axiosError)
 
       // Act

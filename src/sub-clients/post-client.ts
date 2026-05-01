@@ -34,7 +34,7 @@ export class PostClient {
   }
 
   async trending(options?: { limit?: number }): Promise<SubstackTrendingResponse> {
-    return (await this.feedService.getTrending(options)) as unknown as SubstackTrendingResponse
+    return await this.feedService.getTrending(options)
   }
 
   async *trendingFeed(options: { limit?: number } = {}): AsyncGenerator<SubstackTrendingResponse> {
@@ -42,10 +42,10 @@ export class PostClient {
     const batchSize = options.limit || this.perPage
 
     while (true) {
-      const response = (await this.feedService.getTrending({
+      const response = await this.feedService.getTrending({
         limit: batchSize,
         offset
-      })) as unknown as SubstackTrendingResponse
+      })
       yield response
       if (response.posts.length < batchSize) break
       offset += batchSize

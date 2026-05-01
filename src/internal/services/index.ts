@@ -30,5 +30,3 @@ export { DashboardService } from '@substack-api/internal/services/dashboard-serv
 export { RecommendationService } from '@substack-api/internal/services/recommendation-service'
 export { ChatService } from '@substack-api/internal/services/chat-service'
 export { NotificationService } from '@substack-api/internal/services/notification-service'
-// Legacy re-export for backward compatibility
-export { DiscoveryService } from '@substack-api/internal/services/discovery-service'

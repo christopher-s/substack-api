@@ -54,7 +54,7 @@ describe('io-ts validation codecs', () => {
 
       expect(() => {
         decodeOrThrow(SubstackPreviewPostCodec, invalidPost, 'test post')
-      }).toThrow('Invalid test post')
+      }).toThrow('Invalid response from test post')
     })
 
     it('When minimal valid post data is provided, then decodes successfully', () => {

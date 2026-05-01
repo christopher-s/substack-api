@@ -1,5 +1,6 @@
 import type { SubstackNote } from '@substack-api/internal'
-import type { HttpClient } from '@substack-api/internal/http-client'
+import type { SubstackComment } from '@substack-api/internal/types/substack-comment'
+import type { EntityDeps } from '@substack-api/domain/entity-deps'
 import { Comment } from '@substack-api/domain/comment'
 
 /**
@@ -23,7 +24,7 @@ export class Note {
 
   constructor(
     private readonly rawData: SubstackNote,
-    private readonly publicationClient: HttpClient
+    private readonly deps: EntityDeps
   ) {
     this.id = rawData.entity_key
     this.body = rawData.comment?.body || ''
@@ -32,7 +33,8 @@ export class Note {
     this.reactions = rawData.comment?.reactions || undefined
     this.childrenCount = rawData.comment?.children_count || undefined
     this.type = rawData.comment?.type || rawData.type || undefined
-    this.publishedAt = new Date(rawData.context?.timestamp ?? Date.now())
+    const parsed = new Date(rawData.context?.timestamp ?? Date.now())
+    this.publishedAt = isNaN(parsed.getTime()) ? new Date() : parsed
 
     // Extract author info from context users
     const firstUser = rawData.context?.users[0]
@@ -51,8 +53,8 @@ export class Note {
     // Convert parent comments to Comment entities
     for (const parentComment of this.rawData.parentComments || []) {
       if (parentComment) {
-        // Convert note comment format to SubstackComment format - minimal fields only
-        const commentData = {
+        // Convert note comment format to SubstackComment format with proper type annotation
+        const commentData: SubstackComment = {
           id: parentComment.id,
           body: parentComment.body,
           user_id: parentComment.user_id,
@@ -66,7 +68,7 @@ export class Note {
           children_count: parentComment.children_count,
           author_is_admin: false // Not available in note comment format
         }
-        yield new Comment(commentData, this.publicationClient)
+        yield new Comment(commentData, this.deps)
       }
     }
   }

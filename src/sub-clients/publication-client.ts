@@ -158,7 +158,7 @@ export class PublicationClient {
 
   async updateDraft(
     id: number,
-    data: { title?: string; body?: string; [key: string]: unknown }
+    data: { title?: string; body?: string; type?: string; audience?: string; bylineUserId?: number }
   ): Promise<SubstackDraftPost> {
     return await this.postManagementService.updateDraft(id, data)
   }

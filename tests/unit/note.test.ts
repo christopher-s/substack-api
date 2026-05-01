@@ -1,18 +1,14 @@
 import { Note } from '@substack-api/domain/note'
 import { Comment } from '@substack-api/domain/comment'
-import type { HttpClient } from '@substack-api/internal/http-client'
 import type { SubstackNoteComment } from '@substack-api/internal'
+import { createMockEntityDeps } from '@test/unit/helpers/mock-services'
 
 describe('Note Entity', () => {
-  let mockPublicationClient: jest.Mocked<HttpClient>
+  let mockDeps: ReturnType<typeof createMockEntityDeps>
   let note: Note
 
   beforeEach(() => {
-    mockPublicationClient = {
-      get: jest.fn(),
-      post: jest.fn(),
-      request: jest.fn()
-    } as unknown as jest.Mocked<HttpClient>
+    mockDeps = createMockEntityDeps()
 
     const mockNoteData = {
       entity_key: '789',
@@ -121,7 +117,7 @@ describe('Note Entity', () => {
       }
     }
 
-    note = new Note(mockNoteData, mockPublicationClient)
+    note = new Note(mockNoteData, mockDeps)
   })
 
   describe('comments()', () => {
@@ -202,7 +198,7 @@ describe('Note Entity', () => {
         }
       }
 
-      const noteEmpty = new Note(mockNoteDataEmpty, mockPublicationClient)
+      const noteEmpty = new Note(mockNoteDataEmpty, mockDeps)
       const comments = []
       for await (const comment of noteEmpty.comments()) {
         comments.push(comment)
@@ -276,7 +272,7 @@ describe('Note Entity', () => {
         }
       }
 
-      const noteUndefined = new Note(mockNoteDataUndefined, mockPublicationClient)
+      const noteUndefined = new Note(mockNoteDataUndefined, mockDeps)
       const comments = []
       for await (const comment of noteUndefined.comments()) {
         comments.push(comment)
@@ -370,7 +366,7 @@ describe('Note Entity', () => {
         }
       }
 
-      const noteWithNull = new Note(mockNoteDataWithNull, mockPublicationClient)
+      const noteWithNull = new Note(mockNoteDataWithNull, mockDeps)
       const comments = []
       for await (const comment of noteWithNull.comments()) {
         comments.push(comment)
@@ -410,7 +406,7 @@ describe('Note Entity', () => {
             ]
           }
         },
-        mockPublicationClient
+        mockDeps
       )
 
       expect(noteWithoutComment.body).toBe('')
@@ -432,7 +428,7 @@ describe('Note Entity', () => {
             reaction_count: 5
           }
         },
-        mockPublicationClient
+        mockDeps
       )
 
       expect(noteWithoutContext.body).toBe('Note body')
@@ -461,7 +457,7 @@ describe('Note Entity', () => {
             users: []
           }
         },
-        mockPublicationClient
+        mockDeps
       )
 
       expect(noteWithNullComment.likesCount).toBe(0)

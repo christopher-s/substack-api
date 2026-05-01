@@ -8,14 +8,14 @@ A modern, type-safe TypeScript client for the Substack API. Browse publications,
 
 ## Origins
 
-This project started as a fork of [`jakub-k-slys/substack-api`](https://github.com/jakub-k-slys/substack-api) and has since evolved into an independently maintained library with its own architecture, testing strategy, and release cadence. While the original provided a solid foundation, this version introduces a modern entity-based API, comprehensive OpenAPI specification, async iterator pagination, a note builder for rich content, runtime type validation with io-ts, and extensive test coverage across unit, integration, end-to-end, and live API validation layers.
+This project started as a fork of [`jakub-k-slys/substack-api`](https://github.com/jakub-k-slys/substack-api) and has since evolved into an independently maintained library with its own architecture, testing strategy, and release cadence. While the original provided a solid foundation, this version introduces a modern entity-based API, comprehensive OpenAPI specification, async iterator pagination, markdown-based note publishing, runtime type validation with io-ts, and extensive test coverage across unit, integration, end-to-end, and live API validation layers.
 
 ## Features
 
 - **Anonymous & Authenticated** — Read public content without a token; authenticate with a `substack.sid` cookie for write access
 - **Entity-Based API** — Navigate naturally: `profile.posts()`, `post.comments()`, `ownProfile.notes()`
 - **Async Iterators** — Built-in pagination with `for await...of`, no manual cursor handling
-- **Note Builder** — Rich text notes with formatting, lists, links, and link attachments via a fluent builder API
+- **Note Publishing** — Publish notes from markdown with optional link attachments via `me.publishNote(markdown)`
 - **Discovery & Search** — Trending posts, category browsing, profile search, and explore feeds
 - **Chat API** — Direct messages, inbox management, and publication chat rooms
 - **Comment & Note Interactions** — Like/unlike comments, restack/unrestack notes
@@ -82,24 +82,13 @@ for await (const post of me.posts({ limit: 10 })) {
   console.log(post.title);
 }
 
-// Publish a note with rich formatting
-await me
-  .newNote()
-  .paragraph()
-  .text('Hello ')
-  .bold('world')
-  .text('!')
-  .paragraph()
-  .text('Check out this ')
-  .link('article', 'https://example.com')
-  .publish();
+// Publish a note with markdown formatting
+await me.publishNote('Hello **world**!\n\nCheck out this [article](https://example.com)');
 
 // Publish a note with a link attachment
-await me
-  .newNoteWithLink('https://example.com/article')
-  .paragraph()
-  .text('Sharing something interesting:')
-  .publish();
+await me.publishNote('Sharing something interesting:', {
+  linkUrl: 'https://example.com/article',
+});
 ```
 
 ## Markdown Support
@@ -137,10 +126,7 @@ const result = await client.createDraftFromMarkdown(
 ```typescript
 const me = await client.ownProfile();
 
-await me
-  .newNote()
-  .markdown('Check out this **bold** take!\n\n- Point one\n- Point two')
-  .publish();
+await me.publishNote('Check out this **bold** take!\n\n- Point one\n- Point two');
 ```
 
 ## Architecture
@@ -161,7 +147,6 @@ Key patterns:
 
 - **Entity navigation** — Domain objects expose related data as methods (`profile.posts()`, `post.comments()`)
 - **Async iterators** — Pagination is transparent; `for await...of` handles cursors automatically
-- **Builder pattern** — `NoteBuilder` constructs rich ProseMirror document trees for publishing
 - **Markdown adapters** — Convert standard markdown to HTML or ProseMirror JSON for posts and notes
 - **Functional validation** — io-ts codecs decode API responses with detailed error messages
 
@@ -217,11 +202,9 @@ for await (const comment of post.comments({ limit: 5 })) {
 ```typescript
 const me = await client.ownProfile();
 
-await me
-  .newNoteWithLink('https://example.com/article')
-  .paragraph()
-  .text('Check out this interesting read:')
-  .publish();
+await me.publishNote('Check out this interesting read:', {
+  linkUrl: 'https://example.com/article',
+});
 ```
 
 ## Authentication
@@ -306,7 +289,7 @@ The site renders the OpenAPI 3.1 specification with Scalar, allowing you to brow
 | `client.postForId(id)` | Post details and comments |
 | `client.noteForId(id)` | Note by ID |
 | `client.commentForId(id)` | Comment by ID |
-| `client.search(query, options?)` | Full-text search (posts, people, publications, notes) |
+| `client.search(query, options?)` | Full-text search (posts, people, publications, notes) — async iterator |
 | `client.profileSearch(query)` | Search user profiles |
 | `client.exploreSearch(options)` | Explore feed with tab filtering |
 | `client.discoverFeed(options)` | Discovery feed with tab selection |
@@ -338,8 +321,7 @@ The site renders the OpenAPI 3.1 specification with Scalar, allowing you to brow
 | Method | Description |
 |---|---|
 | `client.ownProfile()` | Get authenticated profile with write access |
-| `me.newNote()` | Start building a note (fluent builder) |
-| `me.newNoteWithLink(url)` | Start building a note with link attachment |
+| `me.publishNote(markdown, options?)` | Publish a note from markdown (optional `linkUrl` for link preview) |
 | `client.createDraft(data)` | Create a draft post |
 | `client.createDraftFromMarkdown(md, opts)` | Create a draft from markdown content |
 | `client.updateDraft(id, data)` | Update an existing draft |
@@ -411,6 +393,84 @@ The site renders the OpenAPI 3.1 specification with Scalar, allowing you to brow
 | `client.chatSendMessage(uuid, body)` | Send a chat message |
 | `client.chatInvites()` | Pending chat invites |
 | `client.chatReactions()` | Chat reactions |
+
+### Authenticated — Social
+
+| Method | Description |
+|---|---|
+| `client.likeNote(noteId)` | Like a note |
+| `client.unlikeNote(noteId)` | Remove like from a note |
+| `client.likePost(postId)` | Like a post |
+| `client.unlikePost(postId)` | Remove like from a post |
+| `client.followUser(userId)` | Follow a user |
+| `client.unfollowUser(userId)` | Unfollow a user |
+
+### Authenticated — Reading List
+
+| Method | Description |
+|---|---|
+| `client.getReadingList(options)` | Get your reading list (async iterator) |
+| `client.savePost(postId)` | Save a post to your reading list |
+| `client.unsavePost(postId)` | Remove a post from your reading list |
+
+### Authenticated — Notifications
+
+| Method | Description |
+|---|---|
+| `client.getNotifications()` | Get your notifications |
+| `client.markNotificationsSeen()` | Mark all notifications as seen |
+
+### Authenticated — Pledges
+
+| Method | Description |
+|---|---|
+| `client.pledgeSummary()` | Pledge revenue summary |
+| `client.pledges()` | List pledges |
+| `client.pledgePlans()` | Pledge plans for your publication |
+| `client.pledgePlansSummary()` | Summary of pledge plans |
+| `client.readerReferrals()` | Reader referral statistics |
+
+### Authenticated — Publication Settings
+
+| Method | Description |
+|---|---|
+| `client.publisherSettings()` | Publisher settings |
+| `client.publicationUser()` | Publication user info |
+| `client.sections()` | Publication sections |
+| `client.publicationSettings()` | Publication-level settings |
+| `client.bestsellerTier()` | Current bestseller tier |
+| `client.subscriptionSettings()` | Subscription configuration |
+| `client.boostSettings()` | Boost settings |
+| `client.subscriptionsPage()` | Subscriptions page data |
+
+### Authenticated — Analytics
+
+| Method | Description |
+|---|---|
+| `client.growthEvents()` | Growth events data |
+| `client.audienceLocation(options)` | Audience breakdown by location |
+| `client.audienceLocationTotal()` | Total audience by location |
+| `client.audienceOverlap()` | Audience overlap statistics |
+| `client.visitorSources()` | Visitor source breakdown |
+| `client.trafficTimeseries()` | Traffic over time |
+| `client.emailStats()` | Email statistics |
+| `client.email30dOpenRate()` | 30-day email open rate |
+
+### Authenticated — Additional Methods
+
+| Method | Description |
+|---|---|
+| `client.commentReplies(commentId)` | Threaded replies to a comment |
+| `client.trending(options)` | Trending posts with publications (async iterator) |
+| `client.markPostSeen(postId)` | Mark a post as seen |
+| `client.publicationExport()` | Publication export status/history |
+| `client.publicationSearch(query)` | Search for publications |
+| `client.subscriptions()` | List subscriptions |
+| `client.outgoingRecommendationsPaginated(options)` | Paginated outgoing recommendations |
+| `client.chatMarkInboxSeen()` | Mark chat inbox as seen |
+| `client.chatMarkDmSeen(uuid)` | Mark a DM as seen |
+| `client.chatMarkInvitesSeen()` | Mark chat invites as seen |
+| `client.chatRealtimeToken()` | Get a realtime chat token |
 
 See the [docs site](https://christopher-s.github.io/substack-api/) for the complete OpenAPI endpoint inventory.
 

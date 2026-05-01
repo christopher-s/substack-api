@@ -87,7 +87,8 @@ export class HttpClient {
     const axiosConfig: Record<string, unknown> = {
       baseURL: opts.baseUrl,
       headers: buildHeaders(opts.headerMode ?? 'api', this.cookies),
-      httpsAgent: new https.Agent({ rejectUnauthorized: true })
+      httpsAgent: new https.Agent({ rejectUnauthorized: true }),
+      maxRedirects: 0
     }
 
     if (opts.proxy) {

@@ -17,7 +17,6 @@ export function getErrorMessage(error: unknown): string {
 
 import { pipe } from 'fp-ts/function'
 import { fold } from 'fp-ts/Either'
-import { PathReporter } from 'io-ts/PathReporter'
 import * as t from 'io-ts'
 
 /**
@@ -39,8 +38,7 @@ export function decodeOrThrow<A>(
     result,
     fold(
       (_errors) => {
-        const errorMessage = PathReporter.report(result).join(', ')
-        throw new Error(`Invalid ${errorContext}: ${errorMessage}`)
+        throw new Error(`Invalid response from ${errorContext}`)
       },
       (parsed) => parsed
     )

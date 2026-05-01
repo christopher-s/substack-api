@@ -9,7 +9,7 @@ import {
   CommentService,
   PublicationService,
   DashboardService,
-  DiscoveryService,
+  FeedService,
   PostService,
   FollowingService,
   NotificationService
@@ -27,7 +27,7 @@ describe('SubstackClient new service methods', () => {
   let mockCommentService: jest.Mocked<CommentService>
   let mockPublicationService: jest.Mocked<PublicationService>
   let mockDashboardService: jest.Mocked<DashboardService>
-  let discoveryService: jest.Mocked<DiscoveryService>
+  let discoveryService: jest.Mocked<FeedService>
   let mockPostService: jest.Mocked<PostService>
   let mockFollowingService: jest.Mocked<FollowingService>
   let mockNotificationService: jest.Mocked<NotificationService>
@@ -63,7 +63,7 @@ describe('SubstackClient new service methods', () => {
 
     mockDashboardService = new DashboardService(mockHttpClient) as jest.Mocked<DashboardService>
 
-    discoveryService = new DiscoveryService(mockHttpClient) as jest.Mocked<DiscoveryService>
+    discoveryService = new FeedService(mockHttpClient) as jest.Mocked<FeedService>
     discoveryService.getFeed = jest.fn()
 
     mockNoteService = new NoteService(mockHttpClient) as jest.Mocked<NoteService>

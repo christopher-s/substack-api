@@ -3,9 +3,11 @@ import type { RetryInfo } from '@substack-api/internal/retry'
 import type { AxiosError } from 'axios'
 
 function createAxiosError(status: number): AxiosError {
-  const error = new Error(`HTTP ${status}`) as AxiosError
-  ;(error as any).response = { status, headers: {}, data: {}, config: {}, statusText: '' }
-  ;(error as any).isAxiosError = true
+  const error = new Error(`HTTP ${status}`) as unknown as AxiosError
+  Object.assign(error, {
+    response: { status, headers: {}, data: {}, config: {}, statusText: '' },
+    isAxiosError: true
+  })
   return error
 }
 

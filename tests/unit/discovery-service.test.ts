@@ -1,10 +1,14 @@
-import { DiscoveryService } from '@substack-api/internal/services/discovery-service'
-import type { FeedTab, ProfileFeedTab } from '@substack-api/internal/services/discovery-service'
+import { FeedService } from '@substack-api/internal/services/feed-service'
+import { CategoryService } from '@substack-api/internal/services/category-service'
+import { ProfileActivityService } from '@substack-api/internal/services/profile-activity-service'
+import type { FeedTab, ProfileFeedTab } from '@substack-api/internal/services/feed-types'
 import type { HttpClient } from '@substack-api/internal/http-client'
 
-describe('DiscoveryService', () => {
+describe('FeedService / CategoryService / ProfileActivityService', () => {
   let mockClient: jest.Mocked<HttpClient>
-  let service: DiscoveryService
+  let feedService: FeedService
+  let categoryService: CategoryService
+  let profileActivityService: ProfileActivityService
 
   beforeEach(() => {
     mockClient = {
@@ -12,7 +16,9 @@ describe('DiscoveryService', () => {
       post: jest.fn(),
       put: jest.fn()
     } as unknown as jest.Mocked<HttpClient>
-    service = new DiscoveryService(mockClient)
+    feedService = new FeedService(mockClient)
+    categoryService = new CategoryService(mockClient)
+    profileActivityService = new ProfileActivityService(mockClient)
   })
 
   describe('getTopPosts', () => {
@@ -28,14 +34,14 @@ describe('DiscoveryService', () => {
         ]
       })
 
-      const result = await service.getTopPosts()
+      const result = await feedService.getTopPosts()
       expect(result.items).toHaveLength(1)
       expect(mockClient.get).toHaveBeenCalledWith('/inbox/top')
     })
 
     it('When empty inbox', async () => {
       mockClient.get.mockResolvedValue({})
-      const result = await service.getTopPosts()
+      const result = await feedService.getTopPosts()
       expect(result.items).toHaveLength(0)
     })
   })
@@ -43,13 +49,13 @@ describe('DiscoveryService', () => {
   describe('getFeed', () => {
     it('should fetch feed with default tab', async () => {
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
-      await service.getFeed()
+      await feedService.getFeed()
       expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining('tab=for-you'))
     })
 
     it('should pass cursor for pagination', async () => {
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
-      await service.getFeed({ cursor: 'abc123' })
+      await feedService.getFeed({ cursor: 'abc123' })
       expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining('cursor=abc123'))
     })
 
@@ -58,7 +64,7 @@ describe('DiscoveryService', () => {
         items: [{ type: 'post' }],
         nextCursor: 'next-page'
       })
-      const result = await service.getFeed({ tab: 'top' })
+      const result = await feedService.getFeed({ tab: 'top' })
       expect(result.items).toHaveLength(1)
       expect(result.nextCursor).toBe('next-page')
     })
@@ -67,7 +73,7 @@ describe('DiscoveryService', () => {
       const tabs: FeedTab[] = ['for-you', 'top', 'popular', 'catchup', 'notes', 'explore']
       for (const tab of tabs) {
         mockClient.get.mockResolvedValueOnce({ items: [], nextCursor: null })
-        await service.getFeed({ tab })
+        await feedService.getFeed({ tab })
         expect(mockClient.get).toHaveBeenCalledWith(
           expect.stringContaining(`tab=${encodeURIComponent(tab)}`)
         )
@@ -76,7 +82,7 @@ describe('DiscoveryService', () => {
 
     it('should use tab_id parameter when tabId is provided', async () => {
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
-      await service.getFeed({ tabId: 'subscribed' })
+      await feedService.getFeed({ tabId: 'subscribed' })
       expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining('tab_id=subscribed'))
       expect(mockClient.get).not.toHaveBeenCalledWith(expect.stringContaining('tab='))
     })
@@ -87,13 +93,13 @@ describe('DiscoveryService', () => {
         { id: 'subscribed', name: 'Following', type: 'secondary' }
       ]
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null, tabs: mockTabs })
-      const result = await service.getFeed({ tabId: 'for-you' })
+      const result = await feedService.getFeed({ tabId: 'for-you' })
       expect(result.tabs).toEqual(mockTabs)
     })
 
     it('should omit tabs when not in response', async () => {
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
-      const result = await service.getFeed()
+      const result = await feedService.getFeed()
       expect(result.tabs).toBeUndefined()
     })
   })
@@ -112,7 +118,7 @@ describe('DiscoveryService', () => {
         }
       ])
 
-      const result = await service.getCategories()
+      const result = await categoryService.getCategories()
       expect(result).toHaveLength(1)
       expect(mockClient.get).toHaveBeenCalledWith('/categories')
     })
@@ -121,20 +127,20 @@ describe('DiscoveryService', () => {
   describe('getProfileActivity', () => {
     it('should fetch profile activity', async () => {
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
-      const result = await service.getProfileActivity(123)
+      const result = await profileActivityService.getProfileActivity(123)
       expect(mockClient.get).toHaveBeenCalledWith('/reader/feed/profile/123')
       expect(result.nextCursor).toBeNull()
     })
 
     it('should pass cursor for pagination', async () => {
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
-      await service.getProfileActivity(123, { cursor: 'xyz' })
+      await profileActivityService.getProfileActivity(123, { cursor: 'xyz' })
       expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining('cursor=xyz'))
     })
 
     it('should include tab parameter in URL', async () => {
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
-      await service.getProfileActivity(123, { tab: 'posts' })
+      await profileActivityService.getProfileActivity(123, { tab: 'posts' })
       expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining('tab=posts'))
     })
 
@@ -142,14 +148,14 @@ describe('DiscoveryService', () => {
       const tabs: ProfileFeedTab[] = ['posts', 'notes', 'comments', 'likes']
       for (const tab of tabs) {
         mockClient.get.mockResolvedValueOnce({ items: [], nextCursor: null })
-        await service.getProfileActivity(123, { tab })
+        await profileActivityService.getProfileActivity(123, { tab })
         expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining(`tab=${tab}`))
       }
     })
 
     it('should omit tab when not specified', async () => {
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
-      await service.getProfileActivity(123)
+      await profileActivityService.getProfileActivity(123)
       const calledUrl = mockClient.get.mock.calls[0][0] as string
       expect(calledUrl).not.toContain('tab=')
     })
@@ -158,7 +164,7 @@ describe('DiscoveryService', () => {
   describe('getProfileLikes', () => {
     it('should fetch profile likes with types[]=like', async () => {
       mockClient.get.mockResolvedValue({ items: [], nextCursor: null })
-      await service.getProfileLikes(456)
+      await profileActivityService.getProfileLikes(456)
       expect(mockClient.get).toHaveBeenCalledWith(expect.stringContaining('types%5B%5D=like'))
     })
   })

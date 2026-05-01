@@ -69,7 +69,9 @@ export class ProfileService {
    */
   async getProfileBySlug(slug: string): Promise<SubstackFullProfile> {
     if (!/^[a-zA-Z0-9_-]+$/.test(slug)) {
-      throw new Error(`Invalid slug format: ${slug}`)
+      throw new Error(
+        'Invalid slug format: slug must contain only alphanumeric characters, hyphens, and underscores'
+      )
     }
     const rawResponse = await this.substackClient.get<unknown>(`/user/${slug}/public_profile`)
     return decodeOrThrow(SubstackFullProfileCodec, rawResponse, 'Full profile response')
