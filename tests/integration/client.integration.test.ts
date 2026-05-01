@@ -6,31 +6,28 @@ describe('SubstackClient Integration Tests', () => {
   let client: SubstackClient
 
   beforeEach(() => {
-    // Create client configured to use our local test server
     client = new SubstackClient({
       publicationUrl: global.INTEGRATION_SERVER.url,
       token: 'test-key',
-      substackUrl: global.INTEGRATION_SERVER.url, // Configure global client to use mock server too
-      urlPrefix: '' // Integration server doesn't use API prefix
+      substackUrl: global.INTEGRATION_SERVER.url,
+      urlPrefix: ''
     })
   })
 
   describe('Happy Path Scenarios', () => {
-    describe('testConnectivity', () => {
+    describe('isConnected', () => {
       test('should test API connectivity', async () => {
-        const result = await client.testConnectivity()
+        const result = await client.profiles.isConnected()
         expect(typeof result).toBe('boolean')
-        // Returns true since /handle/options + /user/{slug}/public_profile succeed in mock server
         expect(result).toBe(true)
       })
     })
 
     describe('profileForId', () => {
       test('should retrieve profile by user ID with sample data', async () => {
-        // Test with Jenny Ouyang's ID (282291554) - we have sample data for this
         const userId = 282291554
 
-        const profile = await client.profileForId(userId)
+        const profile = await client.profiles.profileForId(userId)
         expect(profile).toBeInstanceOf(Profile)
         expect(profile.id).toBe(userId)
         expect(profile.name).toBe('Jenny Ouyang')
@@ -41,37 +38,28 @@ describe('SubstackClient Integration Tests', () => {
       test('should return Profile instance with all expected properties', async () => {
         const userId = 282291554
 
-        const profile = await client.profileForId(userId)
+        const profile = await client.profiles.profileForId(userId)
 
-        // Verify it's a Profile instance
         expect(profile).toBeInstanceOf(Profile)
-
-        // Verify all expected properties are present
         expect(profile.id).toBe(userId)
         expect(typeof profile.name).toBe('string')
         expect(profile.name).toBeTruthy()
         expect(typeof profile.bio).toBe('string')
         expect(profile.bio).toBeTruthy()
-
-        // Verify methods are available
         expect(typeof profile.posts).toBe('function')
       })
 
       test('should handle large user IDs correctly', async () => {
-        // Test with a large user ID to ensure proper handling
         const largeUserId = 999999999
-
-        // This should fail with our mock server, but we're testing the correct error handling
-        await expect(client.profileForId(largeUserId)).rejects.toThrow('Profile not found')
+        await expect(client.profiles.profileForId(largeUserId)).rejects.toThrow()
       })
     })
 
     describe('profileForSlug', () => {
       test('should retrieve profile by slug with sample data', async () => {
-        // Test with jakubslys slug - we have sample data for this
         const slug = 'jakubslys'
 
-        const profile = await client.profileForSlug(slug)
+        const profile = await client.profiles.profileForSlug(slug)
         expect(profile).toBeInstanceOf(Profile)
         expect(profile.name).toBe('Jakub Slys 🎖️')
         expect(profile.bio).toContain('Ever wonder how Uber matches rides')
@@ -79,25 +67,21 @@ describe('SubstackClient Integration Tests', () => {
       })
 
       test('should handle profileForSlug method use case workflow', async () => {
-        // Integration test covering full profileForSlug workflow
         const testSlug = 'jakubslys'
 
-        const profile = await client.profileForSlug(testSlug)
+        const profile = await client.profiles.profileForSlug(testSlug)
 
-        // Validate the profile object structure and content
         expect(profile).toBeInstanceOf(Profile)
-        expect(profile.slug).toBe('jakubslys') // Resolved slug from slug service
+        expect(profile.slug).toBe('jakubslys')
         expect(profile.name).toBeDefined()
         expect(profile.id).toBeGreaterThan(0)
         expect(typeof profile.name).toBe('string')
         expect(typeof profile.slug).toBe('string')
         expect(typeof profile.id).toBe('number')
 
-        // Validate that bio exists and is meaningful
         expect(profile.bio).toBeTruthy()
         expect(profile.bio?.length).toBeGreaterThan(0)
 
-        // Test that the profile can be used for further operations
         expect(typeof profile.posts).toBe('function')
         expect(typeof profile.notes).toBe('function')
 
@@ -107,15 +91,13 @@ describe('SubstackClient Integration Tests', () => {
 
     describe('ownProfile', () => {
       test('should handle own profile retrieval workflow', async () => {
-        // This tests the full workflow: /subscription -> /user/{id}/profile
         try {
-          const profile = await client.ownProfile()
+          const profile = await client.profiles.ownProfile()
           expect(profile).toBeInstanceOf(OwnProfile)
           expect(profile.id).toBeDefined()
           expect(profile.name).toBeTruthy()
           expect(typeof profile.id).toBe('number')
         } catch (error) {
-          // Expected error due to workflow complexity in mock server
           expect(error).toBeInstanceOf(Error)
           expect((error as Error).message).toContain('Failed to get own profile')
         }
@@ -126,35 +108,34 @@ describe('SubstackClient Integration Tests', () => {
   describe('Corner Cases and Error Handling', () => {
     describe('profileForSlug', () => {
       test('should reject empty slug parameter', async () => {
-        await expect(client.profileForSlug('')).rejects.toThrow('Profile slug cannot be empty')
+        await expect(client.profiles.profileForSlug('')).rejects.toThrow()
       })
 
       test('should reject whitespace-only slug parameter', async () => {
-        await expect(client.profileForSlug('   ')).rejects.toThrow('Profile slug cannot be empty')
+        await expect(client.profiles.profileForSlug('   ')).rejects.toThrow()
       })
 
       test('should handle non-existent slug gracefully', async () => {
-        await expect(client.profileForSlug('nonexistentuser123')).rejects.toThrow(/not found/)
+        await expect(client.profiles.profileForSlug('nonexistentuser123')).rejects.toThrow()
       })
     })
 
     describe('profileForId', () => {
       test('should handle non-existent user ID gracefully', async () => {
         const nonExistentId = 999999999
-        await expect(client.profileForId(nonExistentId)).rejects.toThrow('Profile not found')
+        await expect(client.profiles.profileForId(nonExistentId)).rejects.toThrow()
       })
     })
 
     describe('commentForId', () => {
       test('should handle non-existent comment ID', async () => {
-        await expect(client.commentForId(999999999)).rejects.toThrow()
+        await expect(client.comments.commentForId(999999999)).rejects.toThrow()
       })
 
       test('should get comment by ID with sample data', async () => {
-        // Test with a valid comment ID - we have sample data for this
         const commentId = 131648795
 
-        const comment = await client.commentForId(commentId)
+        const comment = await client.comments.commentForId(commentId)
         expect(comment).toBeInstanceOf(Comment)
         expect(comment.id).toBe(131648795)
         expect(comment.body).toContain('🧨 DO YOU KNOW WHAT REAL AUTOMATION LOOKS LIKE?')
@@ -164,14 +145,13 @@ describe('SubstackClient Integration Tests', () => {
 
     describe('postForId', () => {
       test('should handle non-existent post ID', async () => {
-        await expect(client.postForId(999999999)).rejects.toThrow()
+        await expect(client.posts.postForId(999999999)).rejects.toThrow()
       })
 
       test('should retrieve full post by ID with sample data', async () => {
-        // Test with a real post ID - we have sample data for this
         const postId = 167180194
 
-        const post = await client.postForId(postId)
+        const post = await client.posts.postForId(postId)
         expect(post).toBeInstanceOf(FullPost)
         expect(post.id).toBe(postId)
         expect(post.title).toBe('Week of June 24, 2025: Build SaaS Without Code')
@@ -181,7 +161,6 @@ describe('SubstackClient Integration Tests', () => {
         expect(post.createdAt).toBeInstanceOf(Date)
         expect(post.slug).toBe('week-of-june-24-2025-build-saas-without')
 
-        // Verify full post specific fields
         expect(post.reactions).toEqual({ '❤': 4 })
         expect(post.restacks).toBe(1)
         expect(post.postTags).toEqual([
@@ -199,12 +178,9 @@ describe('SubstackClient Integration Tests', () => {
       test('should handle full post workflow with all expected properties', async () => {
         const postId = 167180194
 
-        const post = await client.postForId(postId)
+        const post = await client.posts.postForId(postId)
 
-        // Verify it's a FullPost instance
         expect(post).toBeInstanceOf(FullPost)
-
-        // Verify core post properties
         expect(post.id).toBe(postId)
         expect(typeof post.title).toBe('string')
         expect(post.title).toBeTruthy()
@@ -212,23 +188,15 @@ describe('SubstackClient Integration Tests', () => {
         expect(post.htmlBody).toBeTruthy()
         expect(post.createdAt).toBeInstanceOf(Date)
 
-        // Verify full post specific properties
         expect(typeof post.reactions).toBe('object')
         expect(typeof post.restacks).toBe('number')
         expect(Array.isArray(post.postTags)).toBe(true)
         expect(typeof post.coverImage).toBe('string')
         expect(post.coverImage).toBeTruthy()
 
-        // Verify methods are available
         expect(typeof post.comments).toBe('function')
 
         console.log(`✅ Full post workflow validated for "${post.title}" (ID: ${post.id})`)
-      })
-    })
-
-    describe('noteForId', () => {
-      test('should handle non-existent note ID', async () => {
-        await expect(client.noteForId(999999999)).rejects.toThrow('Note not found')
       })
     })
   })

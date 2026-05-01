@@ -19,7 +19,7 @@ describe('note publishing tests', () => {
   })
 
   test('should publish note with correct request structure from markdown', async () => {
-    const profile = await client.ownProfile()
+    const profile = await client.profiles.ownProfile()
     await profile.publishNote('**test**\n\n*test1*\n\n`another test` \n\njust a test')
 
     expect(global.INTEGRATION_SERVER.capturedRequests).toHaveLength(1)
