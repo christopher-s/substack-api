@@ -149,7 +149,13 @@ export class SubstackClient {
    * If no protocol is specified, defaults to https://
    */
   private static normalizeUrl(url: string): string {
-    if (url.startsWith('http://') || url.startsWith('https://')) {
+    if (url.startsWith('http://')) {
+      if (url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1')) {
+        return url
+      }
+      throw new Error('HTTPS is required; HTTP URLs are not supported for security reasons')
+    }
+    if (url.startsWith('https://')) {
       return url
     }
     return `https://${url}`
@@ -187,7 +193,9 @@ export class SubstackClient {
       baseDelayMs: config.baseDelayMs,
       maxDelayMs: config.maxDelayMs,
       headerMode: config.headerMode,
-      onRateLimit: config.onRateLimit
+      onRateLimit: config.onRateLimit,
+      onTokenExpired: config.onTokenExpired,
+      proxy: config.proxy
     })
 
     // Construct full base URL for global Substack endpoints
@@ -203,7 +211,9 @@ export class SubstackClient {
       baseDelayMs: config.baseDelayMs,
       maxDelayMs: config.maxDelayMs,
       headerMode: config.headerMode,
-      onRateLimit: config.onRateLimit
+      onRateLimit: config.onRateLimit,
+      onTokenExpired: config.onTokenExpired,
+      proxy: config.proxy
     })
 
     // Initialize services
@@ -817,6 +827,16 @@ export class SubstackClient {
     return await this.commentService.deleteComment(commentId)
   }
 
+  async likeComment(commentId: number): Promise<void> {
+    this.requireAuth('likeComment')
+    return await this.commentService.likeComment(commentId)
+  }
+
+  async unlikeComment(commentId: number): Promise<void> {
+    this.requireAuth('unlikeComment')
+    return await this.commentService.unlikeComment(commentId)
+  }
+
   // ── Publication detail methods ──────────────────────────────────────
 
   async publicationDetails(): Promise<SubstackPublicationDetail> {
@@ -879,6 +899,18 @@ export class SubstackClient {
     this.requireAuth('noteStats')
     this.requirePublication('noteStats')
     return await this.noteService.getNoteStats(entityKey)
+  }
+
+  async restackNote(noteId: number): Promise<void> {
+    this.requireAuth('restackNote')
+    this.requirePublication('restackNote')
+    return await this.noteService.restackNote(noteId)
+  }
+
+  async unrestackNote(noteId: number): Promise<void> {
+    this.requireAuth('unrestackNote')
+    this.requirePublication('unrestackNote')
+    return await this.noteService.unrestackNote(noteId)
   }
 
   // ── Settings methods (require auth) ─────────────────────────────────

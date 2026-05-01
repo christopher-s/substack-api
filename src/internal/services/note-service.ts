@@ -152,4 +152,12 @@ export class NoteService {
     const response = await this.publicationClient.get<unknown>(`/note_stats/${entityKey}`)
     return decodeOrThrow(SubstackNoteStatsCodec, response, 'Note stats')
   }
+
+  async restackNote(noteId: number): Promise<void> {
+    await this.publicationClient.post(`/notes/${noteId}/restack`)
+  }
+
+  async unrestackNote(noteId: number): Promise<void> {
+    await this.publicationClient.post(`/notes/${noteId}/unrestack`)
+  }
 }

@@ -1,10 +1,13 @@
 /**
  * HTTP client utility for Substack API requests
  */
+import https from 'https'
 import axios, { AxiosInstance } from 'axios'
+import * as t from 'io-ts'
 import { TokenBucket } from '@substack-api/internal/rate-limiter'
 import { RetryPolicy } from '@substack-api/internal/retry'
 import type { RetryInfo } from '@substack-api/internal/retry'
+import { decodeOrThrow } from '@substack-api/internal/validation'
 
 export type { RetryInfo }
 
@@ -12,6 +15,13 @@ export interface RateLimitInfo {
   retryAfter?: number
   attempt: number
   statusCode: number
+}
+
+export interface HttpClientProxyConfig {
+  host: string
+  port: number
+  protocol?: 'http' | 'https'
+  auth?: { username: string; password: string }
 }
 
 export interface HttpClientOptions {
@@ -24,16 +34,23 @@ export interface HttpClientOptions {
   maxDelayMs?: number
   headerMode?: 'browser' | 'api' | 'minimal'
   onRateLimit?: (info: RateLimitInfo) => void
+  onTokenExpired?: () => Promise<string>
+  proxy?: HttpClientProxyConfig
 }
 
 /**
- * Chrome 136 UA strings with slightly varied patch versions.
- * Rotating prevents fingerprinting on the exact build number.
+ * Browser UA strings with varied versions and browsers.
+ * Rotating prevents fingerprinting on browser identity.
  */
 const CHROME_UAS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.7103.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.7125.0 Safari/537.36'
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.7125.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.7100.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.7110.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.7130.0 Safari/537.36'
 ]
 
 function pickRandomUA(): string {
@@ -44,7 +61,9 @@ export class HttpClient {
   private readonly httpClient: AxiosInstance
   private readonly retryPolicy: RetryPolicy
   private readonly onRateLimit?: (info: RateLimitInfo) => void
+  private readonly onTokenExpired?: () => Promise<string>
   private cookies: Record<string, string> = {}
+  private tokenExpiredRetried = false
 
   constructor(options: HttpClientOptions)
   /** @deprecated Use HttpClientOptions object form */
@@ -63,8 +82,17 @@ export class HttpClient {
       this.cookies['substack.sid'] = opts.token
     }
 
-    const headers = buildHeaders(opts.headerMode ?? 'api', this.cookies)
-    this.httpClient = axios.create({ baseURL: opts.baseUrl, headers })
+    const axiosConfig: Record<string, unknown> = {
+      baseURL: opts.baseUrl,
+      headers: buildHeaders(opts.headerMode ?? 'api', this.cookies),
+      httpsAgent: new https.Agent({ rejectUnauthorized: true })
+    }
+
+    if (opts.proxy) {
+      axiosConfig.proxy = opts.proxy
+    }
+
+    this.httpClient = axios.create(axiosConfig as Parameters<typeof axios.create>[0])
 
     const bucket = new TokenBucket({
       maxRequestsPerSecond: opts.maxRequestsPerSecond ?? 25,
@@ -78,6 +106,7 @@ export class HttpClient {
     })
 
     this.onRateLimit = opts.onRateLimit
+    this.onTokenExpired = opts.onTokenExpired
 
     // Rate-limit via token bucket before each request
     this.httpClient.interceptors.request.use(async (config) => {
@@ -103,20 +132,42 @@ export class HttpClient {
       return config
     })
 
-    // Capture Set-Cookie headers from responses
-    this.httpClient.interceptors.response.use((response) => {
-      const setCookie = response.headers?.['set-cookie']
-      if (setCookie) {
-        const entries = Array.isArray(setCookie) ? setCookie : [setCookie]
-        for (const entry of entries) {
-          const match = entry.match(/^([^=]+)=([^;]+)/)
-          if (match) {
-            this.cookies[match[1]] = match[2]
+    // Capture Set-Cookie headers from responses and handle 401 token rotation
+    this.httpClient.interceptors.response.use(
+      (response) => {
+        this.tokenExpiredRetried = false
+        const setCookie = response.headers?.['set-cookie']
+        if (setCookie) {
+          const entries = Array.isArray(setCookie) ? setCookie : [setCookie]
+          for (const entry of entries) {
+            const match = entry.match(/^([^=]+)=([^;]+)/)
+            if (match) {
+              this.cookies[match[1]] = match[2]
+            }
           }
         }
+        return response
+      },
+      async (error) => {
+        if (error.response?.status === 401 && this.onTokenExpired && !this.tokenExpiredRetried) {
+          this.tokenExpiredRetried = true
+          try {
+            const newToken = await this.onTokenExpired()
+            if (newToken) {
+              this.cookies['substack.sid'] = newToken
+              error.config.headers['Cookie'] = Object.entries(this.cookies)
+                .map(([k, v]) => `${k}=${v}`)
+                .join('; ')
+              return await this.httpClient.request(error.config)
+            }
+          } catch {
+            // Token refresh failed — fall through to original error
+          }
+        }
+        this.tokenExpiredRetried = false
+        return Promise.reject(error)
       }
-      return response
-    })
+    )
   }
 
   async get<T>(path: string): Promise<T> {
@@ -133,6 +184,25 @@ export class HttpClient {
 
   async delete<T>(path: string): Promise<T> {
     return this.requestWithRetry(() => this.httpClient.delete(path))
+  }
+
+  async getValidated<T>(
+    codec: t.Type<T, unknown, unknown>,
+    path: string,
+    errorContext?: string
+  ): Promise<T> {
+    const data = await this.get<unknown>(path)
+    return decodeOrThrow(codec, data, errorContext ?? path)
+  }
+
+  async postValidated<T>(
+    codec: t.Type<T, unknown, unknown>,
+    path: string,
+    data?: unknown,
+    errorContext?: string
+  ): Promise<T> {
+    const response = await this.post<unknown>(path, data)
+    return decodeOrThrow(codec, response, errorContext ?? path)
   }
 
   private async requestWithRetry<T>(fn: () => Promise<{ data: T }>): Promise<T> {

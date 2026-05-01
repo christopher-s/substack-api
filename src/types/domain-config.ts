@@ -15,6 +15,8 @@ export interface SubstackConfig {
   maxDelayMs?: number // Maximum delay in ms for backoff (optional, defaults to 30000)
   headerMode?: 'browser' | 'api' | 'minimal' // Header set to use (optional, defaults to 'api')
   onRateLimit?: (info: import('../internal/http-client').RateLimitInfo) => void
+  onTokenExpired?: () => Promise<string> // Callback to refresh token on 401 (optional)
+  proxy?: import('../internal/http-client').HttpClientProxyConfig // Proxy configuration (optional)
 }
 
 export interface PaginationParams {

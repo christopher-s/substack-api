@@ -61,6 +61,12 @@ export class ChatService {
     body: string,
     options?: { clientId?: string }
   ): Promise<SendMessageResponse> {
+    if (!body || body.trim().length === 0) {
+      throw new Error('Message body cannot be empty')
+    }
+    if (body.length > 5000) {
+      throw new Error('Message body exceeds maximum length of 5000 characters')
+    }
     const clientId = options?.clientId ?? randomUUID()
     const raw = await this.substackClient.post<unknown>(
       `/messages/dm/${encodeURIComponent(uuid)}`,

@@ -2,6 +2,108 @@ import { Profile } from '@substack-api/domain/profile'
 import { Note } from '@substack-api/domain'
 import { createMockEntityDeps } from '@test/unit/helpers/mock-services'
 
+// ---------------------------------------------------------------------------
+// Shared mock factories
+// ---------------------------------------------------------------------------
+
+const baseTrackingParams = {
+  item_primary_entity_key: 'c-default',
+  item_entity_key: 'c-default',
+  item_type: 'comment',
+  item_content_user_id: 123,
+  item_context_type: 'note',
+  item_context_type_bucket: '',
+  item_context_timestamp: '2023-01-01T00:00:00Z',
+  item_context_user_id: 123,
+  item_context_user_ids: [123],
+  item_can_reply: true,
+  item_is_fresh: false,
+  item_last_impression_at: null,
+  item_page: null,
+  item_page_rank: 1,
+  impression_id: 'test-impression',
+  followed_user_count: 0,
+  subscribed_publication_count: 0,
+  is_following: false,
+  is_explicitly_subscribed: false
+}
+
+function mockTrackingParameters(
+  overrides: Partial<typeof baseTrackingParams> = {}
+): typeof baseTrackingParams {
+  return { ...baseTrackingParams, ...overrides }
+}
+
+const baseNoteUser = {
+  id: 123,
+  name: 'Test User',
+  handle: 'testuser',
+  photo_url: 'https://example.com/photo.jpg',
+  profile_set_up_at: '2023-01-01T00:00:00Z',
+  reader_installed_at: '2023-01-01T00:00:00Z'
+}
+
+interface CreateMockNoteOptions {
+  id: number
+  body: string
+  date?: string
+  pageRank?: number
+  reactionCount?: number
+  reactions?: Record<string, number>
+  restacks?: number
+}
+
+function createMockNote(options: CreateMockNoteOptions) {
+  const {
+    id,
+    body,
+    date = '2023-01-01T00:00:00Z',
+    pageRank = 1,
+    reactionCount = 0,
+    reactions = {},
+    restacks = 0
+  } = options
+
+  return {
+    entity_key: `c-${id}`,
+    type: 'comment',
+    context: {
+      type: 'note',
+      timestamp: date,
+      users: [baseNoteUser],
+      isFresh: false,
+      page_rank: pageRank
+    },
+    comment: {
+      name: 'Test User',
+      handle: 'testuser',
+      photo_url: 'https://example.com/photo.jpg',
+      id,
+      body,
+      type: 'feed',
+      user_id: 123,
+      date,
+      ancestor_path: '',
+      reply_minimum_role: 'everyone',
+      reaction_count: reactionCount,
+      reactions,
+      restacks,
+      restacked: false,
+      children_count: 0,
+      attachments: []
+    },
+    parentComments: [],
+    canReply: true,
+    isMuted: false,
+    trackingParameters: mockTrackingParameters({
+      item_primary_entity_key: `c-${id}`,
+      item_entity_key: `c-${id}`,
+      item_context_timestamp: date,
+      item_page_rank: pageRank
+    })
+  }
+}
+
 describe('Profile Entity - Notes', () => {
   let deps: ReturnType<typeof createMockEntityDeps>
   let profile: Profile
@@ -55,130 +157,21 @@ describe('Profile Entity - Notes', () => {
   describe('notes()', () => {
     it('When iterating profile notes, then returns Note instances', async () => {
       const mockResponse = [
-        {
-          entity_key: 'c-123',
-          type: 'comment',
-          context: {
-            type: 'note',
-            timestamp: '2023-01-01T00:00:00Z',
-            users: [
-              {
-                id: 123,
-                name: 'Test User',
-                handle: 'testuser',
-                photo_url: 'https://example.com/photo.jpg',
-                profile_set_up_at: '2023-01-01T00:00:00Z',
-                reader_installed_at: '2023-01-01T00:00:00Z'
-              }
-            ],
-            isFresh: false,
-            page_rank: 1
-          },
-          comment: {
-            name: 'Test User',
-            handle: 'testuser',
-            photo_url: 'https://example.com/photo.jpg',
-            id: 123,
-            body: 'Test note content',
-            type: 'feed',
-            user_id: 123,
-            date: '2023-01-01T00:00:00Z',
-            ancestor_path: '',
-            reply_minimum_role: 'everyone',
-            reaction_count: 5,
-            reactions: { '❤️': 5 },
-            restacks: 0,
-            restacked: false,
-            children_count: 0,
-            attachments: []
-          },
-          parentComments: [],
-          canReply: true,
-          isMuted: false,
-          trackingParameters: {
-            item_primary_entity_key: 'c-123',
-            item_entity_key: 'c-123',
-            item_type: 'comment',
-            item_content_user_id: 123,
-            item_context_type: 'note',
-            item_context_type_bucket: '',
-            item_context_timestamp: '2023-01-01T00:00:00Z',
-            item_context_user_id: 123,
-            item_context_user_ids: [123],
-            item_can_reply: true,
-            item_is_fresh: false,
-            item_last_impression_at: null,
-            item_page: null,
-            item_page_rank: 1,
-            impression_id: 'test-impression',
-            followed_user_count: 0,
-            subscribed_publication_count: 0,
-            is_following: false,
-            is_explicitly_subscribed: false
-          }
-        },
-        {
-          entity_key: 'c-124',
-          type: 'comment',
-          context: {
-            type: 'note',
-            timestamp: '2023-01-02T00:00:00Z',
-            users: [
-              {
-                id: 123,
-                name: 'Test User',
-                handle: 'testuser',
-                photo_url: 'https://example.com/photo.jpg',
-                profile_set_up_at: '2023-01-01T00:00:00Z',
-                reader_installed_at: '2023-01-01T00:00:00Z'
-              }
-            ],
-            isFresh: false,
-            page_rank: 2
-          },
-          comment: {
-            name: 'Test User',
-            handle: 'testuser',
-            photo_url: 'https://example.com/photo.jpg',
-            id: 124,
-            body: 'Another test note',
-            type: 'feed',
-            user_id: 123,
-            date: '2023-01-02T00:00:00Z',
-            ancestor_path: '',
-            reply_minimum_role: 'everyone',
-            reaction_count: 3,
-            reactions: { '❤️': 3 },
-            restacks: 1,
-            restacked: false,
-            children_count: 0,
-            attachments: []
-          },
-          parentComments: [],
-          canReply: true,
-          isMuted: false,
-          trackingParameters: {
-            item_primary_entity_key: 'c-124',
-            item_entity_key: 'c-124',
-            item_type: 'comment',
-            item_content_user_id: 123,
-            item_context_type: 'note',
-            item_context_type_bucket: '',
-            item_context_timestamp: '2023-01-02T00:00:00Z',
-            item_context_user_id: 123,
-            item_context_user_ids: [123],
-            item_can_reply: true,
-            item_is_fresh: false,
-            item_last_impression_at: null,
-            item_page: null,
-            item_page_rank: 2,
-            impression_id: 'test-impression',
-            followed_user_count: 0,
-            subscribed_publication_count: 0,
-            is_following: false,
-            is_explicitly_subscribed: false
-          }
-        }
+        createMockNote({
+          id: 123,
+          body: 'Test note content',
+          reactionCount: 5,
+          reactions: { '❤️': 5 }
+        }),
+        createMockNote({
+          id: 124,
+          body: 'Another test note',
+          date: '2023-01-02T00:00:00Z',
+          pageRank: 2,
+          reactionCount: 3,
+          reactions: { '❤️': 3 },
+          restacks: 1
+        })
       ]
       deps.noteService.getNotesForProfile.mockResolvedValue({
         notes: mockResponse,
@@ -201,130 +194,15 @@ describe('Profile Entity - Notes', () => {
 
     it('When limit is specified, then returns only that many notes', async () => {
       const mockResponse = [
-        {
-          entity_key: 'c-125',
-          type: 'comment',
-          context: {
-            type: 'note',
-            timestamp: '2023-01-01T00:00:00Z',
-            users: [
-              {
-                id: 123,
-                name: 'Test User',
-                handle: 'testuser',
-                photo_url: 'https://example.com/photo.jpg',
-                profile_set_up_at: '2023-01-01T00:00:00Z',
-                reader_installed_at: '2023-01-01T00:00:00Z'
-              }
-            ],
-            isFresh: false,
-            page_rank: 1
-          },
-          comment: {
-            name: 'Test User',
-            handle: 'testuser',
-            photo_url: 'https://example.com/photo.jpg',
-            id: 125,
-            body: 'Limited note',
-            type: 'feed',
-            user_id: 123,
-            date: '2023-01-01T00:00:00Z',
-            ancestor_path: '',
-            reply_minimum_role: 'everyone',
-            reaction_count: 2,
-            reactions: { '❤️': 2 },
-            restacks: 0,
-            restacked: false,
-            children_count: 0,
-            attachments: []
-          },
-          parentComments: [],
-          canReply: true,
-          isMuted: false,
-          trackingParameters: {
-            item_primary_entity_key: 'c-125',
-            item_entity_key: 'c-125',
-            item_type: 'comment',
-            item_content_user_id: 123,
-            item_context_type: 'note',
-            item_context_type_bucket: '',
-            item_context_timestamp: '2023-01-01T00:00:00Z',
-            item_context_user_id: 123,
-            item_context_user_ids: [123],
-            item_can_reply: true,
-            item_is_fresh: false,
-            item_last_impression_at: null,
-            item_page: null,
-            item_page_rank: 1,
-            impression_id: 'test-impression',
-            followed_user_count: 0,
-            subscribed_publication_count: 0,
-            is_following: false,
-            is_explicitly_subscribed: false
-          }
-        },
-        {
-          entity_key: 'c-126',
-          type: 'comment',
-          context: {
-            type: 'note',
-            timestamp: '2023-01-02T00:00:00Z',
-            users: [
-              {
-                id: 123,
-                name: 'Test User',
-                handle: 'testuser',
-                photo_url: 'https://example.com/photo.jpg',
-                profile_set_up_at: '2023-01-01T00:00:00Z',
-                reader_installed_at: '2023-01-01T00:00:00Z'
-              }
-            ],
-            isFresh: false,
-            page_rank: 2
-          },
-          comment: {
-            name: 'Test User',
-            handle: 'testuser',
-            photo_url: 'https://example.com/photo.jpg',
-            id: 126,
-            body: 'Second note',
-            type: 'feed',
-            user_id: 123,
-            date: '2023-01-02T00:00:00Z',
-            ancestor_path: '',
-            reply_minimum_role: 'everyone',
-            reaction_count: 1,
-            reactions: { '❤️': 1 },
-            restacks: 0,
-            restacked: false,
-            children_count: 0,
-            attachments: []
-          },
-          parentComments: [],
-          canReply: true,
-          isMuted: false,
-          trackingParameters: {
-            item_primary_entity_key: 'c-126',
-            item_entity_key: 'c-126',
-            item_type: 'comment',
-            item_content_user_id: 123,
-            item_context_type: 'note',
-            item_context_type_bucket: '',
-            item_context_timestamp: '2023-01-02T00:00:00Z',
-            item_context_user_id: 123,
-            item_context_user_ids: [123],
-            item_can_reply: true,
-            item_is_fresh: false,
-            item_last_impression_at: null,
-            item_page: null,
-            item_page_rank: 2,
-            impression_id: 'test-impression',
-            followed_user_count: 0,
-            subscribed_publication_count: 0,
-            is_following: false,
-            is_explicitly_subscribed: false
-          }
-        }
+        createMockNote({ id: 125, body: 'Limited note', reactionCount: 2, reactions: { '❤️': 2 } }),
+        createMockNote({
+          id: 126,
+          body: 'Second note',
+          date: '2023-01-02T00:00:00Z',
+          pageRank: 2,
+          reactionCount: 1,
+          reactions: { '❤️': 1 }
+        })
       ]
       deps.noteService.getNotesForProfile.mockResolvedValue({
         notes: mockResponse,
@@ -341,70 +219,7 @@ describe('Profile Entity - Notes', () => {
     })
 
     it('When response contains non-note items, then filters them out', async () => {
-      const mockResponse = [
-        {
-          entity_key: 'c-128',
-          type: 'comment',
-          context: {
-            type: 'note',
-            timestamp: '2023-01-01T00:00:00Z',
-            users: [
-              {
-                id: 123,
-                name: 'Test User',
-                handle: 'testuser',
-                photo_url: 'https://example.com/photo.jpg',
-                profile_set_up_at: '2023-01-01T00:00:00Z',
-                reader_installed_at: '2023-01-01T00:00:00Z'
-              }
-            ],
-            isFresh: false,
-            page_rank: 1
-          },
-          comment: {
-            name: 'Test User',
-            handle: 'testuser',
-            photo_url: 'https://example.com/photo.jpg',
-            id: 128,
-            body: 'Actual note',
-            type: 'feed', // This is a note
-            user_id: 123,
-            date: '2023-01-01T00:00:00Z',
-            ancestor_path: '',
-            reply_minimum_role: 'everyone',
-            reaction_count: 0,
-            reactions: {},
-            restacks: 0,
-            restacked: false,
-            children_count: 0,
-            attachments: []
-          },
-          parentComments: [],
-          canReply: true,
-          isMuted: false,
-          trackingParameters: {
-            item_primary_entity_key: 'c-128',
-            item_entity_key: 'c-128',
-            item_type: 'comment',
-            item_content_user_id: 123,
-            item_context_type: 'note',
-            item_context_type_bucket: '',
-            item_context_timestamp: '2023-01-01T00:00:00Z',
-            item_context_user_id: 123,
-            item_context_user_ids: [123],
-            item_can_reply: true,
-            item_is_fresh: false,
-            item_last_impression_at: null,
-            item_page: null,
-            item_page_rank: 1,
-            impression_id: 'test-impression',
-            followed_user_count: 0,
-            subscribed_publication_count: 0,
-            is_following: false,
-            is_explicitly_subscribed: false
-          }
-        }
-      ]
+      const mockResponse = [createMockNote({ id: 128, body: 'Actual note' })]
       deps.noteService.getNotesForProfile.mockResolvedValue({
         notes: mockResponse,
         nextCursor: undefined
@@ -466,196 +281,13 @@ describe('Profile Entity - Notes', () => {
 
       // Mock first page response (full page)
       const firstPageResponse = [
-        {
-          entity_key: 'c-130',
-          type: 'comment',
-          context: {
-            type: 'note',
-            timestamp: '2023-01-01T00:00:00Z',
-            users: [
-              {
-                id: 123,
-                name: 'Test User',
-                handle: 'testuser',
-                photo_url: 'https://example.com/photo.jpg',
-                profile_set_up_at: '2023-01-01T00:00:00Z',
-                reader_installed_at: '2023-01-01T00:00:00Z'
-              }
-            ],
-            isFresh: false,
-            page_rank: 1
-          },
-          comment: {
-            name: 'Test User',
-            handle: 'testuser',
-            photo_url: 'https://example.com/photo.jpg',
-            id: 130,
-            body: 'Note 1',
-            type: 'feed',
-            user_id: 123,
-            date: '2023-01-01T00:00:00Z',
-            ancestor_path: '',
-            reply_minimum_role: 'everyone',
-            reaction_count: 0,
-            reactions: {},
-            restacks: 0,
-            restacked: false,
-            children_count: 0,
-            attachments: []
-          },
-          parentComments: [],
-          canReply: true,
-          isMuted: false,
-          trackingParameters: {
-            item_primary_entity_key: 'c-130',
-            item_entity_key: 'c-130',
-            item_type: 'comment',
-            item_content_user_id: 123,
-            item_context_type: 'note',
-            item_context_type_bucket: '',
-            item_context_timestamp: '2023-01-01T00:00:00Z',
-            item_context_user_id: 123,
-            item_context_user_ids: [123],
-            item_can_reply: true,
-            item_is_fresh: false,
-            item_last_impression_at: null,
-            item_page: null,
-            item_page_rank: 1,
-            impression_id: 'test-impression',
-            followed_user_count: 0,
-            subscribed_publication_count: 0,
-            is_following: false,
-            is_explicitly_subscribed: false
-          }
-        },
-        {
-          entity_key: 'c-131',
-          type: 'comment',
-          context: {
-            type: 'note',
-            timestamp: '2023-01-02T00:00:00Z',
-            users: [
-              {
-                id: 123,
-                name: 'Test User',
-                handle: 'testuser',
-                photo_url: 'https://example.com/photo.jpg',
-                profile_set_up_at: '2023-01-01T00:00:00Z',
-                reader_installed_at: '2023-01-01T00:00:00Z'
-              }
-            ],
-            isFresh: false,
-            page_rank: 2
-          },
-          comment: {
-            name: 'Test User',
-            handle: 'testuser',
-            photo_url: 'https://example.com/photo.jpg',
-            id: 131,
-            body: 'Note 2',
-            type: 'feed',
-            user_id: 123,
-            date: '2023-01-02T00:00:00Z',
-            ancestor_path: '',
-            reply_minimum_role: 'everyone',
-            reaction_count: 0,
-            reactions: {},
-            restacks: 0,
-            restacked: false,
-            children_count: 0,
-            attachments: []
-          },
-          parentComments: [],
-          canReply: true,
-          isMuted: false,
-          trackingParameters: {
-            item_primary_entity_key: 'c-131',
-            item_entity_key: 'c-131',
-            item_type: 'comment',
-            item_content_user_id: 123,
-            item_context_type: 'note',
-            item_context_type_bucket: '',
-            item_context_timestamp: '2023-01-02T00:00:00Z',
-            item_context_user_id: 123,
-            item_context_user_ids: [123],
-            item_can_reply: true,
-            item_is_fresh: false,
-            item_last_impression_at: null,
-            item_page: null,
-            item_page_rank: 2,
-            impression_id: 'test-impression',
-            followed_user_count: 0,
-            subscribed_publication_count: 0,
-            is_following: false,
-            is_explicitly_subscribed: false
-          }
-        }
+        createMockNote({ id: 130, body: 'Note 1' }),
+        createMockNote({ id: 131, body: 'Note 2', date: '2023-01-02T00:00:00Z', pageRank: 2 })
       ]
 
       // Mock second page response (partial page - should trigger end of pagination)
       const secondPageResponse = [
-        {
-          entity_key: 'c-132',
-          type: 'comment',
-          context: {
-            type: 'note',
-            timestamp: '2023-01-03T00:00:00Z',
-            users: [
-              {
-                id: 123,
-                name: 'Test User',
-                handle: 'testuser',
-                photo_url: 'https://example.com/photo.jpg',
-                profile_set_up_at: '2023-01-01T00:00:00Z',
-                reader_installed_at: '2023-01-01T00:00:00Z'
-              }
-            ],
-            isFresh: false,
-            page_rank: 3
-          },
-          comment: {
-            name: 'Test User',
-            handle: 'testuser',
-            photo_url: 'https://example.com/photo.jpg',
-            id: 132,
-            body: 'Note 3',
-            type: 'feed',
-            user_id: 123,
-            date: '2023-01-03T00:00:00Z',
-            ancestor_path: '',
-            reply_minimum_role: 'everyone',
-            reaction_count: 0,
-            reactions: {},
-            restacks: 0,
-            restacked: false,
-            children_count: 0,
-            attachments: []
-          },
-          parentComments: [],
-          canReply: true,
-          isMuted: false,
-          trackingParameters: {
-            item_primary_entity_key: 'c-132',
-            item_entity_key: 'c-132',
-            item_type: 'comment',
-            item_content_user_id: 123,
-            item_context_type: 'note',
-            item_context_type_bucket: '',
-            item_context_timestamp: '2023-01-03T00:00:00Z',
-            item_context_user_id: 123,
-            item_context_user_ids: [123],
-            item_can_reply: true,
-            item_is_fresh: false,
-            item_last_impression_at: null,
-            item_page: null,
-            item_page_rank: 3,
-            impression_id: 'test-impression',
-            followed_user_count: 0,
-            subscribed_publication_count: 0,
-            is_following: false,
-            is_explicitly_subscribed: false
-          }
-        }
+        createMockNote({ id: 132, body: 'Note 3', date: '2023-01-03T00:00:00Z', pageRank: 3 })
       ]
 
       // Setup sequential responses for pagination
@@ -663,11 +295,11 @@ describe('Profile Entity - Notes', () => {
         .mockResolvedValueOnce({
           notes: firstPageResponse,
           nextCursor: 'cursor1'
-        }) // offset=0, returns 2 notes (full page)
+        })
         .mockResolvedValueOnce({
           notes: secondPageResponse,
           nextCursor: undefined
-        }) // offset=2, returns 1 note (partial page - end)
+        })
 
       const notes = []
       for await (const note of profile.notes()) {
@@ -679,7 +311,6 @@ describe('Profile Entity - Notes', () => {
       expect(notes[1].body).toBe('Note 2')
       expect(notes[2].body).toBe('Note 3')
 
-      // Verify both service calls were made with correct offsets
       expect(deps.noteService.getNotesForProfile).toHaveBeenCalledTimes(2)
       expect(deps.noteService.getNotesForProfile).toHaveBeenNthCalledWith(1, 123, {
         cursor: undefined

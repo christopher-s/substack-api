@@ -131,7 +131,7 @@ describe('PostManagementService', () => {
     it('should pass query parameter', async () => {
       mockClient.get.mockResolvedValue({ published: 5, drafts: 0, scheduled: 0 })
       await service.getPostCounts('test search')
-      expect(mockClient.get).toHaveBeenCalledWith('/post_management/counts?query=test search')
+      expect(mockClient.get).toHaveBeenCalledWith('/post_management/counts?query=test%20search')
     })
 
     it('should propagate HTTP errors', async () => {

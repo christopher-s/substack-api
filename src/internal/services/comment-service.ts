@@ -84,6 +84,12 @@ export class CommentService {
   }
 
   async createComment(postId: number, body: string): Promise<SubstackCreatedComment> {
+    if (!body || body.trim().length === 0) {
+      throw new Error('Comment body cannot be empty')
+    }
+    if (body.length > 10000) {
+      throw new Error('Comment body exceeds maximum length of 10000 characters')
+    }
     const response = await this.publicationClient.post<unknown>(
       `/post/${encodeURIComponent(String(postId))}/comment`,
       { body, post_id: postId }
@@ -96,5 +102,13 @@ export class CommentService {
       `/comment/${encodeURIComponent(String(commentId))}`
     )
     return decodeOrThrow(SubstackDeleteResponseCodec, response, 'Delete comment')
+  }
+
+  async likeComment(commentId: number): Promise<void> {
+    await this.substackClient.post(`/feed/comments/${commentId}/like`)
+  }
+
+  async unlikeComment(commentId: number): Promise<void> {
+    await this.substackClient.post(`/feed/comments/${commentId}/unlike`)
   }
 }

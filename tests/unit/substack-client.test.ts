@@ -7,7 +7,13 @@ import {
   ProfileService,
   CommentService,
   FollowingService,
-  ConnectivityService
+  ConnectivityService,
+  SubscriberStatsService,
+  GrowthStatsService,
+  PublicationStatsService,
+  DashboardService,
+  RecommendationService,
+  ChatService
 } from '@substack-api/internal/services'
 import type { SubstackFullProfile } from '@substack-api/internal'
 
@@ -28,6 +34,12 @@ describe('SubstackClient', () => {
   let mockCommentService: jest.Mocked<CommentService>
   let mockFollowingService: jest.Mocked<FollowingService>
   let mockConnectivityService: jest.Mocked<ConnectivityService>
+  let mockSubscriberStatsService: jest.Mocked<SubscriberStatsService>
+  let mockGrowthStatsService: jest.Mocked<GrowthStatsService>
+  let mockPublicationStatsService: jest.Mocked<PublicationStatsService>
+  let mockDashboardService: jest.Mocked<DashboardService>
+  let mockRecommendationService: jest.Mocked<RecommendationService>
+  let mockChatService: jest.Mocked<ChatService>
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -69,6 +81,56 @@ describe('SubstackClient', () => {
     ) as jest.Mocked<ConnectivityService>
     mockConnectivityService.isConnected = jest.fn()
 
+    mockSubscriberStatsService = new SubscriberStatsService(
+      mockPublicationClient,
+      mockSubstackClient
+    ) as jest.Mocked<SubscriberStatsService>
+    mockSubscriberStatsService.getSubscriberStats = jest.fn()
+    mockSubscriberStatsService.getSubscriptionsPage = jest.fn()
+
+    mockGrowthStatsService = new GrowthStatsService(
+      mockPublicationClient
+    ) as jest.Mocked<GrowthStatsService>
+    mockGrowthStatsService.getGrowthSources = jest.fn()
+    mockGrowthStatsService.getGrowthTimeseries = jest.fn()
+
+    mockPublicationStatsService = new PublicationStatsService(
+      mockPublicationClient
+    ) as jest.Mocked<PublicationStatsService>
+    mockPublicationStatsService.getNetworkAttribution = jest.fn()
+    mockPublicationStatsService.getFollowerTimeseries = jest.fn()
+    mockPublicationStatsService.getTraffic30dViews = jest.fn()
+    mockPublicationStatsService.getVisitorSources = jest.fn()
+    mockPublicationStatsService.getTrafficTimeseries = jest.fn()
+    mockPublicationStatsService.getEmail30dOpenRate = jest.fn()
+    mockPublicationStatsService.getPledgeSummary = jest.fn()
+    mockPublicationStatsService.getPledges = jest.fn()
+
+    mockDashboardService = new DashboardService(
+      mockPublicationClient
+    ) as jest.Mocked<DashboardService>
+    mockDashboardService.getDashboardSummary = jest.fn()
+
+    mockRecommendationService = new RecommendationService(
+      mockPublicationClient
+    ) as jest.Mocked<RecommendationService>
+    mockRecommendationService.getOutgoingRecommendations = jest.fn()
+    mockRecommendationService.getIncomingRecommendationStats = jest.fn()
+
+    mockChatService = new ChatService(mockSubstackClient) as jest.Mocked<ChatService>
+    mockChatService.getUnreadCount = jest.fn()
+    mockChatService.getInbox = jest.fn()
+    mockChatService.markInboxSeen = jest.fn()
+    mockChatService.getDm = jest.fn()
+    mockChatService.sendMessage = jest.fn()
+    mockChatService.markDmSeen = jest.fn()
+    mockChatService.getInvites = jest.fn()
+    mockChatService.markInvitesSeen = jest.fn()
+    mockChatService.getReactions = jest.fn()
+    mockChatService.getRealtimeToken = jest.fn()
+    mockChatService.inboxThreads = jest.fn()
+    mockChatService.dmMessages = jest.fn()
+
     client = new SubstackClient({
       token: 'test-api-key',
       publicationUrl: 'test.substack.com'
@@ -85,6 +147,19 @@ describe('SubstackClient', () => {
       mockFollowingService
     ;(client as unknown as { connectivityService: ConnectivityService }).connectivityService =
       mockConnectivityService
+    ;(
+      client as unknown as { subscriberStatsService: SubscriberStatsService }
+    ).subscriberStatsService = mockSubscriberStatsService
+    ;(client as unknown as { growthStatsService: GrowthStatsService }).growthStatsService =
+      mockGrowthStatsService
+    ;(
+      client as unknown as { publicationStatsService: PublicationStatsService }
+    ).publicationStatsService = mockPublicationStatsService
+    ;(client as unknown as { dashboardService: DashboardService }).dashboardService =
+      mockDashboardService
+    ;(client as unknown as { recommendationService: RecommendationService }).recommendationService =
+      mockRecommendationService
+    ;(client as unknown as { chatService: ChatService }).chatService = mockChatService
   })
 
   describe('testConnectivity', () => {
@@ -332,6 +407,335 @@ describe('SubstackClient', () => {
       expect(comment).toBeInstanceOf(Comment)
       expect(mockCommentService.getCommentById).toHaveBeenCalledWith(999)
     })
+  })
+
+  describe('subscriberStats', () => {
+    it('should fetch subscriber stats', async () => {
+      mockSubscriberStatsService.getSubscriberStats.mockResolvedValue({
+        subscribers: [{ total_count: 100 }]
+      } as unknown as Awaited<ReturnType<typeof mockSubscriberStatsService.getSubscriberStats>>)
+      const result = await client.subscriberStats()
+      expect(mockSubscriberStatsService.getSubscriberStats).toHaveBeenCalled()
+      expect(result.subscribers).toHaveLength(1)
+    })
+  })
+
+  describe('subscriptionsPage', () => {
+    it('should fetch subscriptions page', async () => {
+      mockSubscriberStatsService.getSubscriptionsPage.mockResolvedValue({
+        subscriptions: [],
+        cursor: null
+      } as unknown as Awaited<ReturnType<typeof mockSubscriberStatsService.getSubscriptionsPage>>)
+      await client.subscriptionsPage()
+      expect(mockSubscriberStatsService.getSubscriptionsPage).toHaveBeenCalledWith(undefined)
+    })
+  })
+
+  describe('growthSources', () => {
+    it('should fetch growth sources', async () => {
+      mockGrowthStatsService.getGrowthSources.mockResolvedValue(
+        {} as unknown as Awaited<ReturnType<typeof mockGrowthStatsService.getGrowthSources>>
+      )
+      const result = await client.growthSources({ fromDate: '2026-01-01', toDate: '2026-03-01' })
+      expect(mockGrowthStatsService.getGrowthSources).toHaveBeenCalledWith({
+        fromDate: '2026-01-01',
+        toDate: '2026-03-01'
+      })
+      expect(result).toBeDefined()
+    })
+  })
+
+  describe('growthTimeseries', () => {
+    it('should fetch growth timeseries', async () => {
+      mockGrowthStatsService.getGrowthTimeseries.mockResolvedValue(
+        {} as unknown as Awaited<ReturnType<typeof mockGrowthStatsService.getGrowthTimeseries>>
+      )
+      const result = await client.growthTimeseries({
+        sources: ['s1'],
+        orderBy: 'users',
+        orderDirection: 'desc'
+      })
+      expect(mockGrowthStatsService.getGrowthTimeseries).toHaveBeenCalled()
+      expect(result).toBeDefined()
+    })
+  })
+
+  describe('networkAttribution', () => {
+    it('should fetch network attribution', async () => {
+      mockPublicationStatsService.getNetworkAttribution.mockResolvedValue(
+        {} as unknown as Awaited<
+          ReturnType<typeof mockPublicationStatsService.getNetworkAttribution>
+        >
+      )
+      await client.networkAttribution()
+      expect(mockPublicationStatsService.getNetworkAttribution).toHaveBeenCalledWith(undefined)
+    })
+  })
+
+  describe('followerTimeseries', () => {
+    it('should fetch follower timeseries', async () => {
+      const mockResult: [string, number][] = [['2026-01-01', 100]]
+      mockPublicationStatsService.getFollowerTimeseries.mockResolvedValue(mockResult)
+      const result = await client.followerTimeseries({ from: '2026-01-01' })
+      expect(mockPublicationStatsService.getFollowerTimeseries).toHaveBeenCalledWith({
+        from: '2026-01-01'
+      })
+      expect(result).toBe(mockResult)
+    })
+  })
+
+  describe('traffic30dViews', () => {
+    it('should fetch 30-day traffic views', async () => {
+      mockPublicationStatsService.getTraffic30dViews.mockResolvedValue({
+        views30d: 5000,
+        viewsDelta30d: 200,
+        uniqueViews30d: 1000,
+        uniqueViewsDelta30d: 50
+      })
+      const result = await client.traffic30dViews()
+      expect(mockPublicationStatsService.getTraffic30dViews).toHaveBeenCalled()
+      expect(result.views30d).toBe(5000)
+    })
+  })
+
+  describe('visitorSources', () => {
+    it('should fetch visitor sources', async () => {
+      mockPublicationStatsService.getVisitorSources.mockResolvedValue(
+        {} as unknown as Awaited<ReturnType<typeof mockPublicationStatsService.getVisitorSources>>
+      )
+      await client.visitorSources({ fromDate: '2026-01-01', toDate: '2026-03-01' })
+      expect(mockPublicationStatsService.getVisitorSources).toHaveBeenCalledWith({
+        fromDate: '2026-01-01',
+        toDate: '2026-03-01'
+      })
+    })
+  })
+
+  describe('trafficTimeseries', () => {
+    it('should fetch traffic timeseries', async () => {
+      const mockResult: [string, number][] = [['2026-01-15', 500]]
+      mockPublicationStatsService.getTrafficTimeseries.mockResolvedValue(mockResult)
+      const result = await client.trafficTimeseries({ from: '2026-01-01', to: '2026-03-01' })
+      expect(mockPublicationStatsService.getTrafficTimeseries).toHaveBeenCalledWith({
+        from: '2026-01-01',
+        to: '2026-03-01'
+      })
+      expect(result).toBe(mockResult)
+    })
+  })
+
+  describe('email30dOpenRate', () => {
+    it('should fetch email open rate', async () => {
+      mockPublicationStatsService.getEmail30dOpenRate.mockResolvedValue({
+        openRate: 45.2,
+        openRateDiff: 1.5
+      })
+      const result = await client.email30dOpenRate()
+      expect(mockPublicationStatsService.getEmail30dOpenRate).toHaveBeenCalled()
+      expect(result.openRate).toBe(45.2)
+    })
+  })
+
+  describe('pledgeSummary', () => {
+    it('should fetch pledge summary', async () => {
+      mockPublicationStatsService.getPledgeSummary.mockResolvedValue({
+        totalPledges: 1000,
+        totalPledgeAmount: 50000,
+        currency: 'USD'
+      })
+      const result = await client.pledgeSummary()
+      expect(mockPublicationStatsService.getPledgeSummary).toHaveBeenCalled()
+      expect(result.totalPledges).toBe(1000)
+    })
+  })
+
+  describe('pledges', () => {
+    it('should fetch pledges', async () => {
+      mockPublicationStatsService.getPledges.mockResolvedValue(
+        {} as unknown as Awaited<ReturnType<typeof mockPublicationStatsService.getPledges>>
+      )
+      await client.pledges()
+      expect(mockPublicationStatsService.getPledges).toHaveBeenCalledWith(undefined)
+    })
+  })
+
+  describe('dashboardSummary', () => {
+    it('should fetch dashboard summary', async () => {
+      mockDashboardService.getDashboardSummary.mockResolvedValue(
+        {} as unknown as Awaited<ReturnType<typeof mockDashboardService.getDashboardSummary>>
+      )
+      await client.dashboardSummary()
+      expect(mockDashboardService.getDashboardSummary).toHaveBeenCalledWith(undefined)
+    })
+  })
+
+  describe('outgoingRecommendations', () => {
+    it('should fetch outgoing recommendations', async () => {
+      mockRecommendationService.getOutgoingRecommendations.mockResolvedValue([])
+      const result = await client.outgoingRecommendations(42)
+      expect(mockRecommendationService.getOutgoingRecommendations).toHaveBeenCalledWith(42)
+      expect(result).toEqual([])
+    })
+  })
+
+  describe('incomingRecommendationStats', () => {
+    it('should fetch incoming recommendation stats', async () => {
+      mockRecommendationService.getIncomingRecommendationStats.mockResolvedValue([])
+      const result = await client.incomingRecommendationStats()
+      expect(mockRecommendationService.getIncomingRecommendationStats).toHaveBeenCalledWith(
+        undefined
+      )
+      expect(result).toEqual([])
+    })
+  })
+
+  describe('chat methods', () => {
+    it('chatUnreadCount should call service', async () => {
+      mockChatService.getUnreadCount.mockResolvedValue({
+        unreadCount: 3,
+        pendingInviteCount: 0,
+        pendingInviteUnreadCount: 0,
+        newPendingInviteUnreadCount: 0,
+        pubChatUnreadCount: 0
+      })
+      const result = await client.chatUnreadCount()
+      expect(mockChatService.getUnreadCount).toHaveBeenCalled()
+      expect(result.unreadCount).toBe(3)
+    })
+
+    it('chatInbox should call service', async () => {
+      const mockInbox: unknown = {
+        threads: [{ id: 't1', unread_count: false, last_message_seen_by_me: false }]
+      }
+      mockChatService.getInbox.mockResolvedValue(
+        mockInbox as Awaited<ReturnType<typeof mockChatService.getInbox>>
+      )
+      await client.chatInbox()
+      expect(mockChatService.getInbox).toHaveBeenCalledWith(undefined)
+    })
+
+    it('chatMarkInboxSeen should call service', async () => {
+      mockChatService.markInboxSeen.mockResolvedValue({ ok: true })
+      const result = await client.chatMarkInboxSeen()
+      expect(mockChatService.markInboxSeen).toHaveBeenCalled()
+      expect(result.ok).toBe(true)
+    })
+
+    it('chatDm should call service', async () => {
+      const mockDm: unknown = { messages: [], more: false }
+      mockChatService.getDm.mockResolvedValue(
+        mockDm as Awaited<ReturnType<typeof mockChatService.getDm>>
+      )
+      await client.chatDm('uuid-123')
+      expect(mockChatService.getDm).toHaveBeenCalledWith('uuid-123', undefined)
+    })
+
+    it('chatSendMessage should call service', async () => {
+      const mockSend: unknown = { thread: { id: 't1' } }
+      mockChatService.sendMessage.mockResolvedValue(
+        mockSend as Awaited<ReturnType<typeof mockChatService.sendMessage>>
+      )
+      await client.chatSendMessage('uuid-123', 'hello')
+      expect(mockChatService.sendMessage).toHaveBeenCalledWith('uuid-123', 'hello', undefined)
+    })
+
+    it('chatMarkDmSeen should call service', async () => {
+      mockChatService.markDmSeen.mockResolvedValue({ ok: true })
+      await client.chatMarkDmSeen('uuid-123')
+      expect(mockChatService.markDmSeen).toHaveBeenCalledWith('uuid-123')
+    })
+
+    it('chatInvites should call service', async () => {
+      const mockInvites: unknown = { threads: [] }
+      mockChatService.getInvites.mockResolvedValue(
+        mockInvites as Awaited<ReturnType<typeof mockChatService.getInvites>>
+      )
+      await client.chatInvites()
+      expect(mockChatService.getInvites).toHaveBeenCalled()
+    })
+
+    it('chatMarkInvitesSeen should call service', async () => {
+      mockChatService.markInvitesSeen.mockResolvedValue({ ok: true })
+      await client.chatMarkInvitesSeen()
+      expect(mockChatService.markInvitesSeen).toHaveBeenCalled()
+    })
+
+    it('chatReactions should call service', async () => {
+      mockChatService.getReactions.mockResolvedValue({
+        suggestedReactionTypes: [],
+        categories: [],
+        reactionTypes: {}
+      })
+      await client.chatReactions()
+      expect(mockChatService.getReactions).toHaveBeenCalled()
+    })
+
+    it('chatRealtimeToken should call service', async () => {
+      mockChatService.getRealtimeToken.mockResolvedValue({
+        token: 'rt-token',
+        expiry: '',
+        permissions: [],
+        endpoint: ''
+      })
+      await client.chatRealtimeToken('channel-1')
+      expect(mockChatService.getRealtimeToken).toHaveBeenCalledWith('channel-1')
+    })
+
+    it('chatInboxThreads should yield from service', async () => {
+      const mockThreads = [{ id: 't1' }, { id: 't2' }]
+      const gen = (async function* () {
+        for (const t of mockThreads) yield t
+      })()
+      mockChatService.inboxThreads = jest.fn().mockReturnValue(gen)
+      const results: unknown[] = []
+      for await (const thread of client.chatInboxThreads({ tab: 'all' })) {
+        results.push(thread)
+      }
+      expect(mockChatService.inboxThreads).toHaveBeenCalledWith({ tab: 'all' })
+      expect(results).toHaveLength(2)
+    })
+
+    it('chatDmMessages should yield from service', async () => {
+      const mockMessages = [{ id: 'm1' }]
+      const gen = (async function* () {
+        for (const m of mockMessages) yield m
+      })()
+      mockChatService.dmMessages = jest.fn().mockReturnValue(gen)
+      const results: unknown[] = []
+      for await (const msg of client.chatDmMessages('uuid-123')) {
+        results.push(msg)
+      }
+      expect(mockChatService.dmMessages).toHaveBeenCalledWith('uuid-123', {})
+      expect(results).toHaveLength(1)
+    })
+  })
+
+  describe('auth guard for stat methods', () => {
+    let anonymousClient: SubstackClient
+
+    beforeEach(() => {
+      anonymousClient = new SubstackClient({ publicationUrl: 'test.substack.com' })
+      ;(anonymousClient as unknown as { publicationClient: HttpClient }).publicationClient =
+        mockPublicationClient
+      mockPublicationClient.get = jest.fn()
+    })
+
+    const methods: Array<{ name: string; call: (c: SubstackClient) => Promise<unknown> }> = [
+      { name: 'subscriberStats', call: (c) => c.subscriberStats() },
+      { name: 'growthSources', call: (c) => c.growthSources({ fromDate: 'a', toDate: 'b' }) },
+      { name: 'networkAttribution', call: (c) => c.networkAttribution() },
+      { name: 'traffic30dViews', call: (c) => c.traffic30dViews() },
+      { name: 'email30dOpenRate', call: (c) => c.email30dOpenRate() },
+      { name: 'pledgeSummary', call: (c) => c.pledgeSummary() },
+      { name: 'dashboardSummary', call: (c) => c.dashboardSummary() },
+      { name: 'chatUnreadCount', call: (c) => c.chatUnreadCount() }
+    ]
+
+    for (const { name, call } of methods) {
+      it(`should throw when calling ${name} without auth`, async () => {
+        await expect(call(anonymousClient)).rejects.toThrow('Authentication required')
+      })
+    }
   })
 
   describe('URL normalization', () => {

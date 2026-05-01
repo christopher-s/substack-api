@@ -27,7 +27,7 @@ export class PostManagementService {
     const orderBy = options?.orderBy ?? 'post_date'
     const orderDirection = options?.orderDirection ?? 'desc'
     const response = await this.publicationClient.get<unknown>(
-      `/post_management/published?offset=${offset}&limit=${limit}&order_by=${orderBy}&order_direction=${orderDirection}`
+      `/post_management/published?offset=${offset}&limit=${limit}&order_by=${encodeURIComponent(orderBy)}&order_direction=${encodeURIComponent(orderDirection)}`
     )
     return decodeOrThrow(SubstackPostManagementResponseCodec, response, 'Published posts')
   }
@@ -43,7 +43,7 @@ export class PostManagementService {
     const orderBy = options?.orderBy ?? 'draft_updated_at'
     const orderDirection = options?.orderDirection ?? 'desc'
     const response = await this.publicationClient.get<unknown>(
-      `/post_management/drafts?offset=${offset}&limit=${limit}&order_by=${orderBy}&order_direction=${orderDirection}`
+      `/post_management/drafts?offset=${offset}&limit=${limit}&order_by=${encodeURIComponent(orderBy)}&order_direction=${encodeURIComponent(orderDirection)}`
     )
     return decodeOrThrow(SubstackPostManagementResponseCodec, response, 'Drafts')
   }
@@ -59,14 +59,14 @@ export class PostManagementService {
     const orderBy = options?.orderBy ?? 'trigger_at'
     const orderDirection = options?.orderDirection ?? 'asc'
     const response = await this.publicationClient.get<unknown>(
-      `/post_management/scheduled?offset=${offset}&limit=${limit}&order_by=${orderBy}&order_direction=${orderDirection}`
+      `/post_management/scheduled?offset=${offset}&limit=${limit}&order_by=${encodeURIComponent(orderBy)}&order_direction=${encodeURIComponent(orderDirection)}`
     )
     return decodeOrThrow(SubstackPostManagementResponseCodec, response, 'Scheduled posts')
   }
 
   async getPostCounts(query?: string): Promise<SubstackPostManagementCounts> {
     const response = await this.publicationClient.get<unknown>(
-      `/post_management/counts?query=${query ?? ''}`
+      `/post_management/counts?query=${encodeURIComponent(query ?? '')}`
     )
     return decodeOrThrow(SubstackPostManagementCountsCodec, response, 'Post counts')
   }
@@ -83,6 +83,12 @@ export class PostManagementService {
     audience?: string
     bylineUserId?: number
   }): Promise<SubstackDraftPost> {
+    if (data.title !== undefined && data.title.length > 200) {
+      throw new Error('Draft title exceeds maximum length of 200 characters')
+    }
+    if (data.body !== undefined && data.body.trim().length === 0) {
+      throw new Error('Draft body cannot be empty')
+    }
     const request = {
       draft_title: data.title,
       draft_body: data.body,
@@ -100,6 +106,12 @@ export class PostManagementService {
     id: number,
     data: { title?: string; body?: string; [key: string]: unknown }
   ): Promise<SubstackDraftPost> {
+    if (data.title !== undefined && data.title.length > 200) {
+      throw new Error('Draft title exceeds maximum length of 200 characters')
+    }
+    if (data.body !== undefined && data.body.trim().length === 0) {
+      throw new Error('Draft body cannot be empty')
+    }
     const request: Record<string, unknown> = {}
     if (data.title !== undefined) request.draft_title = data.title
     if (data.body !== undefined) request.draft_body = data.body

@@ -78,4 +78,98 @@ describe('PublicationService', () => {
       expect(result).toBeDefined()
     })
   })
+
+  describe('getPublicationExport', () => {
+    it('should fetch publication export list', async () => {
+      mockClient.get.mockResolvedValue([
+        {
+          id: 1,
+          status: 'completed',
+          created_at: '2026-01-01T00:00:00Z',
+          export_url: 'https://example.com/export.csv'
+        }
+      ])
+
+      const result = await service.getPublicationExport()
+      expect(mockClient.get).toHaveBeenCalledWith('/publication_export')
+      expect(result).toHaveLength(1)
+      expect(result[0].status).toBe('completed')
+    })
+  })
+
+  describe('searchPublications', () => {
+    it('should search with query string', async () => {
+      mockClient.get.mockResolvedValue({
+        results: [
+          {
+            id: 1,
+            name: 'Test Pub',
+            subdomain: 'test-pub',
+            logo_url: 'https://example.com/logo.png'
+          }
+        ]
+      })
+
+      const result = await service.searchPublications('test query')
+      expect(mockClient.get).toHaveBeenCalledWith(
+        expect.stringContaining('/publication/search?query=test+query')
+      )
+      expect(result.results).toHaveLength(1)
+    })
+
+    it('should include limit when provided', async () => {
+      mockClient.get.mockResolvedValue({ results: [] })
+
+      await service.searchPublications('test', { limit: 5 })
+      const url = mockClient.get.mock.calls[0][0] as string
+      expect(url).toContain('limit=5')
+    })
+  })
+
+  describe('getLiveStreams', () => {
+    it('should use default status=scheduled when no status given', async () => {
+      mockClient.get.mockResolvedValue({ live_streams: [] })
+
+      await service.getLiveStreams()
+      expect(mockClient.get).toHaveBeenCalledWith('/live_streams?status=scheduled')
+    })
+
+    it('should pass custom status', async () => {
+      mockClient.get.mockResolvedValue({ live_streams: [] })
+
+      await service.getLiveStreams('live')
+      expect(mockClient.get).toHaveBeenCalledWith('/live_streams?status=live')
+    })
+  })
+
+  describe('getEligibleHosts', () => {
+    it('should fetch eligible hosts for a publication', async () => {
+      mockClient.get.mockResolvedValue({
+        hosts: [{ id: 1, name: 'Host User' }]
+      })
+
+      const result = await service.getEligibleHosts(42)
+      expect(mockClient.get).toHaveBeenCalledWith('/live_stream/eligible_hosts?publication_id=42')
+      expect(result).toBeDefined()
+    })
+  })
+
+  describe('getArchive', () => {
+    it('should omit sort param when sort=new (default)', async () => {
+      mockClient.get.mockResolvedValue([])
+
+      await service.getArchive({ sort: 'new' })
+      const url = mockClient.get.mock.calls[0][0] as string
+      expect(url).not.toContain('sort=')
+    })
+
+    it('should not include offset=0 or limit=25 (defaults)', async () => {
+      mockClient.get.mockResolvedValue([])
+
+      await service.getArchive({ offset: 0, limit: 25 })
+      const url = mockClient.get.mock.calls[0][0] as string
+      expect(url).not.toContain('offset=0')
+      expect(url).not.toContain('limit=25')
+    })
+  })
 })

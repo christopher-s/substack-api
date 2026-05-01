@@ -36,6 +36,7 @@ junit-integration.xml
 
 # Environment variables
 .env
+.env-new
 .env.local
 .env.*.local
 

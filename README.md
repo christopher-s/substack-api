@@ -18,8 +18,9 @@ This project started as a fork of [`jakub-k-slys/substack-api`](https://github.c
 - **Note Builder** — Rich text notes with formatting, lists, links, and link attachments via a fluent builder API
 - **Discovery & Search** — Trending posts, category browsing, profile search, and explore feeds
 - **Chat API** — Direct messages, inbox management, and publication chat rooms
+- **Comment & Note Interactions** — Like/unlike comments, restack/unrestack notes
 - **Runtime Type Safety** — io-ts codecs validate every API response beyond TypeScript's compile-time checks
-- **Rate Limiting & Retry** — Token bucket with jitter, exponential backoff, and Chrome browser fingerprinting
+- **Rate Limiting & Retry** — Token bucket with jitter, exponential backoff, and rotating Chrome/Edge browser fingerprinting
 - **Full TypeScript** — Complete type definitions exported for consumers
 
 ## Installation
@@ -250,6 +251,8 @@ Substack uses session cookies for authentication. To obtain your token:
 | `maxDelayMs` | `number` | No | `30000` | Maximum backoff delay (ms) |
 | `headerMode` | `'browser' \| 'api' \| 'minimal'` | No | `'api'` | HTTP header profile (see below) |
 | `onRateLimit` | `(info) => void` | No | — | Callback fired on every retry attempt |
+| `onTokenExpired` | `() => Promise<string>` | No | — | Callback to refresh the session token on 401 responses. The new token replaces `substack.sid` internally and the request retries once |
+| `proxy` | `{ host, port, protocol?, auth? }` | No | — | Proxy configuration passed to axios (e.g. `{ host: '127.0.0.1', port: 8080 }`) |
 
 \* Required when using publication-scoped methods like `publicationArchive()`, `publicationPosts()`, `publicationHomepage()`, `postReactors()`, `activeLiveStream()`, `markPostSeen()`, etc. `ownProfile()` only requires a `token`.
 
@@ -261,7 +264,9 @@ The client includes built-in protection against rate limiting and detection:
 - **Jitter** — Each request is randomly delayed by up to 50% of the base interval, producing a natural, non-deterministic cadence
 - **Exponential backoff** — 429 and 5xx responses trigger retries with full-jitter backoff (`random(0, min(base * 2^attempt, maxDelay))`)
 - **Retry-After** — When Substack returns a `Retry-After` header, the client waits exactly that duration with no additional jitter
-- **Browser fingerprint** — Requests include realistic Chrome 136 headers (Sec-Ch-Ua, Sec-Fetch-*, Accept-Language, etc.)
+- **Browser fingerprint** — Requests include realistic Chrome/Edge/Chromium headers (Sec-Ch-Ua, Sec-Fetch-*, Accept-Language, etc.) with a rotating User-Agent pool spanning Chrome 135–137 and Edge to prevent browser-identity fingerprinting
+- **Token rotation** — Optional `onTokenExpired` callback catches 401 responses, refreshes the session cookie, and retries the request transparently
+- **Proxy support** — Optional `proxy` config routes all API requests through an HTTP/HTTPS proxy
 
 ### Header Modes
 
@@ -342,6 +347,8 @@ The site renders the OpenAPI 3.1 specification with Scalar, allowing you to brow
 | `client.deleteDraft(id)` | Delete a draft |
 | `client.createComment(postId, body)` | Post a comment |
 | `client.deleteComment(id)` | Delete a comment |
+| `client.likeComment(commentId)` | Like a comment |
+| `client.unlikeComment(commentId)` | Unlike a comment |
 
 ### Authenticated — Account & Content
 
@@ -355,6 +362,8 @@ The site renders the OpenAPI 3.1 specification with Scalar, allowing you to brow
 | `client.draft(id)` | Get a specific draft |
 | `client.notesFeed(options)` | Your notes feed |
 | `client.noteStats(entityKey)` | Note analytics (impressions, interactions) |
+| `client.restackNote(noteId)` | Restack (re-share) a note |
+| `client.unrestackNote(noteId)` | Remove a restack from a note |
 
 ### Authenticated — Publication Management
 
