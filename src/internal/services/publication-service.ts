@@ -177,8 +177,8 @@ export class PublicationService {
   }
 
   async getLiveStreams(status?: string): Promise<SubstackLiveStreamList> {
-    const params = status ? `?status=${status}` : '?status=scheduled'
-    const response = await this.publicationClient.get<unknown>(`/live_streams${params}`)
+    const params = new URLSearchParams({ status: status || 'scheduled' })
+    const response = await this.publicationClient.get<unknown>(`/live_streams?${params.toString()}`)
     return decodeOrThrow(SubstackLiveStreamListCodec, response, 'Live streams')
   }
 

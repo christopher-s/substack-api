@@ -35,12 +35,8 @@ export class RecommendationService {
         decodeOrThrow(SubstackRecommendationCodec, item, `Outgoing recommendation ${i}`)
       )
     }
-    // Response may be an object wrapper
-    return decodeOrThrow(
-      SubstackRecommendationCodec,
-      response,
-      'Outgoing recommendation'
-    ) as unknown as SubstackRecommendation[]
+    const decoded = decodeOrThrow(SubstackRecommendationCodec, response, 'Outgoing recommendation')
+    return [decoded]
   }
 
   /**
@@ -73,11 +69,12 @@ export class RecommendationService {
         decodeOrThrow(SubstackRecommendationCodec, item, `Paginated recommendation ${i}`)
       )
     }
-    return decodeOrThrow(
+    const decoded = decodeOrThrow(
       SubstackRecommendationCodec,
       response,
       'Paginated recommendations'
-    ) as unknown as SubstackRecommendation[]
+    )
+    return [decoded]
   }
 
   /**
@@ -114,11 +111,8 @@ export class RecommendationService {
         decodeOrThrow(SubstackRecommendationStatsCodec, item, `Outgoing stat ${i}`)
       )
     }
-    return decodeOrThrow(
-      SubstackRecommendationStatsCodec,
-      response,
-      'Outgoing stats'
-    ) as unknown as SubstackRecommendationStats[]
+    const decoded = decodeOrThrow(SubstackRecommendationStatsCodec, response, 'Outgoing stats')
+    return [decoded]
   }
 
   /**
@@ -153,11 +147,8 @@ export class RecommendationService {
         decodeOrThrow(SubstackRecommendationStatsCodec, item, `Incoming stat ${i}`)
       )
     }
-    return decodeOrThrow(
-      SubstackRecommendationStatsCodec,
-      response,
-      'Incoming stats'
-    ) as unknown as SubstackRecommendationStats[]
+    const decoded = decodeOrThrow(SubstackRecommendationStatsCodec, response, 'Incoming stats')
+    return [decoded]
   }
 
   /**

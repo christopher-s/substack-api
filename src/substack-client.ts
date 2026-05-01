@@ -156,7 +156,10 @@ export class SubstackClient {
    */
   private static normalizeUrl(url: string): string {
     if (url.startsWith('http://')) {
-      if (url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1')) {
+      if (
+        /^http:\/\/localhost(?:[:/]|$)/.test(url) ||
+        /^http:\/\/127\.0\.0\.1(?:[:/]|$)/.test(url)
+      ) {
         return url
       }
       throw new Error('HTTPS is required; HTTP URLs are not supported for security reasons')

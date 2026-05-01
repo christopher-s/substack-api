@@ -68,8 +68,7 @@ export class RetryPolicy {
       }
     }
 
-    // Unreachable: all retry attempts exhausted — every path in the loop throws or returns
-    throw new Error('RetryPolicy: unreachable — all retry attempts exhausted')
+    throw new Error('RetryPolicy: unreachable')
   }
 
   private getStatusCode(error: unknown): number | undefined {

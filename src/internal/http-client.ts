@@ -35,6 +35,7 @@ export interface HttpClientOptions {
   headerMode?: 'browser' | 'api' | 'minimal'
   onRateLimit?: (info: RateLimitInfo) => void
   onTokenExpired?: () => Promise<string>
+  onTokenRefreshError?: (error: unknown) => void
   proxy?: HttpClientProxyConfig
 }
 
@@ -62,11 +63,12 @@ export class HttpClient {
   private readonly retryPolicy: RetryPolicy
   private readonly onRateLimit?: (info: RateLimitInfo) => void
   private readonly onTokenExpired?: () => Promise<string>
+  private readonly onTokenRefreshError?: (error: unknown) => void
   private cookies: Record<string, string> = {}
   private tokenExpiredRetried = false
 
   constructor(options: HttpClientOptions)
-  /** @deprecated Use HttpClientOptions object form */
+  /** @internal Tests use positional args; maps to HttpClientOptions */
   constructor(baseUrl: string, token?: string, maxRequestsPerSecond?: number)
   constructor(
     optionsOrBaseUrl: HttpClientOptions | string,
@@ -107,6 +109,7 @@ export class HttpClient {
 
     this.onRateLimit = opts.onRateLimit
     this.onTokenExpired = opts.onTokenExpired
+    this.onTokenRefreshError = opts.onTokenRefreshError
 
     // Rate-limit via token bucket before each request
     this.httpClient.interceptors.request.use(async (config) => {
@@ -161,8 +164,7 @@ export class HttpClient {
               return await this.httpClient.request(error.config)
             }
           } catch (refreshError) {
-            console.warn('Token refresh failed:', refreshError)
-            // Token refresh failed — fall through to original error
+            this.onTokenRefreshError?.(refreshError)
           }
         }
         this.tokenExpiredRetried = false

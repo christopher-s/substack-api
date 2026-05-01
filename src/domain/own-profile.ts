@@ -45,7 +45,7 @@ export class OwnProfile extends Profile {
         yield new Profile(profileResponse, this.deps, user.handle)
         count++
       } catch {
-        /* skip profiles that fail to load */
+        // skip profiles that fail to load
       }
     }
   }

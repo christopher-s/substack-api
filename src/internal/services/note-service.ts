@@ -149,6 +149,9 @@ export class NoteService {
 
   /** Get analytics stats for a note (impressions, surfaces, audience, interactions). */
   async getNoteStats(entityKey: string): Promise<SubstackNoteStats> {
+    if (!/^[a-zA-Z0-9_-]+$/.test(entityKey)) {
+      throw new Error(`Invalid entityKey format: ${entityKey}`)
+    }
     const response = await this.publicationClient.get<unknown>(`/note_stats/${entityKey}`)
     return decodeOrThrow(SubstackNoteStatsCodec, response, 'Note stats')
   }
