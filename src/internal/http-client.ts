@@ -26,10 +26,25 @@ export interface HttpClientOptions {
   onRateLimit?: (info: RateLimitInfo) => void
 }
 
+/**
+ * Chrome 136 UA strings with slightly varied patch versions.
+ * Rotating prevents fingerprinting on the exact build number.
+ */
+const CHROME_UAS = [
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.7103.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.7125.0 Safari/537.36'
+]
+
+function pickRandomUA(): string {
+  return CHROME_UAS[Math.floor(Math.random() * CHROME_UAS.length)]
+}
+
 export class HttpClient {
   private readonly httpClient: AxiosInstance
   private readonly retryPolicy: RetryPolicy
   private readonly onRateLimit?: (info: RateLimitInfo) => void
+  private cookies: Record<string, string> = {}
 
   constructor(options: HttpClientOptions)
   /** @deprecated Use HttpClientOptions object form */
@@ -44,7 +59,11 @@ export class HttpClient {
         ? { baseUrl: optionsOrBaseUrl, token, maxRequestsPerSecond }
         : optionsOrBaseUrl
 
-    const headers = buildHeaders(opts.headerMode ?? 'api', opts.token)
+    if (opts.token) {
+      this.cookies['substack.sid'] = opts.token
+    }
+
+    const headers = buildHeaders(opts.headerMode ?? 'api', this.cookies)
     this.httpClient = axios.create({ baseURL: opts.baseUrl, headers })
 
     const bucket = new TokenBucket({
@@ -63,7 +82,40 @@ export class HttpClient {
     // Rate-limit via token bucket before each request
     this.httpClient.interceptors.request.use(async (config) => {
       await bucket.acquire()
+
+      // Rotate UA on each request to prevent fingerprinting
+      config.headers['User-Agent'] = pickRandomUA()
+
+      // Only set Content-Type on requests with a body (POST/PUT)
+      if (!config.data) {
+        delete config.headers['Content-Type']
+      } else {
+        config.headers['Content-Type'] = 'application/json'
+      }
+
+      // Forward stored cookies
+      if (Object.keys(this.cookies).length > 0) {
+        config.headers['Cookie'] = Object.entries(this.cookies)
+          .map(([k, v]) => `${k}=${v}`)
+          .join('; ')
+      }
+
       return config
+    })
+
+    // Capture Set-Cookie headers from responses
+    this.httpClient.interceptors.response.use((response) => {
+      const setCookie = response.headers?.['set-cookie']
+      if (setCookie) {
+        const entries = Array.isArray(setCookie) ? setCookie : [setCookie]
+        for (const entry of entries) {
+          const match = entry.match(/^([^=]+)=([^;]+)/)
+          if (match) {
+            this.cookies[match[1]] = match[2]
+          }
+        }
+      }
+      return response
     })
   }
 
@@ -99,13 +151,13 @@ export class HttpClient {
 
 function buildHeaders(
   headerMode: 'browser' | 'api' | 'minimal',
-  token?: string
+  cookies: Record<string, string>
 ): Record<string, string> {
   const headers: Record<string, string> = {}
+  const ua = pickRandomUA()
 
   if (headerMode === 'browser') {
-    headers['User-Agent'] =
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+    headers['User-Agent'] = ua
     headers['Accept'] =
       'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8'
     headers['Accept-Language'] = 'en-US,en;q=0.9'
@@ -119,11 +171,9 @@ function buildHeaders(
     headers['Sec-Fetch-Site'] = 'none'
     headers['Sec-Fetch-User'] = '?1'
     headers['Upgrade-Insecure-Requests'] = '1'
-    headers['Content-Type'] = 'application/json'
   } else if (headerMode === 'api') {
-    headers['User-Agent'] =
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
-    headers['Accept'] = 'application/json'
+    headers['User-Agent'] = ua
+    headers['Accept'] = '*/*'
     headers['Accept-Language'] = 'en-US,en;q=0.9'
     headers['Accept-Encoding'] = 'gzip, deflate, br, zstd'
     headers['Sec-Ch-Ua'] = '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"'
@@ -132,13 +182,14 @@ function buildHeaders(
     headers['Sec-Fetch-Dest'] = 'empty'
     headers['Sec-Fetch-Mode'] = 'cors'
     headers['Sec-Fetch-Site'] = 'same-origin'
-    headers['Content-Type'] = 'application/json'
   } else {
-    headers['Accept'] = 'application/json'
+    headers['Accept'] = '*/*'
   }
 
-  if (token) {
-    headers['Cookie'] = `substack.sid=${token}`
+  if (Object.keys(cookies).length > 0) {
+    headers['Cookie'] = Object.entries(cookies)
+      .map(([k, v]) => `${k}=${v}`)
+      .join('; ')
   }
 
   return headers

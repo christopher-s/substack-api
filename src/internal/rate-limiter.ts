@@ -5,11 +5,21 @@ export interface TokenBucketOptions {
   random?: () => number
 }
 
+/**
+ * Token bucket rate limiter with Poisson-distributed inter-arrival times.
+ *
+ * When jitter is enabled (the default), requests use exponential inter-arrival
+ * spacing that produces natural-looking bursty patterns: requests sometimes
+ * cluster together and sometimes space apart, mimicking human network behavior.
+ * This avoids the clockwork timing that server-side rate limiters detect.
+ *
+ * When jitter is disabled, requests dispatch instantly when tokens are available.
+ */
 export class TokenBucket {
   private readonly capacity: number
   private readonly refillRate: number
   private readonly jitterEnabled: boolean
-  private readonly jitterMs: number
+  private readonly meanInterval: number
   private readonly now: () => number
   private readonly random: () => number
 
@@ -22,7 +32,7 @@ export class TokenBucket {
     this.capacity = options.maxRequestsPerSecond
     this.refillRate = options.maxRequestsPerSecond / 1000
     this.jitterEnabled = options.jitter ?? true
-    this.jitterMs = (1000 / options.maxRequestsPerSecond) * 0.5
+    this.meanInterval = 1000 / options.maxRequestsPerSecond
     this.now = options.now ?? (() => Date.now())
     this.random = options.random ?? (() => Math.random())
     this.tokens = this.capacity
@@ -51,13 +61,16 @@ export class TokenBucket {
       if (this.tokens >= 1) {
         this.tokens -= 1
         const resolve = this.queue.shift()!
-        const jitterDelay = this.jitterEnabled ? this.random() * this.jitterMs : 0
 
-        if (jitterDelay > 0) {
+        if (this.jitterEnabled) {
+          // Poisson/exponential inter-arrival: -ln(1 - random) * meanInterval
+          // Produces bursty traffic that mimics human browsing patterns
+          // Clamp random to [0, 0.999999] to avoid Infinity from -ln(0)
+          const waitMs = -Math.log(1 - Math.min(this.random(), 0.999999)) * this.meanInterval
           setTimeout(() => {
             resolve()
             next()
-          }, jitterDelay)
+          }, waitMs)
         } else {
           resolve()
           next()
@@ -65,7 +78,6 @@ export class TokenBucket {
       } else {
         const deficit = 1 - this.tokens
         const waitMs = deficit / this.refillRate
-        const jitterDelay = this.jitterEnabled ? this.random() * this.jitterMs : 0
 
         setTimeout(() => {
           this.refill()
@@ -73,7 +85,7 @@ export class TokenBucket {
           const resolve = this.queue.shift()!
           resolve()
           next()
-        }, waitMs + jitterDelay)
+        }, waitMs)
       }
     }
 

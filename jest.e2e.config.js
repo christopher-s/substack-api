@@ -18,6 +18,7 @@ export default {
   testTimeout: 30000, // 30 seconds for API calls
   collectCoverage: false, // E2E tests don't need coverage
   extensionsToTreatAsEsm: ['.ts'],
+  maxWorkers: 1, // Run E2E test files sequentially to avoid burst rate limiting
   reporters: [
     'default',
     ['jest-junit', {

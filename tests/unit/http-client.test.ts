@@ -48,24 +48,25 @@ describe('HttpClient', () => {
         token: 'test-api-key'
       })
 
-      expect(mockedAxios.create).toHaveBeenCalledWith({
-        baseURL: 'https://test.substack.com',
-        headers: {
-          Cookie: 'substack.sid=test-api-key',
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'User-Agent':
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-          'Accept-Encoding': 'gzip, deflate, br, zstd',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Sec-Ch-Ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
-          'Sec-Ch-Ua-Mobile': '?0',
-          'Sec-Ch-Ua-Platform': '"macOS"',
-          'Sec-Fetch-Dest': 'empty',
-          'Sec-Fetch-Mode': 'cors',
-          'Sec-Fetch-Site': 'same-origin'
-        }
+      const createCall = mockedAxios.create.mock.calls[0][0] as {
+        baseURL: string
+        headers: Record<string, string>
+      }
+      expect(createCall.baseURL).toBe('https://test.substack.com')
+      expect(createCall.headers).toMatchObject({
+        Cookie: 'substack.sid=test-api-key',
+        Accept: '*/*',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Sec-Ch-Ua': '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"macOS"',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-origin'
       })
+      expect(createCall.headers['User-Agent']).toContain('Chrome/136.')
+      expect(createCall.headers).not.toHaveProperty('Content-Type')
       expect(client).toBeDefined()
     })
 
